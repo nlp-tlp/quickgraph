@@ -1,0 +1,80 @@
+/* width */
+.labels-card::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+.labels-card::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+.labels-card::-webkit-scrollbar-thumb {
+  background: #cfd8dc;
+}
+
+/* Handle on hover */
+.labels-card::-webkit-scrollbar-thumb:hover {
+  background: #607d8b;
+}
+
+.sidebar-labelsearch {
+  margin-top: 1rem;
+}
+
+.complex-tree-container {
+  background-color: #fff;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.complex-tree-container .node-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  height: 100%;
+}
+
+.complex-tree-container .node-container .node {
+  white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
+.complex-tree-container .node-container .node-key {
+  margin-right: 0.25rem;
+  margin-left: 0.5rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+/* STYLES FOR REACT COMPLEX TREE
+  https://rct.lukasbach.com/docs/guides/styling
+*/
+.rct-tree-item-li-focused {
+  opacity: 1;
+}
+
+.rct-tree-item {
+  font-size: 1rem;
+}
+
+.rct-tree-item-button {
+  font-size: 1rem;
+  padding: 1rem;
+}
+
+.rct-tree-item-button:hover {
+  background-color: #cfd8dc;
+}
+
+.rct-tree-root {
+  background-color: #fff;
+}
+
+.rct-tree-items-container {
+  background-color: #fff;
+  padding: 0;
+}

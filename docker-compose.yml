@@ -1,0 +1,54 @@
+version: "3.8"
+services:
+  client:
+    image: quickgraph-client
+    build: ./client/
+    stdin_open: true
+    ports:
+      - "3000:3000"
+    networks:
+      - quickgraph-app
+    volumes:
+      - ./client/:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - server
+  server:
+    image: quickgraph-server
+    build: ./server/
+    stdin_open: true
+    ports:
+      - "3001:3001"
+    networks:
+      - quickgraph-app
+    volumes:
+      - ./server/:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:4.4.8
+    ports:
+      - "27018:27017"
+    networks:
+      - quickgraph-app
+    volumes:
+      - mongo-data:/data/db
+    depends_on:
+      - server_cluster
+  server_cluster:
+    image: quickgraph-server-cluster
+    build: ./server_cluster
+    stdin_open: true
+    ports:
+      - "8000:8000"
+    networks:
+      - quickgraph-app
+
+networks:
+  quickgraph-app:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local

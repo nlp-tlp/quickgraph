@@ -1,0 +1,13 @@
+/* TextContainer Styles */
+#text-container {
+  display: flex;
+  margin: 0rem 0rem 0.5rem 0rem;
+}
+
+/* Text Styles */
+.text-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  min-height: 2rem;
+}

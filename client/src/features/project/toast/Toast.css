@@ -1,0 +1,16 @@
+#toast-go-to {
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: right;
+  color: #263238;
+}
+
+#toast-go-to:hover {
+  text-decoration: underline;
+}
+
+#toast-go-to-icon {
+  margin-right: 0.5rem;
+  font-size: 0.8125rem;
+}

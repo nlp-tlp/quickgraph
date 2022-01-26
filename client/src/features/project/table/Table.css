@@ -1,0 +1,27 @@
+.annotation-table {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  outline: none; /* hides focus border for tabIndex */
+}
+
+/* width */
+.annotation-table::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+.annotation-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+.annotation-table::-webkit-scrollbar-thumb {
+  background: #cfd8dc;
+}
+
+/* Handle on hover */
+.annotation-table::-webkit-scrollbar-thumb:hover {
+  background: #607d8b;
+}

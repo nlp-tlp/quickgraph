@@ -1,0 +1,222 @@
+html {
+  scroll-behavior: smooth;
+}
+
+.landing {
+  text-align: left;
+}
+
+.landing #main {
+  height: 100vh;
+}
+
+.landing #details {
+  height: 100vh;
+  padding-top: 20vh;
+}
+
+.landing #row-title {
+  margin-top: 25vh;
+  justify-content: left;
+  margin-left: 3rem;
+  font-weight: bold;
+  color: #263238;
+}
+
+.landing #title-container {
+  display: flex;
+  align-items: center;
+}
+
+.landing #title-icon {
+  height: 4rem;
+  width: 4rem;
+  margin-right: 0.25rem;
+}
+
+.landing #title-container h1 {
+  letter-spacing: 0.1rem;
+  font-weight: bold;
+  font-size: 4rem;
+  /* max-width: 75vw; */
+  color: #263238;
+}
+
+.landing #row-description {
+  justify-content: left;
+}
+
+.landing #row-description h3 {
+  font-size: 1.5rem;
+  margin-left: 3rem;
+}
+
+@media (max-width: 600px) {
+  #title-icon {
+    display: none;
+  }
+  .landing #row-title {
+    margin-left: 0;
+    justify-content: center;
+  }
+  .landing #row-description h3 {
+    justify-content: center;
+  }
+}
+
+.landing #row-signup {
+  margin-top: 10vh;
+  justify-content: left;
+  margin-left: 3rem;
+}
+
+.landing #signup-button {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  background-color: #263238;
+  border: 0rem solid black;
+  padding: 0.25rem 1rem 0.25rem 1rem;
+}
+
+.landing #signup-button:hover {
+  background: linear-gradient(
+      90deg,
+      #0000 33%,
+      rgba(255, 255, 255, 0.3) 50%,
+      #0000 66%
+    )
+    #263238;
+  background-size: 300% 100%;
+  animation: shine 2s infinite;
+  color: white;
+}
+
+@keyframes shine {
+  0% {
+    background-position: right;
+  }
+}
+
+.landing #signup-button:active {
+  background-color: white;
+  border-color: white;
+  color: rgb(143, 143, 143);
+}
+
+.nav-logo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 1rem;
+  color: #263238;
+  font-size: 2.5rem;
+  cursor: pointer;
+  z-index: 10;
+}
+
+#github:hover {
+  color: black;
+}
+
+#youtube {
+  margin-right: 5rem;
+}
+
+#youtube:hover {
+  color: #ff0000;
+}
+
+.landing #row-details {
+  justify-content: center;
+}
+
+.landing #row-details #box {
+  padding: 0.5rem;
+  text-align: center;
+  margin: 1rem;
+  transition: 0.3s;
+  min-height: 25vh;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.landing #row-details #box:hover {
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+  background: linear-gradient(
+      90deg,
+      #0000 33%,
+      rgba(255, 255, 255, 0.3) 50%,
+      #0000 66%
+    )
+    #263238;
+  background-size: 300% 100%;
+  animation: shine 2s infinite;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .landing #details {
+    padding-top: 2vh;
+  }
+
+  .landing #row-details #box {
+    height: 15vh;
+    min-height: 0;
+  }
+  .landing #row-details #icon {
+    display: none;
+  }
+  .landing #row-details #box h3 {
+    font-size: 1.25rem;
+    padding: 0;
+    margin: 0;
+  }
+
+  .landing #row-details #box p {
+    font-size: 0.75rem;
+  }
+}
+
+.landing #row-details #icon {
+  font-size: 4rem;
+}
+
+.landing #row-details #icon:hover {
+  color: white;
+}
+
+.landing #row-details #box h3 {
+  margin: 1rem;
+  font-weight: bold;
+}
+.landing #row-details #box p {
+  padding: 0rem 2rem 0rem 2rem;
+}
+
+/* Scroll buttons */
+.landing #scroll-button-down {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 4rem;
+  font-size: 3rem;
+  color: #263238;
+  cursor: pointer;
+}
+
+.landing #scroll-button-down:hover {
+  opacity: 0.8;
+}
+
+.landing #scroll-button-up {
+  position: absolute;
+  bottom: 4rem;
+  right: 0;
+  margin: 2rem;
+  font-size: 3rem;
+  color: #263238;
+  cursor: pointer;
+}
+
+.landing #scroll-button-up:hover {
+  opacity: 0.8;
+}

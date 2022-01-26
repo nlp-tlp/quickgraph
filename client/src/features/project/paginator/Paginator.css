@@ -1,0 +1,84 @@
+#paginator-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: right;
+}
+
+.paginator {
+  margin: 0rem 0rem 0rem 0rem;
+  padding: 0;
+}
+
+.paginator #action-btn {
+  display: inline-block;
+  padding: 0.1rem 1rem;
+  margin: 0.1rem;
+  border: 0.1rem solid lightgrey;
+  box-sizing: border-box;
+  text-decoration: none;
+  text-align: center;
+  color: white;
+  background-color: grey;
+}
+
+.paginator #action-btn:hover {
+  opacity: 0.8;
+  color: white;
+  background-color: #cfd8dc;
+  border: 0.1rem solid lightgrey;
+}
+
+.paginator #action-btn:disabled {
+  opacity: 0.2;
+  color: grey;
+  background-color: lightgrey;
+  border: 0.1rem solid grey;
+}
+
+.page-link {
+  border: 1px solid #cfd8dc;
+}
+
+#paginator-detail {
+  width: 100%;
+  font-size: 0.7rem;
+  padding: 0;
+  margin: 1rem 1rem 0rem 0rem;
+  color: #546e7a;
+  text-align: right;
+}
+
+/* React Bootstrap paginator */
+.pagination {
+  margin-bottom: 0;
+  font-size: 0.75rem;
+}
+
+.pagination > li > a {
+  background-color: white;
+  color: #8f8f8f;
+}
+
+.pagination > li > span {
+  background-color: #607d8b !important;
+  border-color: #546e7a !important;
+}
+
+.pagination .active .page-link> li > span {
+  background-color: #607d8b !important;
+  border-color: #546e7a !important;
+}
+
+.pagination > li > a:focus,
+.pagination > li > a:hover,
+.pagination > li > span:focus {
+  color: #5a5a5a;
+  background-color: #eee;
+  border-color: #ddd;
+}
+
+.pagination > li > span:hover {
+  opacity: 0.5;
+  cursor: pointer;
+}

@@ -1,0 +1,205 @@
+.modal-wide {
+  min-width: 600px;
+  max-width: 800px;
+  height: 90vh;
+}
+
+.legend #container {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  background-color: white;
+}
+
+.legend #table {
+  display: flex;
+  flex-direction: column;
+  font-size: 16px;
+  padding: 0.25em;
+  justify-content: space-between;
+}
+.legend #description {
+}
+.legend #legend-item {
+  text-align: center;
+  width: 8em;
+  margin: 0.5em;
+  border-radius: 0.25em;
+  padding: 0.2em;
+}
+
+/* .help #override {
+    'width': '90vw',
+    'minWidth': '90vw'
+} */
+
+.help {
+  margin: auto;
+}
+
+.help #qrg-img {
+  max-width: 100%;
+}
+
+.help #description-title {
+  font-weight: bold;
+  font-size: 22px;
+}
+
+/* SCHEMA */
+.schema #description-title {
+  margin-bottom: 0.5em;
+  font-weight: bold;
+}
+
+.schema #tag-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 0.2rem;
+  font-weight: bold;
+  opacity: 0.5;
+}
+
+.schema #tag-preview[active] {
+  opacity: 1;
+}
+
+.schema #tag-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 1rem;
+  opacity: 0.5;
+}
+
+.schema #tag-text[active] {
+  opacity: 1;
+}
+
+.schema #status-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  color: white;
+  background-color: #f44336;
+  cursor: pointer;
+  opacity: 0.9;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 0.2rem;
+  margin: 0rem 0rem 0rem 0rem;
+}
+
+.schema #status-button[active] {
+  background-color: #1b5e20;
+}
+
+.schema #status-button:hover {
+  opacity: 1;
+}
+
+.schema #edit-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  background-color: #cfd8dc;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 0.2rem;
+  cursor: pointer;
+  opacity: 0.9;
+  margin: 0rem 1rem 0rem 1rem;
+}
+
+.schema #edit-button:hover {
+  opacity: 1;
+}
+
+.schema thead,
+tbody {
+  text-align: center;
+}
+
+.schema input {
+  width: 8em;
+}
+
+.schema #add-btn {
+  font-size: 22px;
+  color: #28a745;
+}
+
+.schema #active-state {
+  font-weight: bolder;
+}
+
+/* DOWNLOAD */
+.download {
+  /* width: 600px; */
+}
+
+.download #checkbox-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.download #checkbox-container #checkbox {
+  font-size: 10px;
+}
+
+.download #main-description {
+  font-size: 1em;
+}
+
+.download .list-item {
+  font-size: 0.9em;
+}
+
+.download .list-group-item.active {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.download .list-header {
+  font-weight: bold;
+  color: black;
+  font-size: 1em;
+  background-color: #b0bec5;
+}
+
+
+/* DELETE PROJECT */
+.delete-loading {
+  text-align: center;
+  margin: auto;
+  margin-top: 4em;
+  margin-bottom: 4em;
+}
+
+.delete-loading #loading-text {
+  font-size: 18px;
+}
+
+.delete {
+  text-align: center;
+}
+
+.delete #input-text {
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  outline: none;
+  padding: 0.5em;
+  border-radius: 0.5em;
+}
+
+.delete #button {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 1em;
+}
