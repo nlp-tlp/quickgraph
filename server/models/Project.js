@@ -43,6 +43,8 @@ const ProjectSchema = mongoose.Schema(
         active: { type: Boolean, default: true },
         children: { type: Array },
         parent: { type: Object },
+        id: { type: String, required: true },
+        _id: false,
       },
     ],
     relationOntology: [
@@ -57,6 +59,8 @@ const ProjectSchema = mongoose.Schema(
         parent: { type: Object },
         domain: { type: Array },
         range: { type: Array },
+        id: { type: String, required: true },
+        _id: false,
       },
     ],
     annotators: [
@@ -86,9 +90,7 @@ const ProjectSchema = mongoose.Schema(
         ],
       },
     ],
-    clusterDetails: {
-      
-    },
+    clusterDetails: {},
     settings: {
       performClustering: {
         type: Boolean,

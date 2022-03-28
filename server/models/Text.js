@@ -37,8 +37,10 @@ const TextSchema = mongoose.Schema(
           type: String,
         },
         label_id: {
-          type: Schema.Types.ObjectId,
-          ref: "Project.entityOntology",
+          type: String,
+          // Labels are nested in Array[Object[Array]] as a tree structure
+          // type: Schema.Types.ObjectId,
+          // ref: "Project.entityOntology",
         },
         suggested: { type: Boolean },
         createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -61,8 +63,10 @@ const TextSchema = mongoose.Schema(
           type: String,
         },
         label_id: {
-          type: Schema.Types.ObjectId,
-          ref: "Project.relationOntology",
+          type: String,
+          // Labels are nested in Array[Object[Array]] as a tree structure
+          // type: Schema.Types.ObjectId,
+          // ref: "Project.relationOntology",
         },
         labelStart: { type: Number },
         labelEnd: { type: Number },

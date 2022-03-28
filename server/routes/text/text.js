@@ -229,6 +229,9 @@ router.post("/annotation/apply", authUtils.cookieJwtAuth, async (req, res) => {
     ];
     const userId = authUtils.getUserIdFromToken(req.cookies.token);
 
+    console.log('RELATION ANNOTATION BODY', req.body);
+
+
     const applySingle = async () => {
       let text = await Text.findById({ _id: req.body.textId });
       if (req.body.annotationType === "entity") {
