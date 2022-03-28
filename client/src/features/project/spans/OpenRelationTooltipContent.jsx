@@ -18,7 +18,7 @@ import {
   selectSourceSpan,
   selectTargetSpan,
 } from "../../../app/dataSlice";
-import { selectProject, selectRelationSchema } from "../projectSlice";
+import { selectProject } from "../projectSlice";
 import "./Tooltip.css";
 
 export const OpenRelationTooltipContent = ({
@@ -34,7 +34,6 @@ export const OpenRelationTooltipContent = ({
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
   const relations = useSelector(selectRelations);
-  const relationSchema = useSelector(selectRelationSchema);
 
   const handleRelationInteraction = ({
     relation,
@@ -79,7 +78,7 @@ export const OpenRelationTooltipContent = ({
             targetEntityId: targetSpan._id,
             targetEntityLabel: targetSpan.label,
             relationLabel: relationLabel,
-            relationLabelId: relation._id,
+            relationLabelId: null,
             targetTokenIds: targetTokenIds,
             applyAll: applyAll,
             suggested: suggested,

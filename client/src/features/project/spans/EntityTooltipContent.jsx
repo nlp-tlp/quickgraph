@@ -13,17 +13,18 @@ import {
   applyAnnotation,
   deleteAnnotation,
 } from "../../../app/dataSlice";
-import { selectProject } from "../projectSlice";
+import { selectProject, selectFlatEntityOntology } from "../projectSlice";
 import "./Tooltip.css";
 
 export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
-  const entityOntology = project.entityOntology;
+  const flatEntityOntology = useSelector(selectFlatEntityOntology);
+
   const labelFullName =
-    entityOntology.filter((e) => e._id == tooltipFocusSpan.label_id).length >
-      0 &&
-    entityOntology.filter((e) => e._id == tooltipFocusSpan.label_id)[0]
+    flatEntityOntology.filter((e) => e._id == tooltipFocusSpan.label_id)
+      .length > 0 &&
+    flatEntityOntology.filter((e) => e._id == tooltipFocusSpan.label_id)[0]
       .fullName;
 
   const handleMarkupAllClick = () => {

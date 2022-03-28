@@ -113,7 +113,6 @@ export const Table = () => {
         selectMode.tokenIds.length > 0
       ) {
         // Only operate on existing bindings
-        console.log("user pressed binding for", keyBinding[key]);
 
         // Get start and end indexes
         const textId = selectMode.textId;
@@ -135,13 +134,15 @@ export const Table = () => {
               ? tokens[0].index
               : tokens[tokens.length - 1].index,
           entityLabel: keyBinding[key].name,
-          entityLabelId: keyBinding[key]._id,
+          entityLabelId: keyBinding[key].id,
           textId: textId,
           projectId: project._id,
           applyAll: e.shiftKey,
           annotationType: "entity",
           suggested: false,
         };
+
+        // console.log("key press payload", payload);
 
         dispatch(applyAnnotation({ ...payload }));
       }

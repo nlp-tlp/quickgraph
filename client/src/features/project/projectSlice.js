@@ -54,10 +54,11 @@ const initialState = {
   activeModal: null,
   modalInfo: null,
   schema: null,
-  activeLabel: 0,
+  activeEntityClass: 0,
   keyBinding: {},
-  relationSchema: {},
   deleteProjectStatus: "idle",
+  flatEntityOntology: [],
+  flatRelationOntology: [],
 };
 
 export const fetchProject = createAsyncThunk(
@@ -171,9 +172,9 @@ export const projectSlice = createSlice({
       state.metrics = null;
       state.details = action.payload;
     },
-    setActiveLabel: (state, action) => {
-      // Sets the active schema key
-      state.activeLabel = action.payload;
+    setActiveEntityClass: (state, action) => {
+      // Sets the active entity class
+      state.activeEntityClass = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -187,9 +188,43 @@ export const projectSlice = createSlice({
         state.details = action.payload;
         state.id = action.payload._id;
 
-        state.relationSchema = Object.fromEntries(
-          action.payload.relationOntology.map((label, index) => [[index], label])
+        // Flatten entity and relation ontologies
+        // src: https://stackoverflow.com/questions/58908893/flatten-array-of-objects-with-nested-children
+
+        // TODO: Add keybinding to each item
+        function flattenEntityOntology(a) {
+          return a.reduce(function (
+            flattened,
+            { id, name, fullName, colour, children }
+          ) {
+            return flattened
+              .concat([{ id, name, fullName, colour }])
+              .concat(children ? flattenEntityOntology(children) : []);
+          },
+          []);
+        }
+
+        function flattenRelationOntology(a) {
+          return a.reduce(function (
+            flattened,
+            { id, name, fullName, domain, range, children }
+          ) {
+            return flattened
+              .concat([{ id, name, fullName, domain, range }])
+              .concat(children ? flattenRelationOntology(children) : []);
+          },
+          []);
+        }
+
+        state.flatEntityOntology = flattenEntityOntology(
+          action.payload.entityOntology
         );
+
+        state.flatRelationOntology = flattenRelationOntology(
+          action.payload.relationOntology
+        );
+
+
 
         state.keyBinding = Object.assign(
           {},
@@ -287,7 +322,7 @@ export const {
   setProject,
   setFilters,
   resetFilters,
-  setActiveLabel,
+  setActiveEntityClass,
   setActiveKey,
 } = projectSlice.actions;
 
@@ -302,8 +337,11 @@ export const selectActiveModal = (state) => state.project.activeModal;
 export const selectModalInfo = (state) => state.project.modalInfo;
 export const selectProjectSchema = (state) => state.project.schema;
 export const selectFilters = (state) => state.project.filters;
-export const selectActiveLabel = (state) => state.project.activeLabel;
+export const selectActiveEntityClass = (state) =>
+  state.project.activeEntityClass;
 export const selectKeyBinding = (state) => state.project.keyBinding;
-export const selectRelationSchema = (state) => state.project.relationSchema;
+export const selectFlatEntityOntology = (state) => state.project.flatEntityOntology;
+export const selectFlatRelationOntology = (state) =>
+  state.project.flatRelationOntology;
 
 export default projectSlice.reducer;

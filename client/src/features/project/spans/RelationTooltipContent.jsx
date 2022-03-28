@@ -18,7 +18,11 @@ import {
   selectSourceSpan,
   selectTargetSpan,
 } from "../../../app/dataSlice";
-import { selectProject, selectRelationSchema } from "../projectSlice";
+import {
+  selectProject,
+  selectFlatRelationOntology,
+  selectFlatEntityOntology,
+} from "../projectSlice";
 import "./Tooltip.css";
 
 export const RelationTooltipContent = ({
@@ -34,7 +38,8 @@ export const RelationTooltipContent = ({
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
   const relations = useSelector(selectRelations);
-  const relationSchema = useSelector(selectRelationSchema);
+  const flatRelationOntology = useSelector(selectFlatRelationOntology);
+  const flatEntityOntology = useSelector(selectFlatEntityOntology);
 
   const findRelatedSpans = (relations, text, sourceSpan, targetSpan) => {
     /* 
@@ -71,17 +76,17 @@ export const RelationTooltipContent = ({
     );
 
     // Filter relations based on source/span entity types
-    const filteredRels = project.relationOntology
+    const filteredRels = flatRelationOntology
       .map((relation) => {
         const domain = relation.domain;
         const range = relation.range;
 
         // Get label fullnames
-        const sourceEntityType = project.entityOntology.filter(
-          (r) => r._id === sourceSpan.labelId
+        const sourceEntityType = flatEntityOntology.filter(
+          (r) => r.id === sourceSpan.labelId
         )[0].fullName;
-        const targetEntityType = project.entityOntology.filter(
-          (r) => r._id === targetSpan.labelId
+        const targetEntityType = flatEntityOntology.filter(
+          (r) => r.id === targetSpan.labelId
         )[0].fullName;
 
         // console.log(sourceEntityType, targetEntityType);
@@ -164,7 +169,6 @@ const ListItemContent = ({
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
   const relations = useSelector(selectRelations);
-  const relationSchema = useSelector(selectRelationSchema);
 
   const handleRelationInteraction = ({
     relation,
@@ -200,6 +204,9 @@ const ListItemContent = ({
     let relationId;
     switch (action) {
       case "apply":
+
+        console.log('RELATION TOOLTIP ID CHECK', relation)
+
         dispatch(
           applyAnnotation({
             projectId: project._id,
@@ -209,7 +216,7 @@ const ListItemContent = ({
             targetEntityId: targetSpan._id,
             targetEntityLabel: targetSpan.label,
             relationLabel: relationLabel,
-            relationLabelId: relation._id,
+            relationLabelId: relation.id,
             targetTokenIds: targetTokenIds,
             applyAll: applyAll,
             suggested: suggested,
@@ -307,9 +314,7 @@ const ListItemContent = ({
           >
             {relation.fullName.replace(relation.name, "")}
           </span>
-          <span id="tooltip-relation-label"
-          
-          >{relation.name}</span>
+          <span id="tooltip-relation-label">{relation.name}</span>
         </div>
       </div>
       <div id="tooltip-relation-icon-tray">

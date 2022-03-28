@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Badge, OverlayTrigger, Tooltip, Popover } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import { selectProject } from "../projectSlice";
+import { selectProject, selectFlatEntityOntology } from "../projectSlice";
 import "./Spans.css";
 import {
   selectAnnotationMode,
@@ -93,6 +93,8 @@ const Span = ({
   const project = useSelector(selectProject);
   const annotationMode = useSelector(selectAnnotationMode);
 
+  const flatEntityOntology = useSelector(selectFlatEntityOntology);
+
   //   States
   const [showTooltip, setShowTooltip] = useState(false);
   const [showRelTooltip, setShowRelTooltip] = useState(true);
@@ -111,8 +113,6 @@ const Span = ({
     relations[text._id].filter(
       (r) => r.suggested && r.source === span._id
     )[0] !== undefined;
-
-  // console.log("hasSuggestedRelation", hasSuggestedRelation);
 
   useEffect(() => {
     switch (hoveredElement) {
@@ -208,10 +208,9 @@ const Span = ({
   }, [hoveredElement]);
 
   //    Get meta-data for span
-
   const spanLabelPos = getSpanLabelPosition(span, tokenIndex);
-  const labelColour = project.entityOntology.filter(
-    (l) => l.name.toLowerCase() === spanLabel.toLowerCase()
+  const labelColour = flatEntityOntology.filter(
+    (l) => l.id === span.label_id
   )[0].colour;
   const fontColour = getFontColour(labelColour);
 
