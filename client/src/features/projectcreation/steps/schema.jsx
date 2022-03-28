@@ -2,7 +2,6 @@ import SortableTree, {
   addNodeUnderParent,
   changeNodeAtPath,
   removeNodeAtPath,
-  getFlatDataFromTree,
 } from "@nosferatu500/react-sortable-tree";
 // Using forked version of react-sortable-tree as version at date 15.12.21 isn't react v17 compatible.
 import "@nosferatu500/react-sortable-tree/style.css";
@@ -31,6 +30,7 @@ import {
 } from "../createStepSlice";
 import { entityOntologies, relationOntologies } from "../data/ontologies";
 import { getRandomColor } from "../data/utils";
+import { v4 as uuidv4 } from "uuid";
 
 export const Schema = () => {
   const dispatch = useDispatch();
@@ -322,11 +322,15 @@ const OntologyContainer = ({
                                     parentKey: path[path.length - 1],
                                     domain: [],
                                     range: [],
+                                    placeholder: "Enter relation name",
+                                    id: uuidv4(),
                                   }
                                 : {
                                     name: "",
                                     parentKey: path[path.length - 1],
                                     colour: node.colour,
+                                    id: uuidv4(),
+                                    placeholder: "Enter entity name",
                                   },
                             addAsFirstChild: state.addAsFirstChild,
                           }).treeData,
@@ -382,8 +386,16 @@ const OntologyContainer = ({
                           fullName: "",
                           domain: [],
                           range: [],
+                          placeholder: "Enter relation name",
+                          id: uuidv4(),
                         }
-                      : { name: "", fullName: [], colour: getRandomColor() }
+                      : {
+                          name: "",
+                          fullName: [],
+                          colour: getRandomColor(),
+                          placeholder: "Enter entity name",
+                          id: uuidv4(),
+                        }
                   ),
                 }))
               }

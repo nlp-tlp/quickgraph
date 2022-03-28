@@ -4,7 +4,7 @@ import axios from "../features/utils/api-interceptor";
 const initialState = {
   textsStatus: "idle",
   textsError: null,
-  annotationMode: "concept", // Two types: concept (entity typing), relation (relation extraction)
+  annotationMode: "concept", // Two types: concept (entity annotation) and relation (relation extraction)
   tokens: null,
   selectedTokens: {},
   relations: null,
@@ -34,7 +34,6 @@ export const getTotalPages = createAsyncThunk(
       "/api/text/filter",
       {
         projectId: projectId,
-        getPages: projectId,
         filters: filters,
         getPages: getPages,
       },

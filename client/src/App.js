@@ -92,7 +92,7 @@ function App() {
             component={Anonpage}
           /> */}
 
-          {/* <Route exact path="/dev" component={Dev} /> */}
+          <Route exact path="/dev" component={Dev} />
 
           <Route exact path="/unauthorized" component={Unauthorized} />
 

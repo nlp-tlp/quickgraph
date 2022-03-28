@@ -23,8 +23,6 @@ body::after{
   left: 0;
   right: 0;
   z-index: -1;
-  /* width: 100%;
-  height: 100vh; */
-  -webkit-mask-image: linear-gradient(to top, transparent 25%, black 75%);
+  -webkit-mask-image: linear-gradient(to top, transparent 50%, black 85%);
   mask-image: linear-gradient(to top, transparent 25%, black 75%);
 }

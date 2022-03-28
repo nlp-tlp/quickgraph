@@ -20,7 +20,7 @@ const combinedReducer = combineReducers({
 });
 
 const persistConfig = {
-  timeout: 2000, //Set the timeout function to 2 seconds (src: https://github.com/rt2zz/redux-persist/issues/816)
+  timeout: 500, //Set the timeout function to 2 seconds (src: https://github.com/rt2zz/redux-persist/issues/816)
   key: "root",
   storage,
   whitelist: ["user"],

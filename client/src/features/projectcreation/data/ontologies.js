@@ -1,4 +1,5 @@
 import { getRandomColor, muiColorPalette500 } from "./utils";
+import { v4 as uuidv4 } from "uuid";
 
 export const entityOntologies = {
   Custom: [
@@ -9,40 +10,41 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: "#E91E63",
+      id: uuidv4(),
     },
   ],
   CoNLL03: [
     {
       name: "Organisation",
       fullName: "Organisation",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Person",
       fullName: "Person",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Location",
       fullName: "Location",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Miscellaneous",
-
       fullName: "Miscellaneous",
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
   ],
   SemEval07Task4: [
@@ -53,6 +55,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "effect",
@@ -61,6 +64,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "content",
@@ -69,6 +73,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "container",
@@ -77,6 +82,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "instrument",
@@ -85,6 +91,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "agency",
@@ -93,6 +100,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "origin",
@@ -101,6 +109,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "entity",
@@ -109,6 +118,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "part",
@@ -117,6 +127,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "whole",
@@ -125,6 +136,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "product",
@@ -133,6 +145,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "producer",
@@ -141,6 +154,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "theme",
@@ -149,6 +163,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "tool",
@@ -157,6 +172,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
   ],
   SemEval10Task8: [
@@ -167,6 +183,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "effect",
@@ -175,6 +192,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "content",
@@ -183,6 +201,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "container",
@@ -191,6 +210,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "instrument",
@@ -199,6 +219,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "agency",
@@ -207,6 +228,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "entity",
@@ -215,6 +237,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "origin",
@@ -223,6 +246,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "destination",
@@ -231,6 +255,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "component",
@@ -239,6 +264,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "whole",
@@ -247,6 +273,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "product",
@@ -255,6 +282,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "producer",
@@ -263,6 +291,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "member",
@@ -271,6 +300,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "collection",
@@ -279,6 +309,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "message",
@@ -287,6 +318,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "topic",
@@ -295,6 +327,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
   ],
   FIGER: [
@@ -309,6 +342,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "architect",
@@ -316,6 +350,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "artist",
@@ -323,6 +358,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "athlete",
@@ -330,6 +366,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "author",
@@ -337,6 +374,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "coach",
@@ -344,6 +382,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "director",
@@ -351,6 +390,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "doctor",
@@ -358,6 +398,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "engineer",
@@ -365,6 +406,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "monarch",
@@ -372,6 +414,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "musician",
@@ -379,6 +422,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "politician",
@@ -386,6 +430,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "religious_leader",
@@ -393,6 +438,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "soldier",
@@ -400,6 +446,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
         {
           name: "terrorist",
@@ -407,9 +454,11 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[0],
+          id: uuidv4(),
         },
       ],
       colour: muiColorPalette500[0],
+      id: uuidv4(),
     },
     {
       name: "location",
@@ -422,6 +471,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "bridge",
@@ -429,6 +479,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "city",
@@ -436,6 +487,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "country",
@@ -443,6 +495,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "county",
@@ -450,6 +503,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "province",
@@ -457,6 +511,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "railway",
@@ -464,6 +519,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "road",
@@ -471,6 +527,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
 
         {
@@ -479,6 +536,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "mountain",
@@ -486,6 +544,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "glacier",
@@ -493,6 +552,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "astral_body",
@@ -500,6 +560,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "cemetery",
@@ -507,6 +568,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
         {
           name: "park",
@@ -514,9 +576,11 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[1],
+          id: uuidv4(),
         },
       ],
       colour: muiColorPalette500[1],
+      id: uuidv4(),
     },
     {
       name: "building",
@@ -529,6 +593,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "dam",
@@ -536,6 +601,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "hospital",
@@ -543,6 +609,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "hotel",
@@ -550,6 +617,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "library",
@@ -557,6 +625,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "power_station",
@@ -564,6 +633,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "restaurant",
@@ -571,6 +641,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "sports_facility",
@@ -578,6 +649,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
         {
           name: "theater",
@@ -585,9 +657,11 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[2],
+          id: uuidv4(),
         },
       ],
       colour: muiColorPalette500[2],
+      id: uuidv4(),
     },
     {
       name: "organisation",
@@ -600,6 +674,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "company",
@@ -607,6 +682,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "educational_institution",
@@ -614,6 +690,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "fraternity_sorority",
@@ -621,6 +698,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "sports_league",
@@ -628,6 +706,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "sports_team",
@@ -635,6 +714,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "terrorist_organization",
@@ -642,6 +722,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "government_agency",
@@ -649,6 +730,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "government",
@@ -656,6 +738,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "political_party",
@@ -663,6 +746,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "educational_department",
@@ -670,6 +754,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "military",
@@ -677,6 +762,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
         {
           name: "news_agency",
@@ -684,9 +770,11 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[3],
+          id: uuidv4(),
         },
       ],
       colour: muiColorPalette500[3],
+      id: uuidv4(),
     },
     {
       name: "product",
@@ -699,6 +787,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "airplane",
@@ -706,6 +795,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "car",
@@ -713,6 +803,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "ship",
@@ -720,6 +811,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "spacecraft",
@@ -727,6 +819,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "camera",
@@ -734,6 +827,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "mobile_phone",
@@ -741,6 +835,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "computer",
@@ -748,6 +843,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "software",
@@ -755,6 +851,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "game",
@@ -762,6 +859,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "instrument",
@@ -769,6 +867,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
         {
           name: "weapon",
@@ -776,9 +875,11 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[4],
+          id: uuidv4(),
         },
       ],
       colour: muiColorPalette500[4],
+      id: uuidv4(),
     },
     {
       name: "art",
@@ -791,6 +892,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[5],
+          id: uuidv4(),
         },
         {
           name: "play",
@@ -798,6 +900,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[5],
+          id: uuidv4(),
         },
         {
           name: "written_work",
@@ -805,6 +908,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[5],
+          id: uuidv4(),
         },
         {
           name: "newspaper",
@@ -812,6 +916,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[5],
+          id: uuidv4(),
         },
         {
           name: "music",
@@ -819,9 +924,11 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[5],
+          id: uuidv4(),
         },
       ],
       colour: muiColorPalette500[5],
+      id: uuidv4(),
     },
     {
       name: "event",
@@ -834,6 +941,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[6],
+          id: uuidv4(),
         },
         {
           name: "election",
@@ -841,6 +949,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[6],
+          id: uuidv4(),
         },
         {
           name: "protest",
@@ -848,6 +957,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[6],
+          id: uuidv4(),
         },
         {
           name: "military_conflict",
@@ -855,6 +965,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[6],
+          id: uuidv4(),
         },
         {
           name: "natural_disaster",
@@ -862,6 +973,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[6],
+          id: uuidv4(),
         },
         {
           name: "sports_event",
@@ -869,6 +981,7 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[6],
+          id: uuidv4(),
         },
         {
           name: "terrorist_attack",
@@ -876,9 +989,11 @@ export const entityOntologies = {
           description: "",
           children: [],
           colour: muiColorPalette500[6],
+          id: uuidv4(),
         },
       ],
       colour: muiColorPalette500[6],
+      id: uuidv4(),
     },
     {
       name: "time",
@@ -886,6 +1001,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "color",
@@ -893,6 +1009,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "award",
@@ -900,6 +1017,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "educational_degree",
@@ -907,6 +1025,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "title",
@@ -914,6 +1033,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "law",
@@ -921,6 +1041,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "ethnicity",
@@ -928,6 +1049,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "language",
@@ -935,6 +1057,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "religion",
@@ -942,6 +1065,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "god",
@@ -949,6 +1073,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "chemical_thing",
@@ -956,6 +1081,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "biological_thing",
@@ -963,6 +1089,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "medical_treatment",
@@ -970,6 +1097,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "disease",
@@ -977,6 +1105,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "symptom",
@@ -984,6 +1113,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "drug",
@@ -991,6 +1121,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "body_part",
@@ -998,6 +1129,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "living_thing",
@@ -1005,6 +1137,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "animal",
@@ -1012,6 +1145,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "food",
@@ -1019,6 +1153,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "website",
@@ -1026,6 +1161,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "broadcast_network",
@@ -1033,6 +1169,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "broadcast_program",
@@ -1040,6 +1177,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "tv_channel",
@@ -1047,6 +1185,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "currency",
@@ -1054,6 +1193,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "stock_exchange",
@@ -1061,6 +1201,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "algorithm",
@@ -1068,6 +1209,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "programming_language",
@@ -1075,6 +1217,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "transit_system",
@@ -1082,6 +1225,7 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "transit_line",
@@ -1089,146 +1233,635 @@ export const entityOntologies = {
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
   ],
   Maintenance: [
     {
       name: "Activity",
       fullName: "Activity",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Item",
       fullName: "Item",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Location",
       fullName: "Location",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Observation",
       fullName: "Observation",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Attribute",
       fullName: "Attribute",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Specifier",
       fullName: "Specifier",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Time",
       fullName: "Time",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Cardinality",
       fullName: "Cardinality",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Substance",
       fullName: "Substance",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Agent",
       fullName: "Agent",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Identifier",
-
       fullName: "Identifier",
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
   ],
   MaintenanceProcedure: [
     {
       name: "Resource",
       fullName: "Resource",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Tool",
       fullName: "Tool",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Specifier",
       fullName: "Specifier",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Consumable",
       fullName: "Consumable",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Make",
       fullName: "Make",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
     },
     {
       name: "Material",
       fullName: "Material",
-
       description: "",
       children: [],
       colour: getRandomColor(),
+      id: uuidv4(),
+    },
+  ],
+  MIE: [
+    {
+      name: "Activity",
+      description: "",
+      fullName: "Activity",
+      expanded: true,
+      colour: muiColorPalette500[0],
+      children: [
+        {
+          name: "Event",
+          description: "",
+          fullName: "Activity/Event",
+          children: [
+            {
+              name: "UndesirableProcess",
+              description: "",
+              fullName: "Activity/Event/UndesirableProcess",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "DesirableProcess",
+              description: "",
+              fullName: "Activity/Event/DesirableProcess",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+          ],
+          colour: muiColorPalette500[0],
+          id: uuidv4(),
+        },
+        {
+          name: "MaintenanceActivity",
+          description: "",
+          fullName: "Activity/MaintenanceActivity",
+          children: [
+            {
+              name: "Adjust",
+              description: "",
+              fullName: "Activity/MaintenanceActivity/Adjust",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Calibrate",
+              description: "",
+              fullName: "Activity/MaintenanceActivity/Calibrate",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Diagnose",
+              description: "",
+              fullName: "Activity/MaintenanceActivity/Diagnose",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Inspect",
+              description: "",
+              fullName: "Activity/MaintenanceActivity/Inspect",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Replace",
+              description: "",
+              fullName: "Activity/MaintenanceActivity/Replace",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Repair",
+              description: "",
+              fullName: "Activity/MaintenanceActivity/Repair",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Service",
+              description: "",
+              fullName: "Activity/MaintenanceActivity/Service",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+          ],
+          colour: muiColorPalette500[0],
+          id: uuidv4(),
+        },
+        {
+          name: "SupportingActivity",
+          description: "",
+          fullName: "Activity/SupportingActivity",
+          children: [
+            {
+              name: "Isolate",
+              description: "",
+              fullName: "Activity/SupportingActivity/Isolate",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Measure",
+              description: "",
+              fullName: "Activity/SupportingActivity/Measure",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Modify",
+              description: "",
+              fullName: "Activity/SupportingActivity/Modify",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Move",
+              description: "",
+              fullName: "Activity/SupportingActivity/Move",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Operate",
+              description: "",
+              fullName: "Activity/SupportingActivity/Operate",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "Perform",
+              description: "",
+              fullName: "Activity/SupportingActivity/Perform",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+          ],
+          colour: muiColorPalette500[0],
+          id: uuidv4(),
+        },
+        {
+          name: "State",
+          description: "",
+          fullName: "Activity/State",
+          children: [
+            {
+              name: "DesirableState",
+              description: "",
+              fullName: "Activity/State/DesirableState",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+            {
+              name: "UndesirableState",
+              description: "",
+              fullName: "Activity/State/UndesirableState",
+              children: [],
+              colour: muiColorPalette500[0],
+              id: uuidv4(),
+            },
+          ],
+          colour: muiColorPalette500[0],
+          id: uuidv4(),
+        },
+      ],
+      id: uuidv4(),
+    },
+    {
+      name: "Quality",
+      description: "Child of /Aspect",
+      fullName: "Quality",
+      colour: muiColorPalette500[1],
+      children: [
+        {
+          name: "PhysicalQuantity",
+          description: "",
+          fullName: "Quality/PhysicalQuantity",
+          children: [],
+          colour: muiColorPalette500[1],
+          id: uuidv4(),
+        },
+      ],
+      id: uuidv4(),
+    },
+    {
+      name: "RealizableEntity",
+      description: "",
+      fullName: "RealizableEntity",
+      colour: muiColorPalette500[2],
+      children: [
+        {
+          name: "Disposition",
+          description: "",
+          fullName: "RealizableEntity/Disposition",
+          colour: muiColorPalette500[2],
+          id: uuidv4(),
+          children: [
+            {
+              name: "Function",
+              description: "",
+              fullName: "RealizableEntity/Disposition/Function",
+              children: [],
+              colour: muiColorPalette500[2],
+              id: uuidv4(),
+            },
+          ],
+        },
+        {
+          name: "Role",
+          description: "",
+          colour: muiColorPalette500[2],
+          fullName: "RealizableEntity/Role",
+          id: uuidv4(),
+          children: [
+            {
+              name: "RegulatoryRole",
+              description: "",
+              fullName: "RealizableEntity/Role/RegulatoryRole",
+              children: [],
+              colour: muiColorPalette500[2],
+              id: uuidv4(),
+            },
+          ],
+        },
+      ],
+      id: uuidv4(),
+    },
+    {
+      name: "FunctionalObject",
+      description: "Child of /Object",
+      fullName: "FunctionalObject",
+      colour: muiColorPalette500[3],
+      id: uuidv4(),
+      children: [],
+    },
+    {
+      name: "InformationObject",
+      description: " Child of /Object",
+      fullName: "InformationObject",
+      colour: muiColorPalette500[4],
+      id: uuidv4(),
+      children: [],
+    },
+    {
+      name: "Location",
+      description: "Child of /Object",
+      fullName: "Location",
+      colour: muiColorPalette500[5],
+      id: uuidv4(),
+      children: [
+        {
+          name: "Site",
+          description: "",
+          fullName: "Location/Site",
+          children: [],
+          colour: muiColorPalette500[5],
+          id: uuidv4(),
+        },
+        {
+          name: "SpatialLocation",
+          description: "",
+          fullName: "Location/SpatialLocation",
+          colour: muiColorPalette500[5],
+          id: uuidv4(),
+          children: [
+            {
+              name: "PointInSpace",
+              description: "",
+              fullName: "Location/SpatialLocation/PointInSpace",
+              colour: muiColorPalette500[5],
+              id: uuidv4(),
+              children: [],
+            },
+            {
+              name: "RegionInSpace",
+              description: "",
+              fullName: "Location/SpatialLocation/RegionInSpace",
+              colour: muiColorPalette500[5],
+              id: uuidv4(),
+              children: [],
+            },
+          ],
+        },
+        {
+          name: "SpatialReference",
+          description: "",
+          fullName: "Location/SpatialReference",
+          colour: muiColorPalette500[5],
+          id: uuidv4(),
+          children: [],
+        },
+      ],
+    },
+    {
+      name: "Organization",
+      description: "Child of /Object",
+      fullName: "Organization",
+      colour: muiColorPalette500[6],
+      id: uuidv4(),
+      children: [],
+    },
+    {
+      name: "PhysicalObject",
+      description: "Child of /Object",
+      fullName: "PhysicalObject",
+      colour: muiColorPalette500[7],
+      id: uuidv4(),
+      children: [
+        {
+          name: "Feature",
+          description: "",
+          fullName: "PhysicalObject/Feature",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "Organism",
+          description: "",
+          fullName: "PhysicalObject/Organism",
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+          children: [
+            {
+              name: "Person",
+              description: "",
+              fullName: "PhysicalObject/Organism/Person",
+              children: [],
+              colour: muiColorPalette500[7],
+              id: uuidv4(),
+            },
+          ],
+        },
+        {
+          name: "SensingObject",
+          description: "",
+          fullName: "PhysicalObject/SensingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "StoringObject",
+          description: "",
+          fullName: "PhysicalObject/StoringObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "EmittingObject",
+          description: "",
+          fullName: "PhysicalObject/EmittingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "ProtectingObject",
+          description: "",
+          fullName: "PhysicalObject/ProtectingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "GeneratingObject",
+          description: "",
+          fullName: "PhysicalObject/GeneratingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "MatterProcessingObject",
+          description: "",
+          fullName: "PhysicalObject/MatterProcessingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "InformationProcessingObject",
+          description: "",
+          fullName: "PhysicalObject/InformationProcessingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "DrivingObject",
+          description: "",
+          fullName: "PhysicalObject/DrivingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "CoveringObject",
+          description: "",
+          fullName: "PhysicalObject/CoveringObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "PresentingObject",
+          description: "",
+          fullName: "PhysicalObject/PresentingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "ControllingObject",
+          description: "",
+          fullName: "PhysicalObject/ControllingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "RestrictingObject",
+          description: "",
+          fullName: "PhysicalObject/RestrictingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "HumanInteractionObject",
+          description: "",
+          fullName: "PhysicalObject/HumanInteractionObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "TransformingObject",
+          description: "",
+          fullName: "PhysicalObject/TransformingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "HoldingObject",
+          description: "",
+          fullName: "PhysicalObject/HoldingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "GuidingObject",
+          description: "",
+          fullName: "PhysicalObject/GuidingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+        {
+          name: "InterfacingObject",
+          description: "",
+          fullName: "PhysicalObject/InterfacingObject",
+          children: [],
+          colour: muiColorPalette500[7],
+          id: uuidv4(),
+        },
+      ],
     },
   ],
 };
@@ -1243,6 +1876,7 @@ export const relationOntologies = {
       domain: [],
       range: [],
       children: [],
+      id: uuidv4(),
     },
   ],
   ConceptNet5: [
@@ -1253,6 +1887,7 @@ export const relationOntologies = {
         "The most general relation. There is some positive relationship between A and B, but ConceptNet can't determine what that relationship is based on the data. This was called 'ConceptuallyRelatedTo' in ConceptNet 2 through 4. Symmetric.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
 
     {
@@ -1261,6 +1896,7 @@ export const relationOntologies = {
       description: "A is an inflected form of B; B is the root word of A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "IsA",
@@ -1269,6 +1905,7 @@ export const relationOntologies = {
         "A is a subtype or a specific instance of B; every A is a B. This can include specific instances; the distinction between subtypes and instances is often blurry in language. This is the hyponym relation in WordNet.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "PartOf",
@@ -1277,6 +1914,7 @@ export const relationOntologies = {
         "A is a part of B. This is the part meronym relation in WordNet.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "HasA",
@@ -1285,6 +1923,7 @@ export const relationOntologies = {
         "B belongs to A, either as an inherent part or due to a social construct of possession. HasA is often the reverse of PartOf.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
 
     {
@@ -1293,6 +1932,7 @@ export const relationOntologies = {
       description: "A is used for B; the purpose of A is B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "CapableOf",
@@ -1300,6 +1940,7 @@ export const relationOntologies = {
       description: "Something that A can typically do is B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "AtLocation",
@@ -1308,6 +1949,7 @@ export const relationOntologies = {
         "A is a typical location for B, or A is the inherent location of B. Some instances of this would be considered meronyms in WordNet.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "Causes",
@@ -1315,6 +1957,7 @@ export const relationOntologies = {
       description: "A and B are events, and it is typical for A to cause B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
 
     {
@@ -1323,6 +1966,7 @@ export const relationOntologies = {
       description: "A and B are events, and B happens as a subevent of A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "HasFirstSubevent",
@@ -1330,6 +1974,7 @@ export const relationOntologies = {
       description: "A is an event that begins with subevent B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "HasLastSubevent",
@@ -1337,6 +1982,7 @@ export const relationOntologies = {
       description: "A is an event that concludes with subevent B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "HasPrerequisite",
@@ -1345,6 +1991,7 @@ export const relationOntologies = {
         "In order for A to happen, B needs to happen; B is a dependency of A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "HasProperty",
@@ -1352,6 +1999,7 @@ export const relationOntologies = {
       description: "A has B as a property; A can be described as B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
 
     {
@@ -1361,6 +2009,7 @@ export const relationOntologies = {
         "Someone does A because they want result B; A is a step toward accomplishing the goal B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "ObstructedBy",
@@ -1369,6 +2018,7 @@ export const relationOntologies = {
         "A is a goal that can be prevented by B; B is an obstacle in the way of A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "Desires",
@@ -1377,6 +2027,7 @@ export const relationOntologies = {
         "A is a conscious entity that typically wants B. Many assertions of this type use the appropriate language's word for 'person' as A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "CreatedBy",
@@ -1384,6 +2035,7 @@ export const relationOntologies = {
       description: "B is a process or agent that creates A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "Synonym",
@@ -1392,6 +2044,7 @@ export const relationOntologies = {
         "A and B have very similar meanings. They may be translations of each other in different languages. This is the synonym relation in WordNet as well. Symmetric.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "Antonym",
@@ -1400,6 +2053,7 @@ export const relationOntologies = {
         "A and B are opposites in some relevant way, such as being opposite ends of a scale, or fundamentally similar things with a key difference between them. Counterintuitively, two concepts must be quite similar before people consider them antonyms. This is the antonym relation in WordNet as well. Symmetric.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "DistinctFrom",
@@ -1408,6 +2062,7 @@ export const relationOntologies = {
         "A and B are distinct member of a set; something that is A is not B. Symmetric.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "DerivedFrom",
@@ -1416,6 +2071,7 @@ export const relationOntologies = {
         "A is a word or phrase that appears within B and contributes to B's meaning.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "SymbolOf",
@@ -1423,6 +2079,7 @@ export const relationOntologies = {
       description: "A symbolically represents B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "DefinedAs",
@@ -1431,6 +2088,7 @@ export const relationOntologies = {
         "A and B overlap considerably in meaning, and B is a more explanatory version of A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "MannerOf",
@@ -1439,6 +2097,7 @@ export const relationOntologies = {
         "A is a specific way to do B. Similar to 'IsA', but for verbs.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "LocatedNear",
@@ -1446,6 +2105,7 @@ export const relationOntologies = {
       description: "A and B are typically found near each other. Symmetric.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "HasContext",
@@ -1454,6 +2114,7 @@ export const relationOntologies = {
         "A is a word used in the context of B, which could be a topic area, technical field, or regional dialect.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "EtymologicallyRelatedTo",
@@ -1461,6 +2122,7 @@ export const relationOntologies = {
       description: "A and B have a common origin. Symmetric.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "EtymologicallyDerivedFrom",
@@ -1468,6 +2130,7 @@ export const relationOntologies = {
       description: "A is derived from B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
 
     {
@@ -1476,6 +2139,7 @@ export const relationOntologies = {
       description: "A makes someone want B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "MadeOf",
@@ -1483,6 +2147,7 @@ export const relationOntologies = {
       description: "A is made of B.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "ReceivesAction",
@@ -1490,6 +2155,7 @@ export const relationOntologies = {
       description: "B can be done to A.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
     {
       name: "ExternalURL",
@@ -1498,6 +2164,7 @@ export const relationOntologies = {
         "Instead of relating to ConceptNet nodes, this pseudo-relation points to a URL outside of ConceptNet, where further Linked Data about this term can be found. Similar to RDF's seeAlso relation.",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
   ],
   Coreference: [
@@ -1507,6 +2174,7 @@ export const relationOntologies = {
       description: "The most granular relation in coreference resolution",
       domain: [],
       range: [],
+      id: uuidv4(),
     },
   ],
   SemEval07Task4: [
@@ -1516,6 +2184,7 @@ export const relationOntologies = {
       description: "",
       domain: ["cause"],
       range: ["effect"],
+      id: uuidv4(),
     },
     {
       name: "content_container",
@@ -1523,6 +2192,7 @@ export const relationOntologies = {
       description: "",
       domain: ["content"],
       range: ["container"],
+      id: uuidv4(),
     },
     {
       name: "instrument_agency",
@@ -1530,6 +2200,7 @@ export const relationOntologies = {
       description: "",
       domain: ["instrument"],
       range: ["agency"],
+      id: uuidv4(),
     },
     {
       name: "origin_entity",
@@ -1537,6 +2208,7 @@ export const relationOntologies = {
       description: "",
       domain: ["origin"],
       range: ["entity"],
+      id: uuidv4(),
     },
     {
       name: "part_whole",
@@ -1544,6 +2216,7 @@ export const relationOntologies = {
       description: "",
       domain: ["part"],
       range: ["whole"],
+      id: uuidv4(),
     },
     {
       name: "product_producer",
@@ -1551,6 +2224,7 @@ export const relationOntologies = {
       description: "",
       domain: ["product"],
       range: ["producer"],
+      id: uuidv4(),
     },
     {
       name: "theme_tool",
@@ -1558,6 +2232,7 @@ export const relationOntologies = {
       description: "",
       domain: ["theme"],
       range: ["tool"],
+      id: uuidv4(),
     },
   ],
   SemEval10Task8: [
@@ -1567,6 +2242,7 @@ export const relationOntologies = {
       description: "",
       domain: ["cause"],
       range: ["effect"],
+      id: uuidv4(),
     },
     {
       name: "content_container",
@@ -1574,6 +2250,7 @@ export const relationOntologies = {
       description: "",
       domain: ["content"],
       range: ["container"],
+      id: uuidv4(),
     },
     {
       name: "instrument_agency",
@@ -1581,6 +2258,7 @@ export const relationOntologies = {
       description: "",
       domain: ["instrument"],
       range: ["agency"],
+      id: uuidv4(),
     },
     {
       name: "entity_origin",
@@ -1588,6 +2266,7 @@ export const relationOntologies = {
       description: "",
       domain: ["entity"],
       range: ["origin"],
+      id: uuidv4(),
     },
     {
       name: "entity_destination",
@@ -1595,6 +2274,7 @@ export const relationOntologies = {
       description: "",
       domain: ["entity"],
       range: ["destination"],
+      id: uuidv4(),
     },
     {
       name: "component_whole",
@@ -1602,6 +2282,7 @@ export const relationOntologies = {
       description: "",
       domain: ["component"],
       range: ["whole"],
+      id: uuidv4(),
     },
     {
       name: "member_collection",
@@ -1609,6 +2290,7 @@ export const relationOntologies = {
       description: "",
       domain: ["member"],
       range: ["collection"],
+      id: uuidv4(),
     },
     {
       name: "product_producer",
@@ -1616,6 +2298,7 @@ export const relationOntologies = {
       description: "",
       domain: ["product"],
       range: ["producer"],
+      id: uuidv4(),
     },
     {
       name: "messenger_topic",
@@ -1623,46 +2306,271 @@ export const relationOntologies = {
       description: "",
       domain: ["messenger"],
       range: ["topic"],
+      id: uuidv4(),
     },
   ],
-  MaintenanceActivity: [
+  MIE: [
     {
-      name: "Replace",
-      fullName: "Replace",
+      name: "connectedTo",
       description: "",
-      domain: [],
-      range: [],
+      fullName: "connectedTo",
+      domain: ["PhysicalObject"],
+      range: ["PhysicalObject"],
+      id: uuidv4(),
+      children: [
+        {
+          name: "directlyConnectedTo",
+          description: "",
+          fullName: "connectedTo/directlyConnectedTo",
+          domain: ["PhysicalObject"],
+          range: ["PhysicalObject"],
+          id: uuidv4(),
+          children: [],
+        },
+      ],
     },
     {
-      name: "Repair",
-      fullName: "Repair",
+      name: "creates",
       description: "",
-      domain: [],
-      range: [],
+      fullName: "creates",
+      domain: ["Activity"],
+      range: ["PhysicalObject"],
+      id: uuidv4(),
+      children: [],
     },
     {
-      name: "Inspect",
-      fullName: "Inspect",
-
+      name: "hasDisposition",
       description: "",
-      domain: [],
-      range: [],
+      fullName: "hasDisposition",
+      domain: ["all"],
+      range: ["RealizableEntity/Disposition"],
+      id: uuidv4(),
+      children: [
+        {
+          name: "hasFunction",
+          description: "",
+          fullName: "hasDisposition/hasFunction",
+          domain: ["all"],
+          range: ["RealizableEntity/Disposition/Function"],
+          id: uuidv4(),
+          children: [],
+        },
+      ],
     },
     {
-      name: "Activity",
-      fullName: "Activity",
-
+      name: "installedAs",
       description: "",
-      domain: [],
-      range: [],
+      fullName: "installedAs",
+      domain: ["PhysicalObject"],
+      range: ["PhysicalObject"],
+      id: uuidv4(),
+      children: [],
     },
     {
-      name: "Modify",
-      fullName: "Modify",
-
+      name: "hasPart",
       description: "",
-      domain: [],
-      range: [],
+      fullName: "hasPart",
+      domain: ["all"],
+      range: ["all"],
+      id: uuidv4(),
+      children: [
+        {
+          name: "hasActivityPart",
+          description: "",
+          fullName: "hasPart/hasActivityPart",
+          domain: ["Activity"],
+          range: ["Activity"],
+          id: uuidv4(),
+          children: [
+            {
+              name: "hasActivityBound",
+              description: "",
+              fullName: "hasPart/hasActivityPart/hasActivityBound",
+              domain: ["Activity"],
+              range: ["Activity"],
+              id: uuidv4(),
+              children: [],
+            },
+          ],
+        },
+        {
+          name: "hasArrangedPart",
+          description: "",
+          fullName: "hasPart/hasArrangedPart",
+          domain: ["PhysicalObject"],
+          range: ["PhysicalObject"],
+          id: uuidv4(),
+          children: [
+            {
+              name: "hasAssembledPart",
+              description: "",
+              fullName: "hasPart/hasArrangedPart/hasAssembledPart",
+              domain: ["PhysicalObject"],
+              range: ["PhysicalObject"],
+              id: uuidv4(),
+              children: [],
+            },
+            {
+              name: "hasFeature",
+              description: "",
+              fullName: "hasPart/hasArrangedPart/hasFeature",
+              domain: ["PhysicalObject"],
+              range: ["PhysicalObject"],
+              id: uuidv4(),
+              children: [],
+            },
+          ],
+        },
+        {
+          name: "hasFunctionalPart",
+          description: "",
+          fullName: "hasPart/hasFunctionalPart",
+          domain: ["PhysicalObject"],
+          range: ["PhysicalObject"],
+          id: uuidv4(),
+          children: [],
+        },
+        {
+          name: "hasSubLocation",
+          description: "",
+          fullName: "hasPart/hasSubLocation",
+          domain: ["PhysicalObject"],
+          range: ["Location"],
+          id: uuidv4(),
+          children: [],
+        },
+      ],
     },
-  ]
+    {
+      name: "hasParticipant",
+      description: "",
+      fullName: "hasParticipant",
+      domain: ["Activity"],
+      range: ["all"],
+      id: uuidv4(),
+      children: [
+        {
+          name: "hasAgent",
+          description: "",
+          fullName: "hasParticipant/hasAgent",
+          domain: ["Activity"],
+          range: ["all"],
+          id: uuidv4(),
+          children: [],
+        },
+        {
+          name: "hasPatient",
+          description: "",
+          fullName: "hasParticipant/hasPatient",
+          domain: ["Activity"],
+          range: ["all"],
+          id: uuidv4(),
+          children: [],
+        },
+      ],
+    },
+    {
+      name: "hasQuality",
+      description: "",
+      fullName: "hasQuality",
+      domain: ["all"],
+      range: ["Quality"],
+      id: uuidv4(),
+      children: [
+        {
+          name: "hasPhysicalQuantity",
+          description: "",
+          fullName: "hasQuality/hasPhysicalQuantity",
+          domain: ["PhysicalObject"],
+          range: ["Quality/PhysicalQuantity"],
+          id: uuidv4(),
+          children: [],
+        },
+      ],
+    },
+    {
+      name: "hasRole",
+      description: "",
+      fullName: "hasRole",
+      domain: ["all"],
+      range: ["RealizableEntity/Role"],
+      id: uuidv4(),
+      children: [],
+    },
+    {
+      name: "locatedRelativeTo",
+      description: "",
+      fullName: "locatedRelativeTo",
+      domain: ["all"],
+      range: ["all"],
+      id: uuidv4(),
+      children: [
+        {
+          name: "contains",
+          description: "",
+          fullName: "locatedRelativeTo/contains",
+          domain: ["PhysicalObject"],
+          range: ["PhysicalObject"],
+          id: uuidv4(),
+          children: [],
+        },
+        {
+          name: "residesIn",
+          description: "",
+          fullName: "locatedRelativeTo/residesIn",
+          domain: ["PhysicalObject"],
+          range: ["Location"],
+          id: uuidv4(),
+          children: [],
+        },
+      ],
+    },
+    {
+      name: "occursRelativeTo",
+      description: "",
+      fullName: "occursRelativeTo",
+      domain: ["Activity"],
+      range: ["Activity"],
+      id: uuidv4(),
+      children: [
+        {
+          name: "after",
+          description: "",
+          fullName: "occursRelativeTo/after",
+          domain: ["Activity"],
+          range: ["Activity"],
+          id: uuidv4(),
+          children: [],
+        },
+        {
+          name: "before",
+          description: "",
+          fullName: "occursRelativeTo/before",
+          domain: ["Activity"],
+          range: ["Activity"],
+          id: uuidv4(),
+          children: [
+            {
+              name: "causes",
+              description: "",
+              fullName: "occursRelativeTo/before/causes",
+              domain: ["Activity"],
+              range: ["Activity"],
+              id: uuidv4(),
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: "realizes",
+      description: "",
+      fullName: "realizes",
+      domain: ["Activity"],
+      range: ["RealizableEntity"],
+      id: uuidv4(),
+      children: [],
+    },
+  ],
 };

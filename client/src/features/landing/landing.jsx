@@ -8,7 +8,7 @@ import { IoLogoGithub, IoLogoYoutube } from "react-icons/io5";
 import { Button, Navbar, Container, Row, Col } from "react-bootstrap";
 import Logo from "../../media/quickgraph_logo.png";
 import { selectIsAuthenticated } from "../auth/userSlice";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import {
   IoArrowDownCircleOutline,
@@ -24,14 +24,14 @@ export const Landing = () => {
         <IoLogoGithub
           className="nav-logo"
           id="github"
-          // onClick={() =>
-          //   window.open("https://github.com/nlp-tlp/lexiclean", "_blank")
-          // }
+          onClick={() =>
+            window.open("https://github.com/nlp-tlp/quickgraph", "_blank")
+          }
         />
         <IoLogoYoutube
           className="nav-logo"
           id="youtube"
-          // onClick={() => window.open("https://youtu.be/P7_ooKrQPDU", "_blank")}
+          onClick={() => window.open("https://youtu.be/ZlzH-AAoGXs", "_blank")}
         />
         <Row id="main">
           <Col>
@@ -96,7 +96,7 @@ export const Landing = () => {
                   <IoSpeedometer id="icon" />
                   <h3>Fast</h3>
                   <p>
-                    Accelerates annotation via entity and relation propagatio,
+                    Accelerates annotation via entity and relation propagation,
                     and semantic clustering
                   </p>
                 </div>
@@ -150,7 +150,15 @@ export const Landing = () => {
                   flexDirection: "column",
                 }}
               >
-                <p>© UWA NLP-TLP Group 2021.</p>
+                <p
+                  style={{
+                    color: "black",
+                    fontWeight: "bold",
+                    fontSize: "1rem",
+                  }}
+                >
+                  © UWA NLP-TLP Group 2021.
+                </p>
                 <p style={{ fontSize: "0.75rem" }}>
                   Developer: Tyler Bikaun (
                   <a

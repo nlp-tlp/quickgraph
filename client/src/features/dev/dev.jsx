@@ -51,12 +51,14 @@ export const Dev = () => {
   const { graph, events } = state;
 
   return (
-    <Graph
+    <div>
+      {/* <Graph
       graph={graph}
       options={options}
       events={events}
       style={{ height: "640px" }}
-    />
+      /> */}
+    </div>
   );
 };
 

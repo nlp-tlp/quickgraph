@@ -98,11 +98,29 @@ export const StepperControls = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // const addOntologyClassIds = (nodes) => {
+  //   // Adds ids to classes within tree structured ontology
+
+  //   var out;
+  //   console.log("hello?");
+  //   console.log(nodes);
+
+  //   if (Array.isArray(nodes.children)) {
+  //     console.log(nodes);
+  //     return nodes.children.map((node) => addOntologyClassIds(node));
+  //   } else {
+  //     console.log('node', nodes);
+  //     return null;
+  //   }
+  // };
+
   const handleCreate = async () => {
-    /*
-        Note: concept and relation labels have their hierarchical tree structures flattened for storage in DB. 
-        The flattening is done using a data structure utility probided by react-sortable-tree
-      */
+    // addOntologyClassIds({
+    //   id: "x",
+    //   name: "x",
+    //   children: [steps.schema.data.relationLabels],
+    // });
+
     const payload = {
       name: steps.details.data.name,
       description: steps.details.data.description,
@@ -115,33 +133,15 @@ export const StepperControls = () => {
       texts: steps.upload.data.corpus,
       entityDictionary: steps.preannotation.data.entityDictionary,
       typedTripleDictionary: steps.preannotation.data.typedTripleDictionary,
-      entityOntology: getFlatDataFromTree({
-        treeData: steps.schema.data.conceptLabels,
-        getNodeKey: ({ treeIndex }) => treeIndex,
-        ignoreCollapsed: false,
-      }).map((n) => ({ ...n.node, parent: n.parentNode })),
+      entityOntology: steps.schema.data.conceptLabels,
       relationOntology: steps.details.data.performRelationAnnotation
-        ? getFlatDataFromTree({
-            treeData: steps.schema.data.relationLabels,
-            getNodeKey: ({ treeIndex }) => treeIndex,
-            ignoreCollapsed: false,
-          }).map((n) => ({ ...n.node, parent: n.parentNode }))
+        ? steps.schema.data.relationLabels
         : [],
       lowerCase: steps.preprocessing.data.lowercase,
       removeDuplicates: steps.preprocessing.data.removeDuplicates,
       charsRemove: steps.preprocessing.data.removeChars,
       charsetRemove: steps.preprocessing.data.removeCharSet,
     };
-
-    // console.log(steps.schema.data.conceptLabels);
-    // console.log(
-    //   "flat entity data",
-    //   getFlatDataFromTree({
-    //     treeData: steps.schema.data.conceptLabels,
-    //     getNodeKey: ({ treeIndex }) => treeIndex,
-    //     ignoreCollapsed: false,
-    //   })
-    // );
 
     // console.log("Form payload ->", payload);
     if (formSubmitted === false) {
