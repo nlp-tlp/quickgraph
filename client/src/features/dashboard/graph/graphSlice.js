@@ -13,6 +13,8 @@ const initialState = {
       defaultValue: "",
       display: true,
     },
+    entityClasses: [],
+    relationClasses: [],
   },
   options: {
     interaction: {
@@ -24,20 +26,21 @@ const initialState = {
     physics: {
       forceAtlas2Based: {
         gravitationalConstant: -25,
-        centralGravity: 0.005,
+        centralGravity: 0.01,
         springLength: 150,
         springConstant: 0.5,
         damping: 1,
-        avoidOverlap: 0.25,
+        avoidOverlap: 0.5,
       },
-      maxVelocity: 100,
+      maxVelocity: 50,
       solver: "forceAtlas2Based",
       timestep: 0.35,
-      // stabilization: {
-      //   enabled: false,
-      //   iterations: 2000,
-      //   updateInterval: 25,
-      // },
+      stabilization: {
+        enabled: false,
+        iterations: 2000,
+        updateInterval: 25,
+        fit: true,
+      },
     },
     layout: {
       randomSeed: 1337,
@@ -92,7 +95,8 @@ const initialState = {
   },
   data: {},
   metrics: null,
-  groups: {},
+  nodeClasses: {},
+  edgeClasses: [],
   selectedNode: null,
   text: "No subgraph selected",
   textId: null,
@@ -103,10 +107,11 @@ const initialState = {
 
 export const fetchGraph = createAsyncThunk(
   "/graph/fetchGraph",
-  async ({ projectId, searchTerm }, { getState }) => {
+  async ({ projectId }, { getState }) => {
     const state = getState();
-    const response = await axios.get(`/api/project/graph/${projectId}`, {
-      params: { aggregate: state.graph.aggregate, search: searchTerm },
+    const response = await axios.post(`/api/project/graph/${projectId}`, {
+      aggregate: state.graph.aggregate,
+      filters: state.graph.filters,
     });
     return response.data;
   }
@@ -346,7 +351,7 @@ export const graphSlice = createSlice({
 
         state.data = action.payload.data;
         state.metrics = action.payload.metrics;
-        state.groups = action.payload.groups;
+        state.nodeClasses = action.payload.classes.nodes;
       })
       .addCase(fetchGraph.rejected, (state, action) => {
         state.status = "failed";
@@ -369,12 +374,13 @@ export const {
 export const selectGraphData = (state) => state.graph.data;
 export const selectGraphStatus = (state) => state.graph.status;
 export const selectGraphMetrics = (state) => state.graph.metrics;
-export const selectGraphGroups = (state) => state.graph.groups;
+export const selectNodeClasses = (state) => state.graph.nodeClasses;
 export const selectGraphOptions = (state) => state.graph.options;
 export const selectSelectedNode = (state) => state.graph.selectedNode;
 export const selectHighlighted = (state) => state.graph.highlighted;
 export const selectAggregate = (state) => state.graph.aggregate;
 export const selectGraphKey = (state) => state.graph.graphKey;
+export const selectGraphFilters = (state) => state.graph.filters;
 
 export const selectText = (state) => state.graph.text;
 export const selectTextId = (state) => state.graph.textId;

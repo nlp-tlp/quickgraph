@@ -2,13 +2,13 @@ import "./Graph.css";
 import { useEffect, useState } from "react";
 import { Col, Row, Spinner } from "react-bootstrap";
 import "react-complex-tree/lib/style.css";
-import { IoAlertCircle } from "react-icons/io5";
+import { IoArrowBack } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { KnowledgeGraph } from "./features/KnowledgeGraph";
 import { Legend } from "./features/Legend";
 import { Overview } from "./features/Overview";
 import { Text } from "./features/Text";
-import { Actions } from "./features/Actions";
+import { Filters } from "./features/Filters";
 
 import {
   selectGraphData,
@@ -25,7 +25,6 @@ import { useDispatch, useSelector } from "react-redux";
 export const CustomGraph = () => {
   const dispatch = useDispatch();
   const { projectId } = useParams();
-  const [searchTerm, setSearchTerm] = useState(null);
   const aggregate = useSelector(selectAggregate);
   const graphStatus = useSelector(selectGraphStatus);
   const graphData = useSelector(selectGraphData);
@@ -37,11 +36,10 @@ export const CustomGraph = () => {
       dispatch(
         fetchGraph({
           projectId: projectId,
-          search: searchTerm,
         })
       );
     }
-  }, [graphStatus, searchTerm]);
+  }, [graphStatus]);
 
   if (graphStatus === "loading") {
     return (
@@ -64,60 +62,56 @@ export const CustomGraph = () => {
             style={{ maxWidth: "300px !important" }}
           >
             <Overview />
-            <Actions
-              projectId={projectId}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-            />
-            <Legend />
+            {/* <Filters /> */}
+            {/* <Legend /> */}
           </Col>
           <Col>
             <Row>
               <Col>
-                {
-                  // && graphData.nodes.length > 0
-                  graphStatus === "succeeded" && graphData.nodes.length > 0 ? (
-                    <KnowledgeGraph
-                      projectId={projectId}
-                      searchTerm={searchTerm}
-                    />
-                  ) : (
-                    <div
+                {graphStatus === "succeeded" && graphData.nodes.length > 0 ? (
+                  <KnowledgeGraph projectId={projectId} />
+                ) : (
+                  <div
+                    style={{
+                      height: "500px",
+                      border: "1px solid rgba(0,0,0,.125)",
+                      borderRadius: ".25rem",
+                      textAlign: "center",
+                      color: "#607d8b",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span
                       style={{
-                        height: "500px",
-                        border: "1px solid rgba(0,0,0,.125)",
-                        borderRadius: ".25rem",
-                        textAlign: "center",
-                        color: "#607d8b",
                         display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
                         alignItems: "center",
+                        flexDirection: "column",
                       }}
                     >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        <IoAlertCircle
-                          style={{ fontSize: "3rem", textAlign: "center" }}
-                        />
-                        <p
-                          style={{
-                            fontSize: "1.75rem",
-                            fontWeight: "bold",
-                            padding: "0",
-                            margin: "0",
-                          }}
-                        >
-                          Graph not loaded
-                        </p>
+                      <span
+                        style={{
+                          fontSize: "1.75rem",
+                          fontWeight: "bold",
+                          padding: "0",
+                          margin: "0",
+                        }}
+                      >
+                        Graph not loaded
                       </span>
-                      {/* {graphData.nodes.length === 0 ? (
-                        <p>No documents saved</p>
-                      ) : (
-                        <p>Please select entities and relations</p>
-                      )} */}
-                    </div>
-                  )
-                }
+                      <span style={{ display: "flex", alignItems: "center" }}>
+                        <IoArrowBack
+                          style={{ fontSize: "1rem", textAlign: "center" }}
+                        />
+                        <span>
+                          Click and apply class filters to visualise graph
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                )}
               </Col>
             </Row>
             {!aggregate && (
