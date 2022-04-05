@@ -1,41 +1,23 @@
-import * as React from "react";
-import { useState } from "react";
-import TreeView from "@mui/lab/TreeView";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import PropTypes from "prop-types";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import TreeItem, { useTreeItem } from "@mui/lab/TreeItem";
+import TreeView from "@mui/lab/TreeView";
 import Typography from "@mui/material/Typography";
 import clsx from "clsx";
-import { useParams } from "react-router-dom";
-
+import PropTypes from "prop-types";
+import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  selectActiveEntityClass,
-  selectProject,
-} from "../../../project/projectSlice";
+import { useParams } from "react-router-dom";
+import { selectProject } from "../../../project/projectSlice";
+import { fetchGraph, selectGraphFilters, setFilters } from "../graphSlice";
 
-import { selectGraphFilters, setFilters, fetchGraph } from "../graphSlice";
-
-import {
-  selectSelectMode,
-  selectTexts,
-  applyAnnotation,
-} from "../../../../app/dataSlice";
-
-export const FilterSelectHierarchy = ({ontology, rootName}) => {
+export const FilterSelectHierarchy = ({ ontology }) => {
   const { projectId } = useParams();
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
-  const selectMode = useSelector(selectSelectMode);
-  const texts = useSelector(selectTexts);
-  const activeEntityClass = useSelector(selectActiveEntityClass);
-
   const graphFilters = useSelector(selectGraphFilters);
-
-  console.log(graphFilters);
 
   const renderTree = (nodes) => {
     return (
@@ -172,9 +154,15 @@ export const FilterSelectHierarchy = ({ontology, rootName}) => {
         aria-label="icon expansion"
         defaultCollapseIcon={<ExpandMoreIcon />}
         defaultExpandIcon={<ChevronRightIcon />}
-        sx={{ height: 240, flexGrow: 1, maxWidth: 400, overflowY: "auto" }}
+        sx={{
+          maxHeight: 240,
+          flexGrow: 1,
+          maxWidth: 400,
+          overflowY: "auto",
+          marginBottom: "1rem",
+        }}
       >
-        {project.entityOntology.map((parent) => renderTree(parent))}
+        {ontology.map((parent) => renderTree(parent))}
       </TreeView>
     );
   }

@@ -6,7 +6,7 @@ import {
   selectPageLimit,
   setPageLimit,
   setTextsIdle
-} from "../../app/dataSlice"   //"../../features/project/text/textSlice";
+} from "../../app/dataSlice"
 import { selectProject } from "../../features/project/projectSlice";
 import {
   IoCheckmarkCircleSharp,
@@ -49,8 +49,8 @@ export const Settings = () => {
         <Form.Group
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            marginLeft: "0.25em",
+            // justifyContent: "space-between",
+            // marginLeft: "0.25em",
             alignItems: "center",
           }}
         >
@@ -83,55 +83,6 @@ export const Settings = () => {
           Apply
         </Button>
       </Form>
-
-      <p style={{ fontWeight: "bold", borderBottom: "1px solid #dee2e6" }}>
-        Ontology Settings
-      </p>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <span>
-          <p style={{ padding: "0", margin: "0" }}>Expand label hierarchy</p>
-          <p style={{ fontSize: "0.75rem", padding: "0", margin: "0" }}>
-            This will flatten the label hierarchy.
-          </p>
-        </span>
-        <Button size="sm" disabled>Expand label hierarchy</Button>
-        {/* <IoContract /> : <IoExpand /> */}
-      </div>
     </div>
   );
 };
-
-/* 
-  Component for letting user update key bindings and colours associated with their
-  annotation hierarchy. They can also disable elements/reorder the hierarchy too.
-*/
-
-// const SettingsModal = ({ showSettings, setShowSettings, labelHierarchy }) => {
-//   const dispatch = useDispatch();
-
-//   const renderList = (node) => {
-//     if (node.children !== undefined) {
-//     }
-
-//     return node.map((k) => <li>{k}</li>);
-//   };
-
-//   return (
-//     <Modal show={showSettings} onHide={() => setShowSettings(false)}>
-//       <Modal.Header closeButton>
-//         <Modal.Title>Annotation Hiearchy Settings</Modal.Title>
-//       </Modal.Header>
-//       <Modal.Body>
-//         Update the colour and key binding associated with your annotation
-//         hierarchy.
-//         <br />
-//         {}
-//       </Modal.Body>
-//       <Modal.Footer>
-//         <Button variant="secondary" onClick={() => setShowSettings(false)}>
-//           Close
-//         </Button>
-//       </Modal.Footer>
-//     </Modal>
-//   );
-// };

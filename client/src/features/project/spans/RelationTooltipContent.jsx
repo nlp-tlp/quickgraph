@@ -199,13 +199,13 @@ const ListItemContent = ({
       .filter((_, index) => targetTokenIndexes.includes(index))
       .map((token) => token._id);
     // console.log("targetTokenIds", targetTokenIds);
-    console.log("relation", relation);
+    // console.log("relation", relation);
 
     let relationId;
     switch (action) {
       case "apply":
 
-        console.log('RELATION TOOLTIP ID CHECK', relation)
+        // console.log('RELATION TOOLTIP ID CHECK', relation)
 
         dispatch(
           applyAnnotation({

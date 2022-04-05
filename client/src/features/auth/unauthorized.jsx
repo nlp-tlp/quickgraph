@@ -11,10 +11,18 @@ export const Unauthorized = () => {
       <Card.Body>
         <Card.Title>Unable to Access Page (Unauthorised)</Card.Title>
         <div id="unauthorized-container">
-          <Button variant="secondary" onClick={() => history.push("/signup")}>
+          <Button
+            variant="secondary"
+            href="/signup"
+            // onClick={() => history.push("/signup")}
+          >
             Sign Up
           </Button>
-          <Button variant="dark" onClick={() => history.push("/login")}>
+          <Button
+            variant="dark"
+            href="/login"
+            // onClick={() => history.push("/login")}
+          >
             Log In
           </Button>
         </div>
@@ -26,4 +34,4 @@ export const Unauthorized = () => {
       </Card.Body>
     </Card>
   );
-}
+};

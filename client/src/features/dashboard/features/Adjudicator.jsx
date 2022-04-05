@@ -3,7 +3,10 @@ import { useState, useEffect } from "react";
 import { Pagination, Spinner, Row, Col, Badge } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "../../utils/api-interceptor";
-import { selectProject } from "../../project/projectSlice";
+import {
+  selectProject,
+  selectFlatEntityOntology,
+} from "../../project/projectSlice";
 import { useParams } from "react-router-dom";
 import { hasMarkup, markupPosition, getFontColour } from "../../project/utils"; // project/utils
 import { getSpanLabelPosition } from "../../project/spans/utils";
@@ -23,15 +26,19 @@ import { HiSortDescending, HiSortAscending } from "react-icons/hi";
     - Pagination is performed one document at a time
 */
 export const Adjudicator = () => {
-  const project = useSelector(selectProject);
   const { projectId } = useParams();
   const [totalPages, setTotalPages] = useState();
   const [page, setPage] = useState(1);
   const [sortDirection, setSortDirection] = useState(-1); // Default descending (hi-lo)
-  const entityColourMap = Object.assign(
-    {},
-    ...project.entityOntology.map((l) => ({ [l.name]: l.colour }))
-  );
+  const flatEntityOntology = useSelector(selectFlatEntityOntology);
+  const entityColourMap =
+    flatEntityOntology &&
+    Object.assign(
+      {},
+      ...flatEntityOntology.map((l) => ({ [l.name]: l.colour }))
+    );
+
+  console.log(entityColourMap);
 
   const [doc, setDoc] = useState();
   const [docLoaded, setDocLoaded] = useState(false);
@@ -73,7 +80,7 @@ export const Adjudicator = () => {
             params: {
               page: page,
               limit: 1,
-              sort: sortDirection
+              sort: sortDirection,
             },
           }
         );
@@ -613,9 +620,9 @@ const Spans = ({ text, textIndex, token, tokenIndex, triple }) => {
 };
 
 const Span = ({ tokenIndex, span, suggested }) => {
-  const project = useSelector(selectProject);
+  const flatEntityOntology = useSelector(selectFlatEntityOntology);
   const spanLabelPos = getSpanLabelPosition(span, tokenIndex);
-  const labelColour = project.entityOntology.filter(
+  const labelColour = flatEntityOntology.filter(
     (l) => l.name.toLowerCase() === span.label.toLowerCase()
   )[0].colour;
   console.log(labelColour);

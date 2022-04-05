@@ -18,8 +18,6 @@ export const Project = () => {
   const annotationMode = useSelector(selectAnnotationMode);
   const showCluster = useSelector(selectShowCluster);
 
-  console.log('annotationMode', annotationMode);
-
   return (
     <>
       {showToast && <AnnotationToast />}

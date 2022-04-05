@@ -59,18 +59,6 @@ export const logout = createAsyncThunk(
   }
 );
 
-export const validateToken = createAsyncThunk(
-  "/user/validate-token",
-  async (data, { rejectWithValue }) => {
-    try {
-      const response = await axios.get("/api/auth/validate");
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
-
 export const fetchUserDetails = createAsyncThunk(
   "/user/fetchUserDetails",
   async () => {
@@ -185,19 +173,6 @@ export const userSlice = createSlice({
       })
       .addCase(logout.rejected, (state, action) => {
         console.log("failed to logout user", action.payload.error);
-      })
-      .addCase(validateToken.fulfilled, (state, action) => {
-        state.isAuthenticated = true;
-        state.tokenStatus = "succeeded";
-        state.tokenError = null;
-      })
-      .addCase(validateToken.rejected, (state, action) => {
-        console.log("token rejected");
-        return {
-          ...initialState,
-          tokenError: "unauthorized",
-          tokenStatus: "failed",
-        };
       })
       .addCase(fetchUserDetails.fulfilled, (state, action) => {
         state.username = action.payload.username;

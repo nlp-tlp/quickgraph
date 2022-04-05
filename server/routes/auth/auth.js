@@ -24,7 +24,7 @@ router.post("/signup", async (req, res) => {
     const userExists = await User.exists({ username: username });
 
     if (userExists) {
-      res.status(409).send({ error: "User already exists" });
+      res.status(409).send({ message: "User already exists" });
       logger.error("User already exists", { route: "/signup" });
     } else {
       logger.info("Creating new user", { route: "/signup" });
@@ -58,7 +58,7 @@ router.post("/login", async (req, res) => {
     const userExists = await User.exists({ username: username });
 
     if (!userExists) {
-      res.status(409).send({ error: "User does not exist" });
+      res.status(404).send({ message: "User does not exist" });
       logger.error("User does not exist", { route: "/login" });
     } else {
       const user = await User.findOne({ username: username })
@@ -77,7 +77,7 @@ router.post("/login", async (req, res) => {
         });
         logger.info("Login successful", { route: "/login" });
       } else {
-        res.status(409).send({ error: "Password incorrect" });
+        res.status(409).send({ message: "Password incorrect" });
         logger.warn("Incorrect password", { route: "/login" });
       }
     }
@@ -96,39 +96,6 @@ router.post("/logout", authUtils.cookieJwtAuth, async (req, res) => {
     res
       .status(500)
       .send("Our server experienced an issue 😞 - please try again!");
-  }
-});
-
-router.get("/validate", async (req, res) => {
-  logger.info("Validating session cookie", { route: "/api/auth/validate" });
-  try {
-    const cookies = req.cookies;
-    if (!Object.keys(cookies).includes("token")) {
-      res.status(401).send({ message: "Token is missing" });
-    }
-
-    // verify token is valid
-    jwt.verify(
-      cookies.token,
-      process.env.TOKEN_SECRET,
-      async function (err, decoded) {
-        if (decoded === undefined) {
-          res.clearCookie("token", { path: "/" });
-          res.status(401).send({ message: "Token is invalid" });
-        }
-
-        const userExists = await User.exists({ _id: decoded.user_id });
-        if (err || !userExists) {
-          res.clearCookie("token");
-          res.status(401).send({ message: "Token is invalid" });
-        } else {
-          res.json({ valid: true });
-        }
-      }
-    );
-  } catch (err) {
-    logger.error("Failed to validate cookie");
-    res.status(500).send("something broke...");
   }
 });
 

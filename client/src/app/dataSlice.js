@@ -8,7 +8,7 @@ const initialState = {
   tokens: null,
   selectedTokens: {},
   relations: null,
-  selectMode: { active: false, tokenIds: [], textId: null },
+  selectMode: { active: false, tokenIds: [], tokenIndexes: [], textId: null },
   sourceSpan: null,
   targetSpan: null,
   relatedSpans: null,
@@ -266,12 +266,27 @@ export const dataSlice = createSlice({
       state.relatedSpans = null;
     },
     setSelectedTokens: (state, action) => {
-      const tokenId = action.payload;
+      const token = action.payload;
+      console.log("token", token);
       if (state.selectMode.active) {
-        state.selectMode.tokenIds = [...state.selectMode.tokenIds, tokenId];
-        state.tokens = state.tokens.map((token) =>
-          token._id === tokenId ? { ...token, selected: true } : token
-        );
+        //
+        if (state.selectMode.textId === token.text_id) {
+          // If tokens already selected, only allow adjacents to be also selected
+          state.selectMode.tokenIds = [...state.selectMode.tokenIds, token._id];
+          state.selectMode.tokenIndexes = [
+            ...new Set([...state.selectMode.tokenIndexes, token.index]),
+          ].sort((a, b) => a - b);
+
+          // Add new token attributes based on current text
+          const newTokens = state.tokens
+            .filter((t) => t.text_id == state.selectMode.textId)
+            .map((t) => (t._id === token._id ? { ...t, selected: true } : t));
+
+          state.tokens = [
+            ...state.tokens.filter((t) => t.text_id != state.selectMode.textId),
+            ...newTokens,
+          ];
+        }
       }
     },
     setSelectMode: (state, action) => {
@@ -280,6 +295,7 @@ export const dataSlice = createSlice({
         // Clear token cache
         state.selectMode.tokenIds = [];
         state.selectMode.textId = action.payload.textId;
+        state.selectMode.textIndexes = action.payload.textIndexes;
       }
     },
     setSourceRel: (state, action) => {

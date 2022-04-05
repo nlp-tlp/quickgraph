@@ -31,14 +31,14 @@ export const Token = ({ text, textIndex, token, tokenIndex }) => {
   const handleMouseOver = () => {
     if (allowSelect) {
       // console.log("selecting token", token._id);
-      dispatch(setSelectedTokens(token._id));
+      dispatch(setSelectedTokens(token));
     }
   };
 
   const handleMouseDown = () => {
     if (allowSelect) {
       dispatch(setSelectMode({ active: true, textId: text._id }));
-      dispatch(setSelectedTokens(token._id));
+      dispatch(setSelectedTokens(token));
     }
   };
 

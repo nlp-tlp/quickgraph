@@ -185,7 +185,7 @@ export const SelectHierarchy = () => {
         aria-label="icon expansion"
         defaultCollapseIcon={<ExpandMoreIcon />}
         defaultExpandIcon={<ChevronRightIcon />}
-        sx={{ height: 240, flexGrow: 1, maxWidth: 400, overflowY: "auto" }}
+        sx={{ height: 440, flexGrow: 1, maxWidth: 400, overflowY: "auto" }}
       >
         {project.entityOntology.map((parent) => renderTree(parent))}
       </TreeView>

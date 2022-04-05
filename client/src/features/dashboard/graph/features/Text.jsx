@@ -2,27 +2,36 @@
   Component for marking up text with entities and relations
 */
 
-import "react-complex-tree/lib/style.css";
 import { IoInformationCircle } from "react-icons/io5";
-import "../Graph.css";
-
 import { useSelector } from "react-redux";
-import { selectText, selectTextId } from "../graphSlice";
+import "../Graph.css";
+import { selectText, selectAggregate } from "../graphSlice";
 
 export const Text = () => {
   const text = useSelector(selectText);
-  const textId = useSelector(selectTextId);
+  const aggregate = useSelector(selectAggregate);
 
-  // {/* {textId && <p style={{ fontSize: "0.8rem", padding: "0" }}>{textId}</p>} */}
-  return (
-    <div id="graph-info-container" style={{ marginTop: "1rem" }}>
-      <span id="graph-info-icon">
-        <IoInformationCircle />
-      </span>
-      <span id="graph-info-content">
-        {/* <p id="graph-info-title">Quick Information</p> */}
-        {text}
-      </span>
-    </div>
-  );
+  if (aggregate) {
+    return <></>;
+  } else {
+    return (
+      <div id="graph-info-container" style={{ height: "3rem" }}>
+        <IoInformationCircle
+          style={{ marginRight: "0.5rem", fontSize: "1.25rem" }}
+        />
+        <span
+          style={{
+            whiteSpace: text && "nowrap",
+            overflow: text && "hidden",
+            textOverflow: text && "ellipsis",
+            cursor: "help",
+            fontSize: !text && "0.75rem",
+          }}
+          title={text}
+        >
+          {text ? text : ""}
+        </span>
+      </div>
+    );
+  }
 };

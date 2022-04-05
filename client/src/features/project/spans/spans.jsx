@@ -128,7 +128,7 @@ const Span = ({
 
           switch (event) {
             case "SET_TARGET":
-              console.log("SET TARGET", span);
+              // console.log("SET TARGET", span);
               dispatch(
                 setTargetRel({
                   tokenIds: text.tokens
@@ -174,7 +174,7 @@ const Span = ({
         // popover e.g. mouse from span -> popover container; otherwise it
         // disappears.
         if (targetSpan) {
-          console.log("unset target");
+          // console.log("unset target");
           const event = targetSpan._id === span._id && "UNSET_TARGET";
 
           switch (event) {
@@ -446,7 +446,8 @@ const Span = ({
         // Token is related, but doesnt have a realted label!
         return opacityValue;
       } else {
-        console.log(span);
+        // console.log(span);
+        // TODO: What is going on here?
       }
     };
     // Logic: Check if span_id in idlabelmap; if so, see if the current label is within it. Note: there

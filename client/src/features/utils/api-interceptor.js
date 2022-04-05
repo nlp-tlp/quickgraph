@@ -1,6 +1,8 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 import history from "./history";
+import store from "../../app/store";
+import { setIsAuthenticated } from "../auth/userSlice";
 
 const errorHandler = (error) => {
   // Use a common toastId for "Session Expired" toast so there is only ever one
@@ -8,7 +10,6 @@ const errorHandler = (error) => {
 
   switch (error.response.status) {
     case 403:
-      window.localStorage.removeItem("token");
       toast.info("Session expired. Please log in.", {
         toastId: expiredToastId,
         position: "top-center",
@@ -18,10 +19,22 @@ const errorHandler = (error) => {
         draggable: true,
         progress: 0,
       });
+      store.dispatch(setIsAuthenticated(false));
       history.push("/");
       break;
     case 404:
-      toast.error(`${error}`, {
+      toast.error(`${error.response.data.message}`, {
+        position: "top-center",
+        autoClose: false,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: 0,
+      });
+      break;
+    case 409:
+      toast.error(`${error.response.data.message}`, {
         position: "top-center",
         autoClose: false,
         hideProgressBar: false,
@@ -51,15 +64,6 @@ const errorHandler = (error) => {
 
 // axios instance for making requests
 const axiosInstance = axios.create();
-
-// request interceptor for adding token
-axiosInstance.interceptors.request.use((config) => {
-  // add token to request headers
-  const token = window.localStorage.getItem("token");
-  config.headers.Authorization = `Bearer ${token}`;
-
-  return config;
-});
 
 // response interceptor for handling common errors (e.g. HTTP 500)
 axiosInstance.interceptors.response.use(

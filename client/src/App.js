@@ -1,4 +1,3 @@
-import React from "react";
 import { Helmet } from "react-helmet";
 import { Route, Router, Switch } from "react-router-dom";
 import "./App.css";
@@ -16,7 +15,7 @@ import { AlertPortal } from "./features/alerts/alertportal";
 import { Create } from "./features/projectcreation/create";
 import { Project } from "./features/project/project";
 import { Dashboard } from "./features/dashboard/Dashboard";
-import { Anonpage } from "./features/auth/anonpage";
+// import { Anonpage } from "./features/auth/anonpage";
 import { Profile } from "./features/profile/Profile";
 import history from "./features/utils/history";
 
@@ -94,20 +93,22 @@ function App() {
 
           <Route exact path="/dev" component={Dev} />
 
-          <Route exact path="/unauthorized" component={Unauthorized} />
-
           <Route exact path="/login">
             <Helmet>
               <title>Login | QuickGraph</title>
             </Helmet>
             <Login />
           </Route>
+
           <Route exact path="/signup">
             <Helmet>
               <title>Signup | QuickGraph</title>
             </Helmet>
             <SignUp />
           </Route>
+
+          <Route exact path="/unauthorized" component={Unauthorized} />
+
           <Route path="/">
             <Helmet>
               <title>QuickGraph | Rapid Knowledge Graph Extraction</title>

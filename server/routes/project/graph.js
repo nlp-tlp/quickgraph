@@ -168,16 +168,20 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
         ? {
             $or: [
               req.body.filters.entityClasses.length > 0 && {
-                "markup.label": { $in: req.body.filters.entityClasses },
+                "markup.label": {
+                  $regex: req.body.filters.entityClasses.join("|"),
+                },
               },
               req.body.filters.relationClasses.length > 0 && {
-                "relation.label": { $in: req.body.filters.relationClasses },
+                "relation.label": {
+                  $regex: req.body.filters.relationClasses.join("|"),
+                },
               },
             ],
           }
         : {};
 
-    console.log("class match filter", classMatchFilter);
+    // console.log("class match filter", classMatchFilter);
 
     const entityClassesFilter = {
       $addFields: {
@@ -196,7 +200,7 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
       },
     };
 
-    console.log("entity class filter", entityClassesFilter);
+    // console.log("entity class filter", entityClassesFilter);
 
     const relationClassesFilter = {
       $addFields: {
@@ -215,7 +219,7 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
       },
     };
 
-    console.log("relation class filter", relationClassesFilter);
+    // console.log("relation class filter", relationClassesFilter);
 
     const aggQuery = [
       {
@@ -322,6 +326,7 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
       });
     } else if (graphData.nodes.length < 2 || graphData.edges.length < 1) {
       console.log("Has insufficent nodes and/or edges");
+
       res.json({
         data: {
           nodes: [],
@@ -406,19 +411,27 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
 
       console.log("edges", edges);
 
-      const getNodeGroups = (nodes, ontology) => {
-        // Create groups for legend/filters etc.
-        const nodeClasses = [...new Set(nodes.map((node) => node.class))];
-        // console.log(ontology);
-        const groups = Object.assign(
-          {},
-          ...ontology
-            .filter((label) => nodeClasses.includes(label.name))
-            .map((label) => ({
-              [label.fullName]: { shape: "dot", color: label.colour },
-            }))
-        );
+      // TODO: Merge getNodeGroups and getEdgeGroups
 
+      const getNodeGroups = (nodes, ontology) => {
+        // Create groups for legend/filters etc - including parent classes
+        
+        const nodeClasses = [...new Set(nodes.map((node) => node.class))];
+        console.log(`nodeClasses -> ${nodeClasses}`);
+
+        // const nodeClassesIncParents = nodes.flatMap(node => )
+
+        // TODO: Get parents as well - filter on those with '/' in their names, flatMap them into nodeClasses.
+        // const nodeClassesIncParents = ontology.filter(label => label.name.includes())
+
+        
+
+
+
+        const groups = ontology.filter((label) =>
+          nodeClasses.includes(label.name)
+        );
+        // console.log(groups);
         return groups;
       };
 
@@ -426,9 +439,9 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
         // Create group of edges for legend/filter etc.
         const edgeClasses = [...new Set(edges.map((e) => e.label))];
         // Get full name of edges using ontology
-        const groups = ontology
-          .filter((label) => edgeClasses.includes(label.name))
-          .map((label) => label.fullName);
+        const groups = ontology.filter((label) =>
+          edgeClasses.includes(label.name)
+        );
         return groups;
       };
 
@@ -456,6 +469,8 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
         const nodeClasses = getNodeGroups(fNodes, flatEntityOntology);
         const edgeClasses = getEdgeGroups(edges, flatRelationOntology);
 
+        console.log(fNodes.length);
+
         res.json({
           data: {
             nodes: fNodes,
@@ -463,7 +478,7 @@ router.post("/graph/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
           },
           classes: { nodes: nodeClasses, edges: edgeClasses },
           metrics: {
-            totalDocs: graphData.totalTexts,
+            totalDocs: new Set(fNodes.map((n) => n.textId)).size,
             totalNodes: fNodes.length,
             totalEdges: edges.length,
           },

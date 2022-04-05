@@ -50,20 +50,19 @@ const initialState = {
     edges: {
       smooth: true,
       length: 250,
-      width: 0.15,
+      // width: 0.15,
       font: {
         size: 16,
       },
       scaling: {
-        // PUT SCALING FUNCTION IN COMPONENT; NOT STORE.
-        // customScalingFunction: function (min, max, total, value) {
-        //   if (min === max) {
-        //     return 0.1;
-        //   } else {
-        //     var scale = 0.5 / (max - min);
-        //     return Math.max(0, (value - min) * scale);
-        //   }
-        // },
+        customScalingFunction: function (min, max, total, value) {
+          if (min === max) {
+            return 0.1;
+          } else {
+            var scale = 0.5 / (max - min);
+            return Math.max(0, (value - min) * scale);
+          }
+        },
       },
     },
     nodes: {
@@ -78,15 +77,14 @@ const initialState = {
           drawThreshold: 12,
           maxVisible: 30,
         },
-        // PUT SCALING FUNCTION IN COMPONENT; NOT STORE.
-        // customScalingFunction: function (min, max, total, value) {
-        //   if (max === min) {
-        //     return 0.5;
-        //   } else {
-        //     var scale = 1 / (max - min);
-        //     return Math.max(0, (value - min) * scale);
-        //   }
-        // },
+        customScalingFunction: function (min, max, total, value) {
+          if (max === min) {
+            return 0.5;
+          } else {
+            var scale = 1 / (max - min);
+            return Math.max(0, (value - min) * scale);
+          }
+        },
       },
     },
     groups: {
@@ -95,13 +93,12 @@ const initialState = {
   },
   data: {},
   metrics: null,
-  nodeClasses: {},
-  edgeClasses: [],
+  filteredClasses: { entities: [], relations: [] },
   selectedNode: null,
-  text: "No subgraph selected",
+  text: null,
   textId: null,
   highlighted: false,
-  aggregate: true,
+  aggregate: false,
   graphKey: null,
 };
 
@@ -351,7 +348,8 @@ export const graphSlice = createSlice({
 
         state.data = action.payload.data;
         state.metrics = action.payload.metrics;
-        state.nodeClasses = action.payload.classes.nodes;
+        state.filteredClasses.entities = action.payload.classes.nodes;
+        state.filteredClasses.relations = action.payload.classes.edges;
       })
       .addCase(fetchGraph.rejected, (state, action) => {
         state.status = "failed";
@@ -381,6 +379,7 @@ export const selectHighlighted = (state) => state.graph.highlighted;
 export const selectAggregate = (state) => state.graph.aggregate;
 export const selectGraphKey = (state) => state.graph.graphKey;
 export const selectGraphFilters = (state) => state.graph.filters;
+export const selectFilterClasses = (state) => state.graph.filteredClasses;
 
 export const selectText = (state) => state.graph.text;
 export const selectTextId = (state) => state.graph.textId;

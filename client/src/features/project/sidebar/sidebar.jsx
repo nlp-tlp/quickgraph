@@ -66,36 +66,6 @@ const LabelContainer = () => {
         <div style={{ marginLeft: "1rem" }}>
           <SelectHierarchy />
         </div>
-        {/* {labelHierarchy && (
-
-            } // Nothing as don't want to expand tree
-            renderItemTitle={({ title, item }) => (
-              <span
-                className="node-container"
-                style={{
-                  backgroundColor: currentLabel === title && "#b0bec5",
-                }}
-                onClick={() => handleTreeItemSelect(item)}
-                title={`${item.fullName}`}
-              >
-                <span className="node">{title}</span>
-                <span
-                  className="node-key"
-                  style={{
-                    backgroundColor: item.colour,
-                  }}
-                  title="Keybinding"
-                ></span>
-              </span>
-            )}
-            canDragAndDrop={true}
-            canReorderItems={true}
-            canSearch={true}
-            defaultInteractionMode={InteractionMode.ClickArrowToExpand}
-          >
-            <Tree treeId="tree-1" rootItem="root" treeLabel="Tree Example" />
-          </UncontrolledTreeEnvironment>
-        )} */}
       </div>
     );
   }

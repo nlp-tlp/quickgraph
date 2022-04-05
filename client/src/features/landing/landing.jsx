@@ -50,14 +50,21 @@ export const Landing = () => {
               </Col>
             </Row>
             <Row id="row-signup">
-              <div id="button-group">
+              <div
+                id="button-group"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
                 <Button
                   id="signup-button"
-                  onClick={
-                    isAuthenticated
-                      ? () => history.push("/feed")
-                      : () => history.push("/signup")
-                  }
+                  href={isAuthenticated ? "/feed" : "/signup"}
+                  // onClick={
+                  //   isAuthenticated
+                  //     ? () => history.push("/feed")
+                  //     : () => history.push("/signup")
+                  // }
                 >
                   {isAuthenticated ? (
                     <div>
@@ -67,16 +74,25 @@ export const Landing = () => {
                     "Sign Up"
                   )}
                 </Button>
-                {isAuthenticated ? null : (
-                  <p
+                {!isAuthenticated && (
+                  <span
                     style={{
                       textAlign: "right",
                       marginRight: "0.5rem",
+                      color: "#263238",
                     }}
-                    onClick={() => history.push("/login")}
                   >
-                    or <strong style={{ cursor: "pointer" }}>login</strong>
-                  </p>
+                    or{" "}
+                    <a
+                      style={{
+                        color: "#263238",
+                      }}
+                      href="/login"
+                      // onClick={() => history.push("/login")}
+                    >
+                      <strong style={{ cursor: "pointer" }}>login</strong>
+                    </a>
+                  </span>
                 )}
               </div>
             </Row>
