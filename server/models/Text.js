@@ -4,7 +4,7 @@ const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 const TextSchema = mongoose.Schema(
   {
-    project_id: {
+    projectId: {
       type: Schema.Types.ObjectId,
       ref: "Project",
       required: false,
@@ -25,56 +25,50 @@ const TextSchema = mongoose.Schema(
         },
       },
     ],
-    markup: [
-      {
-        start: {
-          type: Number,
-        },
-        end: {
-          type: Number,
-        },
-        label: {
-          type: String,
-        },
-        label_id: {
-          type: String,
-          // Labels are nested in Array[Object[Array]] as a tree structure
-          // type: Schema.Types.ObjectId,
-          // ref: "Project.entityOntology",
-        },
-        suggested: { type: Boolean },
-        createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        createdAt: { type: Date, default: Date.now },
-      },
-    ],
-    relations: [
-      {
-        source: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Text.markup",
-        },
-        source_label: { type: String }, // Differentiates on multi-label concept spans
-        target: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Text.markup",
-        },
-        target_label: { type: String }, // Differentiates on multi-label concept spans
-        label: {
-          type: String,
-        },
-        label_id: {
-          type: String,
-          // Labels are nested in Array[Object[Array]] as a tree structure
-          // type: Schema.Types.ObjectId,
-          // ref: "Project.relationOntology",
-        },
-        labelStart: { type: Number },
-        labelEnd: { type: Number },
-        suggested: { type: Boolean },
-        createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        createdAt: { type: Date, default: Date.now },
-      },
-    ],
+    // markup: [
+    //   {
+    //     start: {
+    //       type: Number,
+    //     },
+    //     end: {
+    //       type: Number,
+    //     },
+    //     label: {
+    //       type: String,
+    //     },
+    //     labelId: {
+    //       type: String,
+    //     },
+    //     suggested: { type: Boolean },
+    //     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    //     createdAt: { type: Date, default: Date.now },
+    //   },
+    // ],
+    // relations: [
+    //   {
+    //     source: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Text.markup",
+    //     },
+    //     source_label: { type: String }, // Differentiates on multi-label entity spans
+    //     target: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Text.markup",
+    //     },
+    //     target_label: { type: String }, // Differentiates on multi-label entity spans
+    //     label: {
+    //       type: String,
+    //     },
+    //     labelId: {
+    //       type: String,
+    //     },
+    //     labelStart: { type: Number },
+    //     labelEnd: { type: Number },
+    //     suggested: { type: Boolean },
+    //     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    //     createdAt: { type: Date, default: Date.now },
+    //   },
+    // ],
     saved: [
       {
         _id: false,
