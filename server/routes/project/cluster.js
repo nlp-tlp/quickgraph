@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const logger = require("../../logger");
-const _ = require("lodash");
 const dotenv = require("dotenv");
 const authUtils = require("../auth/utils");
 const User = require("../../models/User");
@@ -9,19 +8,17 @@ const Project = require("../../models/Project");
 const Text = require("../../models/Text");
 const mongoose = require("mongoose");
 
-// Get config variables
-dotenv.config();
-
 router.get(
   "/clusters/metrics/:projectId",
   authUtils.cookieJwtAuth,
   async (req, res) => {
     try {
       const userId = authUtils.getUserIdFromToken(req.cookies.token);
+
       const aggQuery = [
         {
           $match: {
-            project_id: mongoose.Types.ObjectId(req.params.projectId),
+            projectId: mongoose.Types.ObjectId(req.params.projectId),
           },
         },
         {

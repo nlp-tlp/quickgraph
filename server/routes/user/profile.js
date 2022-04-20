@@ -60,11 +60,11 @@ router.post("/validation/exists", authUtils.cookieJwtAuth, async (req, res) => {
 });
 
 router.patch("/profile", authUtils.cookieJwtAuth, async (req, res) => {
-  // TODO: Enable user to reset password (effort...)
+  // TODO: Enable user to reset password
   try {
     logger.info("Updating user profile");
 
-    const expectedKeys = ["username", "email", "public"];
+    const expectedKeys = ["username", "email", "public", "colour"];
     if (!authUtils.checkBodyValid(req.body, expectedKeys)) {
       res.status(400).send("One or more required fields not supplied");
     } else {
@@ -76,6 +76,7 @@ router.patch("/profile", authUtils.cookieJwtAuth, async (req, res) => {
           username: req.body.username,
           email: req.body.email,
           public: req.body.public,
+          colour: req.body.colour,
         },
         {
           fields: { password: 0, projects: 0, createdAt: 0, __v: 0 },
@@ -90,31 +91,5 @@ router.patch("/profile", authUtils.cookieJwtAuth, async (req, res) => {
     res.json({ message: err });
   }
 });
-
-router.patch(
-  "/profile/avatar/colour",
-  authUtils.cookieJwtAuth,
-  async (req, res) => {
-    try {
-      const userId = authUtils.getUserIdFromToken(req.cookies.token);
-
-      const response = await User.findByIdAndUpdate(
-        { _id: userId },
-        {
-          colour: req.body.colour,
-        },
-        {
-          upsert: true,
-          new: true,
-          fields: { colour: 1 },
-        }
-      );
-      res.json(response);
-    } catch (err) {
-      logger.error("Failed to update avatar colour");
-      res.json({ message: err });
-    }
-  }
-);
 
 module.exports = router;

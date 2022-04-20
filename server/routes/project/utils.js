@@ -54,7 +54,7 @@ module.exports = {
     // e.g. source: {start: 0, end: 1}, target: {start, 5, end: 5}, surfaceTextTokens: [hello, world, my name, is, tyler], the resulting surfaceText is: "[[hello world]] my name is [[tyler]]".
     // Note: This borrows from the conceptnet format: https://github.com/commonsense/conceptnet5/wiki/API#surfacetext
 
-    console.log('source', source, 'target', target, 'tokens', tokens);
+    console.log("source", source, "target", target, "tokens", tokens);
 
     const surfaceTokens = [...tokens]; // Stops array from accumulating
     surfaceTokens[source.start] = "[[" + surfaceTokens[source.start];
@@ -62,5 +62,46 @@ module.exports = {
     surfaceTokens[target.end] = surfaceTokens[target.end] + "]]";
     surfaceTokens[source.end] = surfaceTokens[source.end] + "]]";
     return surfaceTokens.join(" ");
+  },
+  getFlatOntology: (a) => {
+    return flattenOntology(a);
+    function flattenOntology(a) {
+      return a.reduce(function (
+        flattened,
+        {
+          _id,
+          name,
+          fullName,
+          colour = null,
+          children,
+          domain,
+          range,
+          isEntity,
+        }
+      ) {
+        return flattened
+          .concat([{ _id, name, fullName, colour, domain, range, isEntity }])
+          .concat(children ? flattenOntology(children) : []);
+      },
+      []);
+    }
+  },
+  filterOntology: (a, labelFullNames) => {
+    /*
+      Filters ontology to find parents of labels
+      Given name1 as `person/president` it finds any nameX that is a subset of
+      name1 broken into an array ['person', 'president']
+    */
+    const filterData = (data, labelFullNames) =>
+      data.filter((o) => {
+        const isRelated =
+          labelFullNames.filter((name) =>
+            o.fullName.split("/").every((val) => name.split("/").includes(val))
+          ).length > 0;
+        if (o.children) o.children = filterData(o.children, labelFullNames);
+        return isRelated;
+      });
+
+    return filterData(a, labelFullNames);
   },
 };

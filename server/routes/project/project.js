@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const logger = require("../../logger");
-const _ = require("lodash");
 const dotenv = require("dotenv");
 const authUtils = require("../auth/utils");
 const User = require("../../models/User");
@@ -88,8 +87,6 @@ router.patch("/:projectId", authUtils.cookieJwtAuth, async (req, res) => {
   try {
     logger.info("Updating single project", { route: "/api/project/" });
     const userId = authUtils.getUserIdFromToken(req.cookies.token);
-
-    console.log(req.body);
 
     const updatedProject = await Project.findOneAndUpdate(
       { _id: req.params.projectId, projectManager: userId },
