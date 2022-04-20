@@ -17,13 +17,9 @@ import {
   selectRelations,
   selectSourceSpan,
   selectTargetSpan,
+  selectTexts,
 } from "../../../app/dataSlice";
-import {
-  selectProject,
-  selectFlatRelationOntology,
-  selectFlatEntityOntology,
-} from "../projectSlice";
-import "./Tooltip.css";
+import { selectProject, selectFlatOntology } from "../projectSlice";
 
 export const RelationTooltipContent = ({
   text,
@@ -38,110 +34,102 @@ export const RelationTooltipContent = ({
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
   const relations = useSelector(selectRelations);
-  const flatRelationOntology = useSelector(selectFlatRelationOntology);
-  const flatEntityOntology = useSelector(selectFlatEntityOntology);
-
-  const findRelatedSpans = (relations, text, sourceSpan, targetSpan) => {
-    /* 
-      Gets label and _ids of active relations on span.
-      Notes: Currently selected span information is contained within the state of targetSpan.
-      This needs to be filtered based on the sourceSpan selected as there could be many relations
-      between other non-related spans and the targets of the current one.
-      */
-
-    // console.log(
-    //   relations[text._id].filter((r) => r.target_label === targetSpan.label)
-    // );
-    const activeRelatedSpans = relations[text._id]
-      .filter(
-        (r) =>
-          r.source === sourceSpan._id &&
-          r.target === targetSpan._id &&
-          r.target_label === targetSpan.label
-      )
-      .map((r) => ({ _id: r._id, label: r.label, suggested: r.suggested }));
-    // console.log("active relation labels on target span", activeRelatedSpans);
-
-    return activeRelatedSpans;
-  };
+  const flatOntology = useSelector(selectFlatOntology);
+  const flatRelationOntology = flatOntology.filter((i) => !i.isEntity);
+  const flatEntityOntology = flatOntology.filter((i) => i.isEntity);
 
   if (targetSpan) {
-    // TargetSpan may be removed if user tries to unselect sourceSpan whilst relation
-    // popover is active.
-    const activeRelatedSpans = findRelatedSpans(
-      relations,
-      text,
-      sourceSpan,
-      targetSpan
-    );
+    /*
+      TargetSpan may be removed if user tries to unselect sourceSpan whilst relation
+      popover is active.
+     */
+
+    // Get label fullnames from source/target entity spans
+    const sourceEntityType = flatEntityOntology.filter(
+      (r) => r._id === sourceSpan.labelId
+    )[0].fullName;
+    const targetEntityType = flatEntityOntology.filter(
+      (r) => r._id === targetSpan.labelId
+    )[0].fullName;
+
+    // Check if ANY relations are bounded by these entities, if so - filter, else - allow all relations.
+    let filteredRelationLabels;
 
     // Filter relations based on source/span entity types
-    const filteredRels = flatRelationOntology
-      .map((relation) => {
-        const domain = relation.domain;
-        const range = relation.range;
+    filteredRelationLabels = flatRelationOntology.filter((relation) => {
+      const domain = relation.domain;
+      const range = relation.range;
 
-        // Get label fullnames
-        const sourceEntityType = flatEntityOntology.filter(
-          (r) => r.id === sourceSpan.labelId
-        )[0].fullName;
-        const targetEntityType = flatEntityOntology.filter(
-          (r) => r.id === targetSpan.labelId
-        )[0].fullName;
+      // console.log(sourceEntityType, targetEntityType);
 
-        // console.log(sourceEntityType, targetEntityType);
+      const domainHasSourceEntityType =
+        domain.filter((entity) => sourceEntityType.includes(entity)).length > 0;
 
-        const domainHasSourceEntityType =
-          domain.filter((entity) => sourceEntityType.includes(entity)).length >
-          0;
+      const rangeHasTargetEntityType =
+        range.filter((entity) => targetEntityType.includes(entity)).length > 0;
 
-        const rangeHasTargetEntityType =
-          range.filter((entity) => targetEntityType.includes(entity)).length >
-          0;
+      // console.log(domainHasSourceEntityType, rangeHasTargetEntityType);
 
-        const domainIsOpen =
-          relation.domain.includes("all") || relation.domain.length === 0;
-        const rangeIsOpen =
-          relation.range.includes("all") || relation.range.length === 0;
+      const domainIsOpen =
+        relation.domain.includes("all") || relation.domain.length === 0;
+      const rangeIsOpen =
+        relation.range.includes("all") || relation.range.length === 0;
 
-        if (domainIsOpen && rangeIsOpen) {
-          // Applicable for any entity type
-          return relation;
-        } else if (domainHasSourceEntityType && rangeHasTargetEntityType) {
-          return relation;
-        } else if (domainIsOpen && rangeHasTargetEntityType) {
-          return relation;
-        } else if (domainHasSourceEntityType && rangeIsOpen) {
-          return relation;
-        } else {
-          return undefined;
-        }
-      })
-      .filter((name) => name !== undefined);
+      if (domainHasSourceEntityType && rangeHasTargetEntityType) {
+        return relation;
+      } else if (domainIsOpen && rangeHasTargetEntityType) {
+        return relation;
+      } else if (domainHasSourceEntityType && rangeIsOpen) {
+        return relation;
+      }
+      // else if (domainIsOpen && rangeIsOpen) {
+      //   // Applicable for any entity type
+      //   return relation;
+      // }
+      // else {
+      //   return undefined;
+      // }
+    });
 
-    // console.log("filteredRels", filteredRels);
+    if (filteredRelationLabels.length === 0) {
+      // No relation constraints
+      filteredRelationLabels = flatRelationOntology;
+    }
+
+    console.log("filteredRelationLabels", filteredRelationLabels);
 
     return (
       <ListGroup className="tooltip-relation-container">
-        {filteredRels.map((relation, index) => {
-          const hasRelation = activeRelatedSpans
-            .map((r) => r.label)
-            .includes(relation.name);
-          const hasSuggestedRelation = activeRelatedSpans
-            .filter((r) => r.suggested)
-            .map((r) => r.label)
-            .includes(relation.name);
-
+        {filteredRelationLabels.map((relationLabel, index) => {
           return (
             <ListGroup.Item
               className="tooltip-relation-item-container"
               id={index}
-              title={`${relation.fullName}\n${relation.description}`}
+              title={`${relationLabel.fullName}\n${relationLabel.description}`}
             >
               <ListItemContent
-                hasRelation={hasRelation}
-                hasSuggestedRelation={hasSuggestedRelation}
-                relation={relation}
+                hasRelationLabel={
+                  relations[text._id] &&
+                  relations[text._id].length > 0 &&
+                  relations[text._id].filter(
+                    (r) =>
+                      r.source === sourceSpan._id &&
+                      r.target === targetSpan._id &&
+                      r.labelId === relationLabel._id
+                  ).length > 0
+                }
+                hasSuggestedRelationLabel={
+                  relations[text._id] &&
+                  relations[text._id].length > 0 &&
+                  relations[text._id].filter(
+                    (r) =>
+                      r.suggested &&
+                      r.source === sourceSpan._id &&
+                      r.target === targetSpan._id &&
+                      r.labelId === relationLabel._id
+                  ).length > 0
+                }
+                relationLabel={relationLabel}
                 text={text}
                 setSelectedRelKey={setSelectedRelKey}
               />
@@ -158,9 +146,9 @@ export const RelationTooltipContent = ({
 };
 
 const ListItemContent = ({
-  hasRelation,
-  hasSuggestedRelation,
-  relation,
+  hasRelationLabel,
+  hasSuggestedRelationLabel,
+  relationLabel,
   text,
   setSelectedRelKey,
 }) => {
@@ -168,10 +156,10 @@ const ListItemContent = ({
   const project = useSelector(selectProject);
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
-  const relations = useSelector(selectRelations);
+  const texts = useSelector(selectTexts);
 
   const handleRelationInteraction = ({
-    relation,
+    relationLabel,
     text,
     action,
     applyAll,
@@ -185,90 +173,55 @@ const ListItemContent = ({
         - Relation application is between source span entity and target span entity.
           This allows label differentitation on multi-label spans. 
     */
-    // console.log("relationLabelInfo", relationLabelInfo);
 
-    const relationLabel = relation.name;
-
-    // Get ID of tokens on target span
-    const targetTokenIndexes = text.markup
-      .filter((s) => s._id === targetSpan._id)
-      .flatMap((s) => [...new Set([s.start, s.end])]);
-    // console.log("targetTokenIndexes", targetTokenIndexes);
-
-    const targetTokenIds = text.tokens
-      .filter((_, index) => targetTokenIndexes.includes(index))
-      .map((token) => token._id);
-    // console.log("targetTokenIds", targetTokenIds);
-    // console.log("relation", relation);
-
-    let relationId;
     switch (action) {
       case "apply":
-
-        // console.log('RELATION TOOLTIP ID CHECK', relation)
+        console.log("Applying relation(s)");
 
         dispatch(
           applyAnnotation({
             projectId: project._id,
             textId: text._id,
             sourceEntityId: sourceSpan._id,
-            sourceEntityLabel: sourceSpan.label,
             targetEntityId: targetSpan._id,
-            targetEntityLabel: targetSpan.label,
-            relationLabel: relationLabel,
-            relationLabelId: relation.id,
-            targetTokenIds: targetTokenIds,
+            relationLabelId: relationLabel._id,
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
+            textIds: texts.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);
         break;
       case "delete":
         // User wants to remove relation(s)
-        relationId = relations[
-          Object.keys(relations).filter((key) => key === text._id)
-        ].filter(
-          (r) => r.label === relationLabel && r.target === targetSpan._id
-        )[0]._id;
-
         dispatch(
           deleteAnnotation({
             projectId: project._id,
             textId: text._id,
-            relationId: relationId,
-            sourceEntityLabel: sourceSpan.label,
-            targetEntityLabel: targetSpan.label,
-            relationLabel: relationLabel,
+            relationLabelId: relationLabel._id,
+            sourceEntityId: sourceSpan._id,
+            targetEntityId: targetSpan._id,
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
+            textIds: texts.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);
         break;
       case "accept":
-        relationId = relations[
-          Object.keys(relations).filter((key) => key === text._id)
-        ].filter(
-          (r) => r.label === relationLabel && r.target === targetSpan._id
-        )[0]._id;
-
         dispatch(
           acceptAnnotation({
             projectId: project._id,
             textId: text._id,
             sourceEntityId: sourceSpan._id,
-            sourceEntityLabel: sourceSpan.label,
             targetEntityId: targetSpan._id,
-            targetEntityLabel: targetSpan.label,
-            relationId: relationId,
-            relationLabel: relationLabel,
-            targetTokenIds: targetTokenIds,
+            relationLabelId: relationLabel._id,
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
+            textIds: texts.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);
@@ -286,12 +239,14 @@ const ListItemContent = ({
           style={{
             marginRight: "0.25rem",
             fontSize: "12px",
-            color: hasRelation && "#455a64",
+            color: hasRelationLabel && "#455a64",
           }}
         >
-          {hasRelation ? (
+          {hasRelationLabel ? (
             <IoRadioButtonOn
-              style={{ color: hasSuggestedRelation ? "#90a4ae" : "#263238" }}
+              style={{
+                color: hasSuggestedRelationLabel ? "#90a4ae" : "#263238",
+              }}
             />
           ) : (
             <IoRadioButtonOff />
@@ -312,37 +267,37 @@ const ListItemContent = ({
               fontSize: "0.75rem",
             }}
           >
-            {relation.fullName.replace(relation.name, "")}
+            {relationLabel.fullName.replace(relationLabel.name, "")}
           </span>
-          <span id="tooltip-relation-label">{relation.name}</span>
+          <span id="tooltip-relation-label">{relationLabel.name}</span>
         </div>
       </div>
       <div id="tooltip-relation-icon-tray">
-        {hasSuggestedRelation ? (
+        {hasSuggestedRelationLabel ? (
           <>
             <span
               id="accept-one"
               title="Click to accept suggested relation"
               onClick={() => {
                 handleRelationInteraction({
-                  relation: relation,
+                  relationLabel: relationLabel,
                   text: text,
                   action: "accept",
                   applyAll: false,
                   suggested: true,
                 });
               }}
-              disabled={!hasRelation && "true"}
+              disabled={!hasRelationLabel && "true"}
             >
               <MdDone />
             </span>
             <span
               id="accept-all"
               title="Click to accept all suggested relations of this type"
-              disabled={!hasRelation && "true"}
+              disabled={!hasRelationLabel && "true"}
               onClick={() => {
                 handleRelationInteraction({
-                  relation: relation,
+                  relationLabel: relationLabel,
                   text: text,
                   action: "accept",
                   applyAll: true,
@@ -357,24 +312,24 @@ const ListItemContent = ({
               title="Click to reject this suggested relation (entities will persist)"
               onClick={() => {
                 handleRelationInteraction({
-                  relation: relation,
+                  relationLabel: relationLabel,
                   text: text,
                   action: "delete",
                   applyAll: false,
                   suggested: true,
                 });
               }}
-              disabled={!hasRelation && "true"}
+              disabled={!hasRelationLabel && "true"}
             >
               <MdDelete />
             </span>
             <span
               id="reject-all"
               title="Click to reject all suggested relations of this type (entities will persist)"
-              disabled={!hasRelation && "true"}
+              disabled={!hasRelationLabel && "true"}
               onClick={() => {
                 handleRelationInteraction({
-                  relation: relation,
+                  relationLabel: relationLabel,
                   text: text,
                   action: "delete",
                   applyAll: true,
@@ -390,10 +345,10 @@ const ListItemContent = ({
             <span
               id="apply-one"
               title="Click to apply single relation"
-              disabled={hasRelation && "true"}
+              disabled={hasRelationLabel && "true"}
               onClick={() => {
                 handleRelationInteraction({
-                  relation: relation,
+                  relationLabel: relationLabel,
                   text: text,
                   action: "apply",
                   applyAll: false,
@@ -408,7 +363,7 @@ const ListItemContent = ({
               title="Click to apply relation across entire corpus"
               onClick={() => {
                 handleRelationInteraction({
-                  relation: relation,
+                  relationLabel: relationLabel,
                   text: text,
                   action: "apply",
                   applyAll: true,
@@ -418,32 +373,32 @@ const ListItemContent = ({
             >
               <MdContentPaste />
             </span>
-            {hasRelation && (
+            {hasRelationLabel && (
               <span
                 id="delete-one"
                 title="Click to delete this relation"
                 onClick={() => {
                   handleRelationInteraction({
-                    relation: relation,
+                    relationLabel: relationLabel,
                     text: text,
                     action: "delete",
                     applyAll: false,
                     suggested: false,
                   });
                 }}
-                disabled={!hasRelation && "true"}
+                disabled={!hasRelationLabel && "true"}
               >
                 <MdDelete />
               </span>
             )}
-            {hasRelation && (
+            {hasRelationLabel && (
               <span
                 id="delete-all"
                 title="Click to delete this and all matching relations"
-                disabled={!hasRelation && "true"}
+                disabled={!hasRelationLabel && "true"}
                 onClick={() => {
                   handleRelationInteraction({
-                    relation: relation,
+                    relationLabel: relationLabel,
                     text: text,
                     action: "delete",
                     applyAll: true,

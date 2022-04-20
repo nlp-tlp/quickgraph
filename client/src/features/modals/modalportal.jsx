@@ -95,8 +95,9 @@ export const PortalModal = () => {
       keyboard={false}
       backdrop={modalContent[activeModal].backdrop}
       dialogClassName={modalContent[activeModal].modalSize}
+      centered
     >
-      <Modal.Header>
+      <Modal.Header closeButton>
         <Modal.Title>{modalContent[activeModal].title}</Modal.Title>
       </Modal.Header>
       <Modal.Body>{modalContent[activeModal].body}</Modal.Body>

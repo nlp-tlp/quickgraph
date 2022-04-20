@@ -1,16 +1,23 @@
-import React, { useEffect } from "react";
-import { Button, Col, Container, Row, Spinner } from "react-bootstrap";
-import { MdDashboard, MdEdit } from "react-icons/md";
+import { Button, Grid, Typography } from "@mui/material";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setProject } from "../project/projectSlice";
+import { Loader } from "../common/Loader";
 import history from "../utils/history";
 import "./Feed.css";
 import {
   fetchProjects,
-  selectFeedStatus,
   selectFeedError,
+  selectFeedStatus,
   selectProjects,
 } from "./feedSlice";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import ArticleIcon from "@mui/icons-material/Article";
+import GroupIcon from "@mui/icons-material/Group";
+import LayersIcon from "@mui/icons-material/Layers";
 
 export const Feed = () => {
   const dispatch = useDispatch();
@@ -24,33 +31,35 @@ export const Feed = () => {
     }
   }, [feedStatus]);
 
-  return (
-    <>
-      <Container className="feed-container">
-        {feedStatus !== "succeeded" ? (
-          <div id="loader">
-            <Spinner animation="border" />
-            <p>Loading...</p>
-          </div>
-        ) : projects.length === 0 ? (
-          <div id="create-project">
-            <p>No projects</p>
-            <Button variant="dark" size="lg" href="/project/new">
-              Create Project
-            </Button>
-          </div>
-        ) : (
-          <ProjectList />
-        )}
-      </Container>
-    </>
-  );
+  if (feedStatus !== "succeeded") {
+    return <Loader message={"Projects loading"} />;
+  } else if (projects.length === 0) {
+    return (
+      <Grid
+        item
+        xs={12}
+        container
+        direction="column"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <h2>No Projects</h2>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => history.push("/project/new")}
+        >
+          Create One
+        </Button>
+      </Grid>
+    );
+  } else {
+    return <ProjectList />;
+  }
 };
 
 const ProjectList = () => {
-  const dispatch = useDispatch();
   const projects = useSelector(selectProjects);
-  const feedStatus = useSelector(selectFeedStatus);
 
   const kFormatter = (num) => {
     return Math.abs(num) > 999
@@ -58,114 +67,87 @@ const ProjectList = () => {
       : Math.sign(num) * Math.abs(num);
   };
 
-  const handleDashboard = (project) => {
-    dispatch(setProject(project));
-    history.push(`/dashboard/${project._id}/overview`);
-  };
-
   return (
-    <>
-      <Container fluid className="project-list-container">
-        {feedStatus === "succeeded" ? (
-          projects.map((project, index) => {
-            return (
-              <>
-                <Row className="feed-item">
-                  <Col key={index}>
-                    <Row>
-                      <Col
-                        sm={12}
-                        md={12}
-                        lg={4}
-                        className="details-col"
-                        key={index}
-                      >
-                        <Row>
-                          <Col>
-                            <h1 id="project-name">{project.name}</h1>
-                          </Col>
-                        </Row>
-                        <Row>
-                          <Col>
-                            <p id="project-description">
-                              {project.description}
-                            </p>
-                          </Col>
-                        </Row>
-                        <Row>
-                          <Col>
-                            <p id="project-creation-date">
-                              {new Date(project.createdAt).toDateString()}
-                            </p>
-                          </Col>
-                        </Row>
-                      </Col>
-
-                      <Col
-                        sm={12}
-                        md={12}
-                        lg={6}
-                        className="metrics-col"
-                        style={{ display: "flex", alignItems: "center" }}
-                      >
-                        <Row>
-                          <Col>
-                            <div id="metrics-text-container">
-                              <div>
-                                <p id="metric-number">
-                                  {kFormatter(project.savedTexts)}/
-                                  {kFormatter(project.totalTexts)}
-                                </p>
-                                <p id="metric-title">Documents<br/>Annotated</p>
-                              </div>
-                            </div>
-                          </Col>
-                          <Col>
-                            <div id="metrics-text-container">
-                              <div>
-                                <p id="metric-number">
-                                  {project.annotatorCount}
-                                </p>
-                                <p id="metric-title">Active<br/>Annotators</p>
-                              </div>
-                            </div>
-                          </Col>
-                        </Row>
-                      </Col>
-                      <Col
-                        sm={12}
-                        md={12}
-                        lg={2}
-                        className="actions-col"
-                        style={{ display: "flex", alignItems: "center" }}
-                      >
-                        <div id="action-container">
-                          <MdEdit
-                            id="action-icon"
-                            title="Click to commence annotation"
-                            onClick={() =>
-                              history.push(`/annotation/${project._id}/page=1`)
-                            }
-                          />
-                          <MdDashboard
-                            id="action-icon"
-                            title="Click to go to dashboard"
-                            onClick={() => handleDashboard(project)}
-                          />
-                        </div>
-                      </Col>
-                    </Row>
-                  </Col>
-                </Row>
-              </>
-            );
-          })
-        ) : (
-          <div>
-            <Spinner animation="border" variant="secondary" size="sm" />
-          </div>
-        )}
-      </Container>
-    </>
+    <Grid
+      container
+      direction="row"
+      columnSpacing={4}
+      rowSpacing={4}
+      sx={{ p: 8 }}
+    >
+      {projects.map((project) => (
+        <Grid item xs={4} style={{ maxWidth: "700px" }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Grid container item spacing={3}>
+                <Grid item xs={12}>
+                  <span style={{ fontSize: "0.75rem" }}>
+                    Created: {new Date(project.createdAt).toDateString()}
+                  </span>
+                </Grid>
+                <Grid item xs={12} style={{ textAlign: "left" }}>
+                  <h3>{project.name}</h3>
+                  <h5 style={{ fontWeight: "normal", fontSize: "1rem" }}>
+                    {project.description}
+                  </h5>
+                </Grid>
+              </Grid>
+            </CardContent>
+            <CardActions
+              style={{ justifyContent: "space-between", alignItems: "center" }}
+            >
+              <Stack direction="row" spacing={1}>
+                <Chip
+                  icon={<ArticleIcon />}
+                  label={`${kFormatter(project.savedTexts)} of ${kFormatter(
+                    project.totalTexts
+                  )}`}
+                  title="The number of documents annotated"
+                />
+                <Chip
+                  icon={<GroupIcon />}
+                  label={project.annotatorCount}
+                  title="The number of active annotators"
+                />
+                <Chip
+                  icon={<LayersIcon />}
+                  label={
+                    !project.tasks.relationAnnotation
+                      ? "Entity Only"
+                      : project.tasks.relationAnnotationType.toLowerCase() ===
+                        "closed"
+                      ? "Entity + Closed Relation"
+                      : "Entity + Open Relation"
+                  }
+                  title="The task configuration for this project"
+                />
+              </Stack>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  color="primary"
+                  sx={{
+                    ":hover": {
+                      bgcolor: "primary.light",
+                      color: "white",
+                    },
+                    mr: 1,
+                  }}
+                  href={`/annotation/${project._id}/page=1`}
+                >
+                  Annotate
+                </Button>
+                <Button
+                  color="primary"
+                  sx={{ ":hover": { color: "primary.main" }, ml: 1 }}
+                  href={`/dashboard/${project._id}`}
+                >
+                  Dashboard
+                </Button>
+              </Stack>
+            </CardActions>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
   );
 };

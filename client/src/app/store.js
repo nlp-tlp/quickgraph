@@ -6,7 +6,7 @@ import userReducer from "../features/auth/userSlice";
 import feedReducer from "../features/feed/feedSlice";
 import createStepReducer from "../features/projectcreation/createStepSlice";
 import dataReducer from "./dataSlice";
-import graphReducer from "../features/dashboard/graph/graphSlice";
+import graphReducer from "../features/dashboard/features/graph/graphSlice";
 import alertReducer from "../features/alerts/alertSlice"
 
 const combinedReducer = combineReducers({

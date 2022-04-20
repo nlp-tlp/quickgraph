@@ -16,6 +16,7 @@ import {
   CircularProgressbarWithChildren,
   buildStyles,
 } from "react-circular-progressbar";
+import { teal } from "@mui/material/colors";
 
 export const ClusterIcon = ({ clusterNo }) => {
   const dispatch = useDispatch();
@@ -58,7 +59,7 @@ export const ClusterIcon = ({ clusterNo }) => {
         value={progress}
         maxValue={100}
         styles={buildStyles({
-          pathColor: "rgb(27, 94, 32)",
+          pathColor: teal[700],
         })}
       >
         <div

@@ -9,6 +9,17 @@ const errorHandler = (error) => {
   const expiredToastId = "session-expired-toast-id";
 
   switch (error.response.status) {
+    case 400:
+      toast.error(`${error.response.data.message}`, {
+        position: "top-center",
+        autoClose: false,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: 0,
+      });
+      break;
     case 403:
       toast.info("Session expired. Please log in.", {
         toastId: expiredToastId,
@@ -68,6 +79,37 @@ const axiosInstance = axios.create();
 // response interceptor for handling common errors (e.g. HTTP 500)
 axiosInstance.interceptors.response.use(
   (response) => {
+    if (
+      response.config.url === "/api/user/profile" &&
+      response.config.method === "patch"
+    ) {
+      toast.success("Profile updated.", {
+        toastId: "user-profile-update-toast",
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: 0,
+      });
+    }
+    if (
+      response.config.url.includes("/api/project") &&
+      response.config.method === "patch"
+    ) {
+      toast.success("Project updated.", {
+        toastId: "project-settings-update-toast",
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: 0,
+      });
+    }
+
     return response;
   },
   (error) => errorHandler(error)

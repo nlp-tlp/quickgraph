@@ -1,75 +1,65 @@
 import { useState } from "react";
 import history from "../utils/history";
-import { Form, Button } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectPageLimit,
   setPageLimit,
-  setTextsIdle
-} from "../../app/dataSlice"
+  setTextsIdle,
+} from "../../app/dataSlice";
 import { selectProject } from "../../features/project/projectSlice";
-import {
-  IoCheckmarkCircleSharp,
-  IoCloseCircle,
-  IoContract,
-  IoExpan,
-} from "react-icons/io5";
 import { useParams } from "react-router";
+
+import {
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+} from "@mui/material";
+import { grey } from "@mui/material/colors";
 
 export const Settings = () => {
   const dispatch = useDispatch();
   const pageLimit = useSelector(selectPageLimit);
   const project = useSelector(selectProject);
-  const [tempPageLimit, setTempPageLimit] = useState(1);
+  const [tempPageLimit, setTempPageLimit] = useState(pageLimit);
   const { pageNumber } = useParams();
 
   return (
-    <div>
-      <p
-        style={{
-          fontWeight: "bold",
-          padding: "0",
-          margin: "0",
-          borderBottom: "1px solid #dee2e6",
-        }}
+    <Grid
+      item
+      xs={12}
+      container
+      alignItems="center"
+      justifyContent="space-between"
+    >
+      <Grid
+        item
+        xs={12}
+        container
+        alignItems="center"
+        justifyContent="space-around"
       >
-        Annotation Settings
-      </p>
-      <p style={{ fontSize: "0.75rem" }}>
-        <strong>Tip:</strong> If you have a large project, use smaller page
-        sizes to improve latency.
-      </p>
-      <Form
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Form.Group
-          style={{
-            display: "flex",
-            // justifyContent: "space-between",
-            // marginLeft: "0.25em",
-            alignItems: "center",
-          }}
-        >
-          <Form.Label style={{ width: "10rem" }}>Documents per page</Form.Label>
-          <Form.Control
-            as="select"
-            aria-label="Default select example"
-            size="sm"
+        <FormControl sx={{ m: 1, width: 300 }}>
+          <InputLabel id="demo-multiple-name-label">
+            Documents per page
+          </InputLabel>
+          <Select
+            labelId="demo-multiple-name-label"
+            id="demo-multiple-name"
+            value={tempPageLimit}
             onChange={(e) => setTempPageLimit(e.target.value)}
           >
             {[1, 2, 5, 10, 20, 30, 40, 50].map((limit) => (
-              <option value={limit}>{limit}</option>
+              <MenuItem key={limit} value={limit}>
+                {limit}
+              </MenuItem>
             ))}
-          </Form.Control>
-        </Form.Group>
+          </Select>
+        </FormControl>
         <Button
-          size="sm"
-          variant="dark"
-          style={{ height: "100%" }}
+          variant="contained"
           onClick={() => {
             dispatch(setPageLimit(Number(tempPageLimit)));
             if (Number(pageNumber) === 1) {
@@ -82,7 +72,13 @@ export const Settings = () => {
         >
           Apply
         </Button>
-      </Form>
-    </div>
+      </Grid>
+      <Grid item xs={12}>
+        <span style={{ fontSize: "0.75rem", color: grey[700] }}>
+          <strong>Tip:</strong> If you have a large project, use smaller page
+          sizes to improve latency.
+        </span>
+      </Grid>
+    </Grid>
   );
 };

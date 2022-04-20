@@ -6,23 +6,11 @@
 }
 
 body {
+  min-height: 100vh;
   margin: 0;
   padding: 0;
   font-family: "Roboto", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-body::after{
-  content: "";
-  background-image: url(https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80);
-  opacity: 0.75;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: -1;
-  -webkit-mask-image: linear-gradient(to top, transparent 50%, black 85%);
-  mask-image: linear-gradient(to top, transparent 25%, black 75%);
+  background: #fafafa;
 }

@@ -51,24 +51,6 @@
 }
 
 /* UPLOAD */
-.create #upload-btn {
-  display: inline-block;
-  cursor: pointer;
-  border-radius: 0.2rem;
-  font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
-  line-height: 1.5;
-  border: 1px solid #78909c;
-  padding: 0.25rem;
-  background-color: #607d8b;
-  color: white;
-  opacity: 0.9;
-  user-select: none;
-}
-
-.create #upload-btn:hover {
-  opacity: 1;
-}
 
 .create #upload-text-muted {
   font-size: 0.75rem;

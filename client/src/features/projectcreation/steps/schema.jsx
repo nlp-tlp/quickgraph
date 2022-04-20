@@ -6,7 +6,7 @@ import SortableTree, {
 // Using forked version of react-sortable-tree as version at date 15.12.21 isn't react v17 compatible.
 import "@nosferatu500/react-sortable-tree/style.css";
 import { useEffect, useState } from "react";
-import { Button, Col, Form, Modal, Row, Tab, Tabs } from "react-bootstrap";
+import { Col, Modal, Row } from "react-bootstrap";
 import {
   InteractionMode,
   StaticTreeDataProvider,
@@ -32,6 +32,18 @@ import { entityOntologies, relationOntologies } from "../data/ontologies";
 import { getRandomColor } from "../data/utils";
 import { v4 as uuidv4 } from "uuid";
 
+import {
+  Grid,
+  Tabs,
+  Tab,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Stack,
+  Button,
+} from "@mui/material";
+
 export const Schema = () => {
   const dispatch = useDispatch();
   const steps = useSelector(selectSteps);
@@ -40,9 +52,15 @@ export const Schema = () => {
     selectPerformRelationAnnotation
   );
 
+  const [value, setValue] = useState("entity");
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
+
   const [entityDataPreset, setEntityDataPreset] = useState(
-    steps[activeStep].data.conceptName !== ""
-      ? steps[activeStep].data.conceptName
+    steps[activeStep].data.entityName !== ""
+      ? steps[activeStep].data.entityName
       : "Custom"
   );
   const [relationDataPreset, setRelationDataPreset] = useState(
@@ -52,8 +70,8 @@ export const Schema = () => {
   );
   const [entityData, setEntityData] = useState({
     treeData:
-      steps[activeStep].data.conceptLabels.length > 0
-        ? steps[activeStep].data.conceptLabels
+      steps[activeStep].data.entityLabels.length > 0
+        ? steps[activeStep].data.entityLabels
         : entityOntologies["Custom"],
     addAsFirstChild: false,
   });
@@ -69,7 +87,7 @@ export const Schema = () => {
     // Side effect if user switches between presets
     // Only looks at the top level nodes; if any child are empty, they will be removed later.
     const valid = steps[activeStep].valid;
-    const conceptsValid =
+    const entitiesValid =
       entityData.treeData.filter((node) => node.name !== "").length > 0;
 
     // console.log(
@@ -89,20 +107,20 @@ export const Schema = () => {
       const relationsValid =
         relationData.treeData.filter((node) => node.name !== "").length > 0;
 
-      if (!valid && conceptsValid && relationsValid) {
+      if (!valid && entitiesValid && relationsValid) {
         dispatch(setStepValid(true));
       }
-      if (valid && !conceptsValid) {
+      if (valid && !entitiesValid) {
         dispatch(setStepValid(false));
       }
       if (valid && !relationsValid) {
         dispatch(setStepValid(false));
       }
     } else {
-      if (!valid && conceptsValid) {
+      if (!valid && entitiesValid) {
         dispatch(setStepValid(true));
       }
-      if (valid && !conceptsValid) {
+      if (valid && !entitiesValid) {
         dispatch(setStepValid(false));
       }
     }
@@ -112,8 +130,8 @@ export const Schema = () => {
     // Side effect for capturing tree data changes
     dispatch(
       setStepData({
-        conceptName: entityDataPreset,
-        conceptLabels: entityData.treeData,
+        entityName: entityDataPreset,
+        entityLabels: entityData.treeData,
       })
     );
     dispatch(
@@ -125,34 +143,41 @@ export const Schema = () => {
   }, [entityData, relationData]);
 
   return (
-    <Row style={{ margin: "0rem 0.25rem 0rem 0.25rem" }}>
-      <Col>
-        <Tabs id="controlled-tab-example" className="mb-3">
-          <Tab eventKey="concepts" title="Entity Types">
-            <OntologyContainer
-              presetOntologies={entityOntologies}
-              treeData={entityData}
-              setTreeData={setEntityData}
-              ontologyType={"entity"}
-              selectValue={entityDataPreset}
-            />
-          </Tab>
-          {performRelationAnnotation &&
-            steps.details.data.relationAnnotationType === "closed" && (
-              <Tab eventKey="relations" title="Relation Types">
-                <OntologyContainer
-                  presetOntologies={relationOntologies}
-                  treeData={relationData}
-                  setTreeData={setRelationData}
-                  ontologyType={"relation"}
-                  selectValue={relationDataPreset}
-                  entityOntology={entityData} // Used for selecting entities for domain/range
-                />
-              </Tab>
-            )}
-        </Tabs>
-      </Col>
-    </Row>
+    <Grid item xs={12}>
+      <Tabs
+        centered
+        value={value}
+        onChange={handleChange}
+        textColor="primary"
+        indicatorColor="primary"
+      >
+        <Tab value="entity" label="Entity Types" />
+        {performRelationAnnotation &&
+          steps.details.data.relationAnnotationType === "closed" && (
+            <Tab value="relation" label="Relation Types" />
+          )}
+      </Tabs>
+      {value === "entity" ? (
+        <OntologyContainer
+          presetOntologies={entityOntologies}
+          treeData={entityData}
+          setTreeData={setEntityData}
+          ontologyType={"entity"}
+          selectValue={entityDataPreset}
+          setSelectValue={setEntityDataPreset}
+        />
+      ) : (
+        <OntologyContainer
+          presetOntologies={relationOntologies}
+          treeData={relationData}
+          setTreeData={setRelationData}
+          ontologyType={"relation"}
+          selectValue={relationDataPreset}
+          setSelectValue={setRelationDataPreset}
+          entityOntology={entityData} // Used for selecting entities for domain/range
+        />
+      )}
+    </Grid>
   );
 };
 
@@ -162,6 +187,7 @@ const OntologyContainer = ({
   setTreeData,
   ontologyType,
   selectValue,
+  setSelectValue,
   entityOntology,
 }) => {
   const dispatch = useDispatch();
@@ -170,22 +196,36 @@ const OntologyContainer = ({
   const [showDomainRange, setShowDomainRange] = useState(false);
   const [selectedNode, setSelectedNode] = useState();
 
-  // useEffect(() => {
-  //   console.log(treeData);
-  //   console.log(
-  //     getFlatDataFromTree({
-  //       treeData: treeData.treeData,
-  //       getNodeKey: ({ treeIndex }) => treeIndex,
-  //       ignoreCollapsed: false,
-  //     })
-  //   );
-  // }, [treeData]);
+  const handlePresetChange = (e) => {
+    setTreeData((prevState) => ({
+      ...prevState,
+      treeData: presetOntologies[e.target.value],
+    }));
+
+    // Ontology preset name
+    setSelectValue(e.target.value);
+
+    ontologyType === "entity"
+      ? dispatch(
+          setStepData({
+            entityName: e.target.value,
+            entityLabels: presetOntologies[e.target.value],
+          })
+        )
+      : dispatch(
+          setStepData({
+            relationName: e.target.value,
+            relationLabels: presetOntologies[e.target.value],
+          })
+        );
+  };
 
   if (treeData && !treeData.treeData) {
     return (
       <div style={{ textAlign: "center", marginTop: "auto" }}>
         <span>
-          Select a preset {ontologyType} ontology, upload or create your own!
+          Select <span style={{ textDecoration: "underline" }}>Custom</span> to
+          build your own ontology or select a preset
         </span>
       </div>
     );
@@ -211,44 +251,37 @@ const OntologyContainer = ({
             setTreeData={setTreeData}
           />
         )}
-        <Row className="schema">
-          <Col sm={12} md={12}>
-            <Form.Group>
-              <Form.Label>
-                {/* TODO: implement upload functionality; will allow user to upload as either json or .owl */}
-                {/* or <a>upload</a> */}
-                Create an {ontologyType} ontology, or select a preset!
-              </Form.Label>
-              <Form.Control
-                as="select"
-                onChange={(e) => {
-                  setTreeData((prevState) => ({
-                    ...prevState,
-                    treeData: presetOntologies[e.target.value],
-                  }));
-                  ontologyType === "entity"
-                    ? dispatch(
-                        setStepData({
-                          conceptName: e.target.value,
-                          conceptLabels: presetOntologies[e.target.value],
-                        })
-                      )
-                    : dispatch(
-                        setStepData({
-                          relationName: e.target.value,
-                          relationLabels: presetOntologies[e.target.value],
-                        })
-                      );
-                }}
+        <Grid item container xs={12}>
+          <Grid item xs={12}>
+            {/* TODO: implement upload functionality; will allow user to upload as either json or .owl */}
+            {/* or <a>upload</a> */}
+            Select <span style={{ textDecoration: "underline" }}>
+              Custom
+            </span>{" "}
+            to build your own ontology or select a preset
+          </Grid>
+          <Grid item xs={12} sx={{ mt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel id="ontology-preset-select-label">
+                Preset Ontologies
+              </InputLabel>
+              <Select
+                labelId="ontology-preset-select-label"
+                id="ontology-preset-select"
+                label="Preset Ontologies"
+                value={selectValue}
+                onChange={(e) => handlePresetChange(e)}
               >
-                <option key={selectValue}>{selectValue}</option>
-                {Object.keys(presetOntologies)
-                  .filter((name) => name !== selectValue)
-                  .map((name) => (
-                    <option key={name}>{name}</option>
-                  ))}
-              </Form.Control>
-            </Form.Group>
+                {Object.keys(presetOntologies).map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} sx={{ mt: 2 }}>
             <div
               style={{
                 minHeight: "250px",
@@ -260,7 +293,10 @@ const OntologyContainer = ({
             >
               <SortableTree
                 treeData={treeData.treeData}
-                onChange={(treeData) => setTreeData({ treeData })}
+                onChange={(treeData) => {
+                  console.log(treeData);
+                  setTreeData({ treeData });
+                }}
                 generateNodeProps={({ node, path }) => ({
                   style: { backgroundColor: "orange" },
                   title: (
@@ -318,19 +354,26 @@ const OntologyContainer = ({
                               ontologyType === "relation"
                                 ? {
                                     name: "",
-                                    fullName: "",
+                                    fullName:
+                                      treeData.treeData[path[path.length - 1]]
+                                        .fullName,
                                     parentKey: path[path.length - 1],
                                     domain: [],
                                     range: [],
                                     placeholder: "Enter relation name",
-                                    id: uuidv4(),
+                                    _id: uuidv4(),
+                                    isEntity: false,
                                   }
                                 : {
                                     name: "",
+                                    fullName:
+                                      treeData.treeData[path[path.length - 1]]
+                                        .fullName,
                                     parentKey: path[path.length - 1],
                                     colour: node.colour,
-                                    id: uuidv4(),
+                                    _id: uuidv4(),
                                     placeholder: "Enter entity name",
+                                    isEntity: true,
                                   },
                             addAsFirstChild: state.addAsFirstChild,
                           }).treeData,
@@ -373,45 +416,54 @@ const OntologyContainer = ({
                 })}
               />
             </div>
-            <Button
-              style={{ margin: "0.25rem" }}
-              size="sm"
-              variant="success"
-              onClick={() =>
-                setTreeData((state) => ({
-                  treeData: state.treeData.concat(
-                    ontologyType === "relation"
-                      ? {
-                          name: "",
-                          fullName: "",
-                          domain: [],
-                          range: [],
-                          placeholder: "Enter relation name",
-                          id: uuidv4(),
-                        }
-                      : {
-                          name: "",
-                          fullName: [],
-                          colour: getRandomColor(),
-                          placeholder: "Enter entity name",
-                          id: uuidv4(),
-                        }
-                  ),
-                }))
-              }
-            >
-              Add branch node
-            </Button>
-            <Button
-              style={{ margin: "0.25rem" }}
-              size="sm"
-              variant="dark"
-              onClick={() => setShowAlert(true)}
-            >
-              Clear all
-            </Button>
-          </Col>
-        </Row>
+          </Grid>
+
+          <Grid item xs={12} sx={{ mt: 2 }}>
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="contained"
+                disableElevation
+                color="primary"
+                size="small"
+                onClick={() =>
+                  setTreeData((state) => ({
+                    treeData: state.treeData.concat(
+                      ontologyType === "relation"
+                        ? {
+                            name: "",
+                            fullName: "",
+                            domain: [],
+                            range: [],
+                            placeholder: "Enter relation name",
+                            _id: uuidv4(),
+                            isEntity: false,
+                          }
+                        : {
+                            name: "",
+                            fullName: "",
+                            colour: getRandomColor(),
+                            placeholder: "Enter entity name",
+                            _id: uuidv4(),
+                            isEntity: true,
+                          }
+                    ),
+                  }))
+                }
+              >
+                Add branch node
+              </Button>
+              <Button
+                variant="contained"
+                disableElevation
+                color="error"
+                size="small"
+                onClick={() => setShowAlert(true)}
+              >
+                Clear all
+              </Button>
+            </Stack>
+          </Grid>
+        </Grid>
       </>
     );
   }
@@ -435,8 +487,8 @@ const AlertModal = ({
     if (ontologyType === "entity") {
       dispatch(
         setStepData({
-          conceptName: "Custom",
-          conceptLabels: presetOntologies["Custom"],
+          entityName: "Custom",
+          entityLabels: presetOntologies["Custom"],
         })
       );
     } else {
@@ -450,16 +502,21 @@ const AlertModal = ({
   };
 
   return (
-    <Modal show={showAlert} onHide={() => setShowAlert(false)}>
+    <Modal
+      show={showAlert}
+      onHide={() => setShowAlert(false)}
+      style={{ zIndex: 1999 }}
+      centered
+    >
       <Modal.Header closeButton>
         <Modal.Title>Are you sure?</Modal.Title>
       </Modal.Header>
       <Modal.Body>Clearing your ontology cannot be undone!</Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={() => setShowAlert(false)}>
+        <Button color="secondary" onClick={() => setShowAlert(false)}>
           Close
         </Button>
-        <Button variant="danger" onClick={handleClearAll}>
+        <Button color="error" onClick={handleClearAll}>
           Clear
         </Button>
       </Modal.Footer>
@@ -478,9 +535,6 @@ const DomainRangeModal = ({
   const [domain, setDomain] = useState(selectedNode.domain);
   const [range, setRange] = useState(selectedNode.range);
 
-  console.log("entity ontology", entityOntology);
-  console.log("node", selectedNode);
-
   const handleSave = () => {
     // Sets node domain and range in tree
     const updatedTree = changeNodeAtPath({
@@ -489,15 +543,14 @@ const DomainRangeModal = ({
       newNode: { ...selectedNode, domain: domain, range: range },
       getNodeKey: ({ treeIndex }) => treeIndex,
     });
-    // console.log(updatedTree);
     setTreeData({ ...treeData, treeData: updatedTree });
     setShowDomainRange(false);
   };
 
-  useEffect(() => {
-    console.log("domain", domain);
-    console.log("range", range);
-  }, [domain, range]);
+  // useEffect(() => {
+  //   console.log("domain", domain);
+  //   console.log("range", range);
+  // }, [domain, range]);
 
   return (
     <Modal
@@ -509,8 +562,8 @@ const DomainRangeModal = ({
         <Modal.Title>{selectedNode.fullName}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Row>
-          <Col>
+        <Grid item xs={12} container spacing={2}>
+          <Grid item xs={6}>
             <p
               style={{
                 textAlign: "center",
@@ -531,8 +584,8 @@ const DomainRangeModal = ({
               setSelectList={setDomain}
               type="domain"
             />
-          </Col>
-          <Col>
+          </Grid>
+          <Grid item xs={6}>
             <p
               style={{
                 textAlign: "center",
@@ -551,16 +604,21 @@ const DomainRangeModal = ({
               setSelectList={setRange}
               type="range"
             />
-          </Col>
-        </Row>
+          </Grid>
+        </Grid>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={() => setShowDomainRange(false)}>
-          Cancel
-        </Button>
-        <Button variant="success" onClick={handleSave}>
-          Save
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button onClick={() => setShowDomainRange(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            disableElevation
+            color="primary"
+            onClick={handleSave}
+          >
+            Save
+          </Button>
+        </Stack>
       </Modal.Footer>
     </Modal>
   );
@@ -659,29 +717,12 @@ const DomainRangeTreeSelect = ({
             treeLabel={`Relation ${type} tree`}
           />
         </UncontrolledTreeEnvironment>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-evenly",
-            width: "100%",
-            marginTop: "0.5rem",
-          }}
-        >
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setSelectList([])}
-          >
+        <Stack direction="row" spacing={2} justifyContent="center">
+          <Button color="error" onClick={() => setSelectList([])}>
             Clear
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setSelectList(["all"])}
-          >
-            Select all
-          </Button>
-        </div>
+          <Button onClick={() => setSelectList(["all"])}>Select all</Button>
+        </Stack>
       </>
     );
   }

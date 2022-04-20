@@ -8,7 +8,7 @@ import {
   selectRelations,
   selectTexts,
   selectTextsStatus,
-  selectTokens,
+  // selectTokens,
 } from "../../../app/dataSlice";
 import { selectUserId } from "../../auth/userSlice";
 import { ClusterIcon } from "../cluster/ClusterIcon";
@@ -16,10 +16,9 @@ import { selectProject } from "../projectSlice";
 import { Text } from "./Text";
 import "./Text.css";
 
-export const TextContainer = ({ text, textIndex }) => {
+export const TextContainer = ({ text, textIndex, tokens }) => {
   const project = useSelector(selectProject);
   const texts = useSelector(selectTexts);
-  const tokens = useSelector(selectTokens);
   const textsStatus = useSelector(selectTextsStatus);
   const relations = useSelector(selectRelations);
   const userId = useSelector(selectUserId);
@@ -33,13 +32,17 @@ export const TextContainer = ({ text, textIndex }) => {
     if (textsStatus === "succeeded") {
       setSaved(text.saved.map((s) => s.createdBy).includes(userId));
       setRelationCount(
-        relations && relations[text._id].filter((r) => !r.suggested).length
+        relations &&
+          Object.keys(relations).includes(text._id) &&
+          relations[text._id].filter((r) => !r.suggested).length
       );
       setSuggestedRelationCount(
-        relations && relations[text._id].filter((r) => r.suggested).length
+        relations &&
+          Object.keys(relations).includes(text._id) &&
+          relations[text._id].filter((r) => r.suggested).length
       );
     }
-  }, [textsStatus, texts, tokens, relations]);
+  }, [textsStatus, texts, relations]);
 
   const docProps = {
     project,

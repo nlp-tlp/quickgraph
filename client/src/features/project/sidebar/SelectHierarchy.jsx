@@ -1,5 +1,4 @@
 import * as React from "react";
-import { useState } from "react";
 import TreeView from "@mui/lab/TreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -9,11 +8,7 @@ import Typography from "@mui/material/Typography";
 import clsx from "clsx";
 
 import { useDispatch, useSelector } from "react-redux";
-import {
-  selectActiveEntityClass,
-  selectProject,
-  setActiveEntityClass,
-} from "../projectSlice";
+import { selectProject, setActiveEntityClass } from "../projectSlice";
 
 import {
   selectSelectMode,
@@ -24,9 +19,9 @@ import {
 export const SelectHierarchy = () => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
+  const entityOntology = project.ontology.filter((i) => i.isEntity);
   const selectMode = useSelector(selectSelectMode);
   const texts = useSelector(selectTexts);
-  const activeEntityClass = useSelector(selectActiveEntityClass);
 
   const handleAnnotation = (label, nodeId) => {
     if (selectMode && selectMode.tokenIds.length > 0) {
@@ -42,20 +37,27 @@ export const SelectHierarchy = () => {
         .filter((text) => text._id === textId)[0]
         .tokens.filter((token) => tokenIds.includes(token._id));
 
+      // console.log(
+      //   "user applied single annotation from sidebar - entity id",
+      //   nodeId
+      // );
+
+      const start = tokens[0].index;
+      const end =
+        tokens.length === 1 ? tokens[0].index : tokens[tokens.length - 1].index;
+
       dispatch(
         applyAnnotation({
-          entitySpanStart: tokens[0].index,
-          entitySpanEnd:
-            tokens.length === 1
-              ? tokens[0].index
-              : tokens[tokens.length - 1].index,
-          entityLabel: label,
+          entitySpanStart: start,
+          entitySpanEnd: end,
           entityLabelId: nodeId,
           textId: textId,
           projectId: project._id,
           applyAll: false,
           suggested: false,
           annotationType: "entity",
+          entityText: tokens.map((t) => t.value).join(" "),
+          textIds: texts.map((t) => t._id),
         })
       );
     }
@@ -64,11 +66,12 @@ export const SelectHierarchy = () => {
   const renderTree = (nodes) => {
     return (
       <CustomTreeItem
-        key={nodes.id}
-        nodeId={nodes.id}
+        key={nodes._id}
+        nodeId={nodes._id}
         label={nodes.name}
         style={{
           color: nodes.colour,
+          textAlign: "left",
         }}
       >
         {Array.isArray(nodes.children)
@@ -110,6 +113,7 @@ export const SelectHierarchy = () => {
     };
 
     const handleSelectionClick = (event, label, nodeId) => {
+      // console.log(event, label, nodeId);
       handleSelection(event);
       dispatch(setActiveEntityClass(nodeId));
       handleAnnotation(label, nodeId);
@@ -177,7 +181,7 @@ export const SelectHierarchy = () => {
     <TreeItem ContentComponent={CustomContent} {...props} />
   );
 
-  if (!project) {
+  if (!project || !entityOntology) {
     return <span>Loading entities...</span>;
   } else {
     return (
@@ -185,9 +189,9 @@ export const SelectHierarchy = () => {
         aria-label="icon expansion"
         defaultCollapseIcon={<ExpandMoreIcon />}
         defaultExpandIcon={<ChevronRightIcon />}
-        sx={{ height: 440, flexGrow: 1, maxWidth: 400, overflowY: "auto" }}
+        sx={{ flexGrow: 1, maxWidth: 400, overflowY: "auto" }}
       >
-        {project.entityOntology.map((parent) => renderTree(parent))}
+        {entityOntology.map((parent) => renderTree(parent))}
       </TreeView>
     );
   }

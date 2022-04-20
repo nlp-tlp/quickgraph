@@ -1,15 +1,5 @@
 import "../Create.css";
 import { useState, useEffect } from "react";
-import {
-  Card,
-  Col,
-  OverlayTrigger,
-  Popover,
-  Row,
-  Spinner,
-  Alert,
-} from "react-bootstrap";
-import { IoInformationCircleSharp } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectActiveStep,
@@ -20,13 +10,8 @@ import {
 } from "../createStepSlice";
 import { setAlertContent, setAlertActive } from "../../alerts/alertSlice";
 
-const information = {
-  raw_text: {
-    title: "Corpus",
-    content: "Corpus of newline separated texts.",
-    format: ".txt\nhelo world\nhello there\n...",
-  },
-};
+import { Grid, Input, Button, TextField, Chip, Stack } from "@mui/material";
+import ArticleIcon from "@mui/icons-material/Article";
 
 export const Upload = () => {
   const dispatch = useDispatch();
@@ -56,7 +41,7 @@ export const Upload = () => {
           setAlertContent({
             title: "Oops",
             body: "Incorrect file format. Please upload a corpus in .txt. format",
-            level: 'danger'
+            level: "danger",
           })
         );
         dispatch(setAlertActive(true));
@@ -92,97 +77,66 @@ export const Upload = () => {
     }
   }, [steps]);
 
-  const infoPopover = (content, format) => {
-    return (
-      <Popover id="popover-info">
-        <Popover.Title>Information</Popover.Title>
-        <Popover.Content>
-          <p>{content}</p>
-          <code style={{ whiteSpace: "pre-wrap" }}>{format}</code>
-        </Popover.Content>
-      </Popover>
-    );
-  };
-
-  const infoOverlay = (info) => {
-    return (
-      <OverlayTrigger
-        trigger="click"
-        placement="right"
-        overlay={infoPopover(info.content, info.format)}
-        rootClose
-      >
-        <IoInformationCircleSharp
-          // id="info-label"
-          style={{ marginRight: "0.25rem", cursor: "pointer" }}
-        />
-      </OverlayTrigger>
-    );
-  };
-
   return (
-    <Row>
-      <Col>
-        <Card style={{ display: "flex" }}>
-          <Card.Header id="section-subtitle">
-            <div style={{ display: "flex", alignItems: "center" }}>
-              {infoOverlay(information["raw_text"])}
-              <p style={{ margin: "0", padding: "0" }}>
-                Corpus ({corpus.length})
-              </p>
-            </div>
-          </Card.Header>
-          <Card.Body>
-            <Row>
-              <Col
-                style={{
-                  display: "flex",
-                  justifyContent: "right",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "right" }}>
-                  <label id="upload-btn" style={{ alignItems: "center" }}>
-                    {loading && (
-                      <Spinner
-                        animation="border"
-                        size="sm"
-                        style={{ marginRight: "0.25rem" }}
-                      />
-                    )}
-                    <input
-                      id="corpus"
-                      type="file"
-                      onChange={(e) => readFile(e.target.files[0])}
-                    />
-                    {steps[activeStep].data.corpusFileName === null
-                      ? "Upload File (.txt)"
-                      : steps[activeStep].data.corpusFileName}
-                  </label>
-                </div>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <textarea
-                  className="preview-container-editable"
-                  placeholder="Paste or upload corpus (.txt format)"
-                  onChange={(e) =>
-                    dispatch(
-                      setStepData({
-                        corpus: e.target.value.split("\n"),
-                        corpusFileName: null,
-                      })
-                    )
-                  }
-                  value={corpus && corpus.join("\n")}
-                  key="corpus-input"
-                  wrap="off"
-                />
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+    <Grid item xs={12} container spacing={2}>
+      <Grid
+        item
+        xs={12}
+        container
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <Stack
+          direction="row"
+          spacing={2}
+          justifyContent="center"
+          alignItems="center"
+        >
+          <h5>Project Corpus</h5>
+          <Chip
+            label={corpus.length}
+            icon={<ArticleIcon />}
+            title="Number of texts in corpus"
+            style={{ cursor: "help" }}
+          />
+        </Stack>
+        <label htmlFor="contained-button-file">
+          <Input
+            accept="txt"
+            id="contained-button-file"
+            type="file"
+            onChange={(e) => readFile(e.target.files[0])}
+          />
+          <Button variant="contained" component="span" disableElevation>
+            {steps[activeStep].data.corpusFileName === null
+              ? "Upload File"
+              : steps[activeStep].data.corpusFileName}
+          </Button>
+        </label>
+      </Grid>
+      <Grid item xs={12}>
+        <TextField
+          required
+          id="outlined-multiline-flexible"
+          label={
+            corpus.length > 0 && corpus[0] !== ""
+              ? "Project Corpus"
+              : "Enter or Upload Project Corpus"
+          }
+          multiline
+          maxRows={10}
+          onChange={(e) =>
+            dispatch(
+              setStepData({
+                corpus: e.target.value.split("\n"),
+                corpusFileName: null,
+              })
+            )
+          }
+          value={corpus && corpus.join("\n")}
+          fullWidth
+        />
+      </Grid>
+    </Grid>
   );
 };

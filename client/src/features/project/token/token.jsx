@@ -11,22 +11,28 @@ import {
   applyAnnotation,
   selectSourceSpan,
   selectTargetSpan,
+  selectEntities,
+  selectTexts,
 } from "../../../app/dataSlice";
 import { hasMarkup, markupPosition } from "../utils"; // project/utils
 import { selectProject } from "../projectSlice";
-import { OverlayTrigger, Tooltip, Button } from "react-bootstrap";
+import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
-export const Token = ({ text, textIndex, token, tokenIndex }) => {
+import { Button } from "@mui/material";
+
+export const Token = ({ text, token, tokenIndex }) => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
   const selectMode = useSelector(selectSelectMode);
   const annotationMode = useSelector(selectAnnotationMode);
   const allowSelect =
-    annotationMode === "concept" ||
+    annotationMode === "entity" ||
     project.tasks.relationAnnotationType === "open";
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
-  const ref = useRef(null);
+  const texts = useSelector(selectTexts);
+
+  const entities = useSelector(selectEntities);
 
   const handleMouseOver = () => {
     if (allowSelect) {
@@ -49,25 +55,25 @@ export const Token = ({ text, textIndex, token, tokenIndex }) => {
   };
 
   const handleApplySingleOpenRelation = () => {
+    console.log("Applying single open relation");
+
     const relationTokens = text.tokens.filter((t) =>
       selectMode.tokenIds.includes(t._id.toString())
     );
 
-    const relationLabel = relationTokens.map((t) => t.value).join(" ");
+    const relationText = relationTokens.map((t) => t.value).join(" ");
     const relationLabelStartIndex = relationTokens[0].index;
     const relationLabelEndIndex =
       relationTokens[relationTokens.length - 1].index;
 
-    // Get ID of tokens on target span
-    const targetTokenIndexes = text.markup
-      .filter((s) => s._id === targetSpan._id)
-      .flatMap((s) => [...new Set([s.start, s.end])]);
-    // console.log("targetTokenIndexes", targetTokenIndexes);
-
-    const targetTokenIds = text.tokens
-      .filter((_, index) => targetTokenIndexes.includes(index))
-      .map((token) => token._id);
-    // console.log("targetTokenIds", targetTokenIds);
+    console.log(
+      "relationText",
+      relationText,
+      "relationLabelStartIndex",
+      relationLabelStartIndex,
+      "relationLabelEndIndex",
+      relationLabelEndIndex
+    );
 
     dispatch(
       applyAnnotation({
@@ -77,21 +83,25 @@ export const Token = ({ text, textIndex, token, tokenIndex }) => {
         suggested: false,
         annotationType: "openRelation",
         sourceEntityId: sourceSpan._id,
-        sourceEntityLabel: sourceSpan.label,
         targetEntityId: targetSpan._id,
-        targetEntityLabel: targetSpan.label,
-        relationTokenIds: selectMode.tokenIds,
-        relationLabel: relationLabel,
         relationStart: relationLabelStartIndex,
         relationEnd: relationLabelEndIndex,
-        targetTokenIds: targetTokenIds,
+        relationText: relationText,
+        textIds: texts.map((t) => t._id),
       })
     );
   };
 
+  const showPopOver =
+    sourceSpan &&
+    targetSpan &&
+    text._id === sourceSpan.textId &&
+    allowSelect &&
+    selectMode &&
+    selectMode.tokenIds[selectMode.tokenIds.length - 1] === token._id;
+
   return (
     <div
-      // ref={ref}
       key={tokenIndex}
       id="token-container"
       style={{
@@ -102,25 +112,14 @@ export const Token = ({ text, textIndex, token, tokenIndex }) => {
       <OverlayTrigger
         trigger="click"
         placement="top"
-        show={
-          sourceSpan &&
-          targetSpan &&
-          text._id === sourceSpan.textId &&
-          allowSelect &&
-          selectMode &&
-          selectMode.tokenIds[selectMode.tokenIds.length - 1] === token._id
-        }
+        show={showPopOver}
         overlay={
-          <Tooltip>
-            <Button
-              size="sm"
-              variant="success"
-              onClick={handleApplySingleOpenRelation}
-            >
-              +
+          <Tooltip className="open-relation-tooltip">
+            <Button size="small" color="error">
+              Remove
             </Button>
-            <Button size="sm" variant="danger">
-              -
+            <Button size="small" onClick={handleApplySingleOpenRelation}>
+              Add
             </Button>
           </Tooltip>
         }
@@ -136,8 +135,8 @@ export const Token = ({ text, textIndex, token, tokenIndex }) => {
               ? "true"
               : "false"
           }
-          annotated={hasMarkup(text, tokenIndex)}
-          pos={markupPosition(text, tokenIndex)}
+          annotated={hasMarkup(entities[text._id], tokenIndex)}
+          pos={markupPosition(entities[text._id], tokenIndex)}
           onMouseOver={handleMouseOver}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
@@ -147,19 +146,9 @@ export const Token = ({ text, textIndex, token, tokenIndex }) => {
       </OverlayTrigger>
 
       {project.tasks.relationAnnotationType === "open" ? (
-        <OpenSpans
-          text={text}
-          textIndex={textIndex}
-          token={token}
-          tokenIndex={tokenIndex}
-        />
+        <OpenSpans text={text} token={token} tokenIndex={tokenIndex} />
       ) : (
-        <Spans
-          text={text}
-          textIndex={textIndex}
-          token={token}
-          tokenIndex={tokenIndex}
-        />
+        <Spans text={text} token={token} tokenIndex={tokenIndex} />
       )}
     </div>
   );

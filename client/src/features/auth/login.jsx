@@ -1,7 +1,7 @@
 import "./Auth.css";
 import { useEffect } from "react";
 import history from "../utils/history";
-import { login, selectLoginStatus, selectLoginError } from "./userSlice";
+import { login, selectLoginStatus, selectIsAuthenticated } from "./userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Form, Button, Col } from "react-bootstrap";
 import { Formik } from "formik";
@@ -16,13 +16,13 @@ const schema = yup.object().shape({
 export const Login = () => {
   const dispatch = useDispatch();
   const loginStatus = useSelector(selectLoginStatus);
-  const loginError = useSelector(selectLoginError);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   useEffect(() => {
-    if (loginStatus === "succeeded") {
+    if (loginStatus === "succeeded" && isAuthenticated) {
       history.push("/feed");
     }
-  }, [loginStatus, loginError]);
+  }, [loginStatus, isAuthenticated]);
 
   const handleSubmit = (values) => {
     const { username, password } = values;

@@ -38,6 +38,7 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",
     "react-toastify": "^7.0.4",
+    "react-tsparticles": "^2.0.6",
     "redux": "^4.1.1",
     "redux-persist": "^6.0.0",
     "redux-undo": "^1.0.1",
@@ -68,5 +69,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "tsparticles": "^2.0.6"
   }
 }

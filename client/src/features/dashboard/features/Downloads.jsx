@@ -1,37 +1,122 @@
-import "../../modals/Modals.css";
 import "../Dashboard.css";
-import { ArcElement, Chart } from "chart.js";
 import { useEffect, useState } from "react";
-import { Button, Card, Col, Form, FormControl, Row } from "react-bootstrap";
 import BootstrapTable from "react-bootstrap-table-next";
-import { Doughnut } from "react-chartjs-2";
-import { FaUndo } from "react-icons/fa";
-import { IoFilter } from "react-icons/io5";
 import { useDispatch } from "react-redux";
 import axios from "../../utils/api-interceptor";
 
-Chart.register(ArcElement);
+import {
+  Grid,
+  Avatar,
+  Card,
+  CardContent,
+  Button,
+  InputLabel,
+  FormControl,
+  Select,
+  MenuItem,
+  FormHelperText,
+  OutlinedInput,
+  TextField,
+  IconButton,
+  Stack,
+  Box,
+  Chip,
+} from "@mui/material";
+import { grey, yellow } from "@mui/material/colors";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import { useTheme } from "@mui/material/styles";
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
+
+function getStyles(name, annotatorNames, theme) {
+  return {
+    fontWeight:
+      annotatorNames.indexOf(name) === -1
+        ? theme.typography.fontWeightRegular
+        : theme.typography.fontWeightMedium,
+  };
+}
 
 export const Downloads = ({ project }) => {
+  const theme = useTheme();
   const dispatch = useDispatch();
   const [data, setData] = useState();
   const [loaded, setLoaded] = useState(false);
+  const [filterApplied, setFilterApplied] = useState(false);
 
-  const downloadLabels = async (labelName) => {
-    const response = await axios.post(
-      `/api/project/download/labels/${labelName}`,
-      {
-        project_id: project._id,
-        preview: false,
-        // include_weak_labels: includeWeakLabels,
-        annotation_state: "all", // TODO: make button based
+  const DEFAULT_FILTERS = {
+    iaa: 0,
+    quality: "any",
+    saved: "any",
+    annotators: ["Gold"],
+    annotationType:
+      project && project.tasks.relationAnnotation ? "triples" : "entities",
+  };
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!loaded) {
+        const response = await axios.post(
+          `/api/project/dashboard/effort/${project._id}`,
+          { filters: filters }
+        );
+
+        if (response.status === 200) {
+          setData(response.data);
+          setLoaded(true);
+        }
       }
-    );
+    };
+    fetchData();
+  }, [loaded]);
+
+  const handleFilterApply = () => {
+    // Trigger fetch event
+    setLoaded(false);
+  };
+
+  const handleFilterReset = () => {
+    setFilters(DEFAULT_FILTERS);
+    // Trigger fetch event
+    setLoaded(false);
+  };
+
+  const selectOptions = {
+    quality: ["any", "silver", "weak"],
+    saved: ["any", "yes", "no"],
+    annotationType:
+      project && project.tasks.relationAnnotation
+        ? ["triples", "entities"]
+        : ["entities"],
+    annotators: data ? data.annotators.map((a) => a.username) : ["Loading..."],
+  };
+
+  const downloadAnnotations = async (project) => {
+    const annotatorNameToId = filters.annotators.map((username) => ({
+      username: username,
+      _id: data.annotators.filter((a) => a.username === username)[0]._id,
+    }));
+
+    const response = await axios.post("/api/project/dashboard/download", {
+      projectId: project._id,
+      filters: { ...filters, annotators: annotatorNameToId },
+    });
 
     if (response.status === 200) {
       // Prepare for file download
-      const fileName = `${project.name}-labels_${labelName.toLowerCase()}`;
-      const json = JSON.stringify(response.data, null, 2);
+      const fileName = `${project.name}_${filters.annotationType}_annotations_iaa-${filters.iaa}_q-${filters.quality}_s-${filters.saved}`;
+      const json = JSON.stringify(response.data, null, 4);
       const blob = new Blob([json], { type: "application/json" });
       const href = await URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -43,6 +128,17 @@ export const Downloads = ({ project }) => {
     }
   };
 
+  const handleMultiSelect = (event) => {
+    const {
+      target: { value },
+    } = event;
+
+    setFilters({
+      ...filters,
+      annotators: typeof value === "string" ? value.split(",") : value,
+    });
+  };
+
   const annotatorFormatter = (cell, row) => {
     return (
       <div
@@ -52,11 +148,9 @@ export const Downloads = ({ project }) => {
           justifyContent: "center",
         }}
       >
-        <UserAvatar
-          username={row.username}
-          avatarColour={row.colour}
-          opacity={"1.0"}
-        />
+        <Avatar sx={{ bgcolor: row.colour }} title={row.username}>
+          {row.username[0]}
+        </Avatar>
       </div>
     );
   };
@@ -126,25 +220,6 @@ export const Downloads = ({ project }) => {
     );
   };
 
-  const selectFormatter = (cell, row) => {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Form.Check
-          type="switch"
-          id="download-selector"
-          checked={true}
-          onClick={() => console.log("hi")}
-        />
-      </div>
-    );
-  };
-
   const columns = [
     {
       dataField: "username",
@@ -181,381 +256,261 @@ export const Downloads = ({ project }) => {
     }
   };
 
-  return (
-    <>
-      <Row>
-        <Col>
-          <DownloadForm
-            project={project}
-            loaded={loaded}
-            setLoaded={setLoaded}
-            setData={setData}
-            data={data}
-          />
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              flexDirection: "column",
-            }}
-          >
-            {loaded && (
-              <BootstrapTable
-                keyField="id"
-                data={data.annotators}
-                columns={columns}
-                rowStyle={rowStyle}
-              />
-            )}
-          </div>
-        </Col>
-      </Row>
-    </>
-  );
-};
-
-const UserAvatar = ({ username, avatarColour, opacity }) => {
-  return (
-    <div
-      id="avatar"
-      style={{
-        backgroundColor: avatarColour,
-        borderRadius: "50%",
-        height: "30px",
-        width: "30px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        textTransform: "uppercase",
-        fontSize: "18px",
-        fontWeight: "bold",
-        opacity: opacity,
-        margin: "2px 2px",
-      }}
-      title={username}
-    >
-      {username ? username[0] : "?"}
-    </div>
-  );
-};
-
-const DownloadForm = ({ project, loaded, setLoaded, setData, data }) => {
-  const [filterApplied, setFilterApplied] = useState(false);
-  const DEFAULT_FILTERS = {
-    iaa: 0,
-    quality: "any",
-    saved: "any",
-    annotators: data
-      ? data.annotators.map((a) => a.username).slice(0, 1)
-      : ["Gold"],
-    annotationType:
-      project && project.tasks.relationAnnotation ? "triples" : "entities",
-  };
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-
-  console.log("annotators", data && data.annotators);
-
   useEffect(() => {
-    const fetchData = async () => {
-      if (!loaded) {
-        const response = await axios.post(
-          `/api/project/dashboard/effort/${project._id}`,
-          { filters: filters }
-        );
-
-        if (response.status === 200) {
-          setData(response.data);
-          console.log(response.data);
-          setLoaded(true);
-        }
-      }
-    };
-    fetchData();
-  }, [loaded]);
-
-  const handleFilterApply = () => {
-    setFilterApplied(true);
-    // Trigger fetch event
-    setLoaded(false);
-  };
-
-  const handleFilterReset = () => {
-    console.log("resetting filter", filters);
-    setFilters(DEFAULT_FILTERS);
-    setFilterApplied(false);
-    // Trigger fetch event
-    setLoaded(false);
-  };
-
-  const selectOptions = {
-    quality: ["any", "silver", "weak"],
-    saved: ["any", "yes", "no"],
-    annotationType:
-      project && project.tasks.relationAnnotation
-        ? ["triples", "entities"]
-        : ["entities"],
-    annotators: data ? data.annotators.map((a) => a.username) : ["Loading..."],
-  };
-
-  useEffect(() => {
-    console.log(filters);
+    if (JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS)) {
+      setFilterApplied(true);
+    } else {
+      setFilterApplied(false);
+    }
   }, [filters]);
 
-  const downloadAnnotations = async (project) => {
-    const annotatorNameToId = filters.annotators.map((username) => ({
-      username: username,
-      _id: data.annotators.filter((a) => a.username === username)[0]._id,
-    }));
-
-    const response = await axios.post("/api/project/dashboard/download", {
-      projectId: project._id,
-      filters: { ...filters, annotators: annotatorNameToId },
-    });
-
-    if (response.status === 200) {
-      // Prepare for file download
-      const fileName = `${project.name}_${filters.annotationType}_annotations_iaa-${filters.iaa}_q-${filters.quality}_s-${filters.saved}`;
-      const json = JSON.stringify(response.data, null, 4);
-      const blob = new Blob([json], { type: "application/json" });
-      const href = await URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = href;
-      link.download = fileName + ".json";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
   return (
-    <Card style={{ marginBottom: "1rem" }}>
-      <Card.Body style={{ borderBottom: "1px solid rgba(0,0,0,.125)" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
+    <Grid item container xs={12}>
+      <Grid item xs={12} sx={{ mt: 4 }}>
+        <Card variant="outlined">
+          <CardContent>
+            <Grid item container>
+              <Grid
+                item
+                xs={12}
+                container
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <div>
+                  <h5>Filters</h5>
+                  <span style={{ fontSize: "0.75rem", color: grey[700] }}>
+                    Filter and review project annotations before downloading
+                  </span>
+                </div>
+                <Stack direction="row" spacing={2}>
+                  <IconButton
+                    size="small"
+                    variant="outlined"
+                    disabled={!filterApplied}
+                    onClick={handleFilterReset}
+                  >
+                    <RestartAltIcon />
+                  </IconButton>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    sx={{ color: "white" }}
+                    size="small"
+                    startIcon={<FilterListIcon />}
+                    onClick={handleFilterApply}
+                    disableElevation
+                    disabled={!filterApplied}
+                  >
+                    Filter
+                  </Button>
+                </Stack>
+              </Grid>
+              <Grid
+                item
+                xs={12}
+                sx={{ mt: 4 }}
+                container
+                justifyContent="space-evenly"
+              >
+                <FormControl sx={{ m: 1, minWidth: 120 }}>
+                  <InputLabel id="annotation-type-input-label">Type</InputLabel>
+                  <Select
+                    labelId="annotation-type-label-helper"
+                    id="annotation-type-input"
+                    label="Type"
+                    value={filters.annotationType}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        annotationType: e.target.value,
+                      })
+                    }
+                    style={{ textTransform: "capitalize" }}
+                  >
+                    {selectOptions.annotationType.map((value) => (
+                      <MenuItem
+                        value={value}
+                        style={{ textTransform: "capitalize" }}
+                      >
+                        {value}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Output Annotation Type</FormHelperText>
+                </FormControl>
+
+                <FormControl sx={{ m: 1, minWidth: 120 }}>
+                  <InputLabel id="annotation-quality-helper-label">
+                    Quality
+                  </InputLabel>
+                  <Select
+                    labelId="annotation-quality-select-helper-label"
+                    id="annotation-quality-select-helper"
+                    value={filters.quality}
+                    label="Quality"
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        quality: e.target.value,
+                      })
+                    }
+                    style={{ textTransform: "capitalize" }}
+                  >
+                    {selectOptions.quality.map((value) => (
+                      <MenuItem
+                        value={value}
+                        style={{ textTransform: "capitalize" }}
+                      >
+                        {value}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Annotation Quality</FormHelperText>
+                </FormControl>
+
+                <FormControl sx={{ m: 1, minWidth: 120 }}>
+                  <InputLabel id="annotation-save-helper-label">
+                    Saved
+                  </InputLabel>
+                  <Select
+                    labelId="annotation-save-select-helper-label"
+                    id="annotation-save-select-helper"
+                    value={filters.saved}
+                    label="Saved"
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        saved: e.target.value,
+                      })
+                    }
+                    style={{ textTransform: "capitalize" }}
+                  >
+                    {selectOptions.saved.map((value) => (
+                      <MenuItem
+                        value={value}
+                        style={{ textTransform: "capitalize" }}
+                      >
+                        {value}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Annotation Save State</FormHelperText>
+                </FormControl>
+
+                <FormControl sx={{ m: 1, minWidth: 120 }} variant="outlined">
+                  <TextField
+                    id="minimum-agreement"
+                    label="Agreement"
+                    type="number"
+                    value={filters.iaa}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        iaa:
+                          e.target.value > 100
+                            ? 100
+                            : e.target.value < 0
+                            ? 0
+                            : parseInt(e.target.value),
+                      })
+                    }
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
+                  <FormHelperText id="outlined-weight-helper-text">
+                    Minimum IAA Agreement
+                  </FormHelperText>
+                </FormControl>
+
+                <FormControl sx={{ m: 1, minWidth: 120 }}>
+                  <InputLabel id="annotators-select-helper-label">
+                    Annotators
+                  </InputLabel>
+                  <Select
+                    labelId="annotators-select-helper-label"
+                    id="annotators-select-helper"
+                    multiple
+                    label="Annotators"
+                    style={{ textTransform: "capitalize" }}
+                    value={filters.annotators}
+                    onChange={handleMultiSelect}
+                    input={
+                      <OutlinedInput id="select-multiple-chip" label="Chip" />
+                    }
+                    renderValue={(selected) => (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                        {selected.length > 2 ? (
+                          <>
+                            {selected.slice(0, 2).map((value) => (
+                              <Chip
+                                key={value}
+                                label={value}
+                                sx={{
+                                  bgcolor:
+                                    value.toLowerCase() === "gold" &&
+                                    yellow[600],
+                                }}
+                              />
+                            ))}
+                            <Chip
+                              key="ellipsis"
+                              label={`${selected.length - 2}+`}
+                            />
+                          </>
+                        ) : (
+                          selected.map((value) => (
+                            <Chip
+                              key={value}
+                              label={value}
+                              sx={{
+                                bgcolor:
+                                  value.toLowerCase() === "gold" && yellow[600],
+                              }}
+                            />
+                          ))
+                        )}
+                      </Box>
+                    )}
+                    MenuProps={MenuProps}
+                  >
+                    {selectOptions.annotators.map((name) => (
+                      <MenuItem
+                        key={name}
+                        value={name}
+                        style={getStyles(name, filters.annotators, theme)}
+                      >
+                        {name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Annotators To Include</FormHelperText>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Grid>
+      <Grid item xs={12} sx={{ mt: 4 }}>
+        {loaded && (
+          <BootstrapTable
+            keyField="id"
+            data={data.annotators}
+            columns={columns}
+            rowStyle={rowStyle}
+          />
+        )}
+      </Grid>
+      <Grid item xs={12} sx={{ mt: 2 }} container justifyContent="right">
+        <Button
+          variant="contained"
+          disableElevation
+          onClick={() => downloadAnnotations(project)}
         >
-          <span style={{ display: "flex", flexDirection: "column" }}>
-            <Card.Title>Filter</Card.Title>
-            <Card.Subtitle style={{ fontSize: "0.8125rem", color: "#607d8b" }}>
-              Filter and review project annotations before downloading.
-            </Card.Subtitle>
-          </span>
-          <Button
-            size="sm"
-            variant="success"
-            // disabled
-            style={{ height: "2rem" }}
-            onClick={() => downloadAnnotations(project)}
-          >
-            Download Annotations
-          </Button>
-        </div>
-      </Card.Body>
-      <Card.Body>
-        <Row>
-          <Col>
-            <Form.Label
-              style={{
-                marginLeft: "0.25rem",
-                fontSize: "0.8125rem",
-                fontWeight: "bold",
-              }}
-            >
-              Minimum IAA Threshold
-            </Form.Label>
-            <FormControl
-              type="number"
-              placeholder={0}
-              value={filters.iaa}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  iaa:
-                    e.target.value > 100
-                      ? 100
-                      : e.target.value < 0
-                      ? 0
-                      : parseInt(e.target.value),
-                })
-              }
-              size="sm"
-            />
-          </Col>
-          <Col>
-            <Form.Label
-              style={{
-                marginLeft: "0.25rem",
-                fontSize: "0.8125rem",
-                fontWeight: "bold",
-              }}
-            >
-              Annotation Quality
-            </Form.Label>
-            <FormControl
-              as="select"
-              size="sm"
-              value={filters.quality}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  quality: e.target.value,
-                })
-              }
-              style={{ textTransform: "capitalize" }}
-            >
-              {selectOptions.quality.map((value) => (
-                <option value={value}>{value}</option>
-              ))}
-            </FormControl>
-          </Col>
-          <Col>
-            <Form.Label
-              style={{
-                marginLeft: "0.25rem",
-                fontSize: "0.8125rem",
-                fontWeight: "bold",
-              }}
-            >
-              Saved
-            </Form.Label>
-            <FormControl
-              as="select"
-              size="sm"
-              value={filters.saved}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  saved: e.target.value,
-                })
-              }
-              style={{ textTransform: "capitalize" }}
-            >
-              {selectOptions.saved.map((value) => (
-                <option value={value}>{value}</option>
-              ))}
-            </FormControl>
-          </Col>
-        </Row>
-        <Row>
-          <Col>
-            <Form.Label
-              style={{
-                marginLeft: "0.25rem",
-                fontSize: "0.8125rem",
-                fontWeight: "bold",
-              }}
-            >
-              Annotations
-            </Form.Label>
-            <FormControl
-              style={{ height: "32px" }}
-              as="select"
-              multiple
-              size="sm"
-              value={filters.annotators}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  annotators: [].slice
-                    .call(e.target.selectedOptions)
-                    .map((item) => item.value),
-                })
-              }
-            >
-              {selectOptions.annotators.map((value) => (
-                <option value={value}>{value}</option>
-              ))}
-            </FormControl>
-          </Col>
-          <Col>
-            <Form.Label
-              style={{
-                marginLeft: "0.25rem",
-                fontSize: "0.8125rem",
-                fontWeight: "bold",
-              }}
-            >
-              Annotation Type
-            </Form.Label>
-            <FormControl
-              as="select"
-              size="sm"
-              value={filters.annotationType}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  annotationType: e.target.value,
-                })
-              }
-              style={{ textTransform: "capitalize" }}
-            >
-              {selectOptions.annotationType.map((value) => (
-                <option value={value}>{value}</option>
-              ))}
-            </FormControl>
-          </Col>
-          <Col
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "right",
-            }}
-          >
-            <Button
-              size="sm"
-              variant="secondary"
-              style={{ marginRight: "0.125rem" }}
-              onClick={handleFilterApply}
-            >
-              <IoFilter style={{ marginRight: "0.25rem" }} />
-              Filter
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={!filterApplied}
-              onClick={handleFilterReset}
-            >
-              <FaUndo />
-            </Button>
-          </Col>
-        </Row>
-      </Card.Body>
-    </Card>
-  );
-};
-
-const DownloadDonutChart = () => {
-  const options = {
-    responsive: true,
-    maintainAspectRatio: true,
-  };
-
-  const data = {
-    datasets: [
-      /* Outer doughnut data starts*/
-      {
-        data: [10, 20, 30],
-        backgroundColor: [
-          "rgb(255, 0, 0)", // red
-          "rgb(0, 255, 0)", // green
-          "rgb(0, 0, 255)", //blue
-        ],
-        label: "Doughnut 1",
-      },
-    ],
-    labels: ["Info 1", "Info 2", "Info 3"],
-  };
-  return (
-    <div style={{ height: "200px", width: "200px" }}>
-      <Doughnut data={data} options={options} />;
-    </div>
+          Download Annotations
+        </Button>
+      </Grid>
+    </Grid>
   );
 };

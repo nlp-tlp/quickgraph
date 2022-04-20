@@ -4,10 +4,11 @@ import axios from "../features/utils/api-interceptor";
 const initialState = {
   textsStatus: "idle",
   textsError: null,
-  annotationMode: "concept", // Two types: concept (entity annotation) and relation (relation extraction)
+  annotationMode: "entity",
   tokens: null,
   selectedTokens: {},
   relations: null,
+  entities: null,
   selectMode: { active: false, tokenIds: [], tokenIndexes: [], textId: null },
   sourceSpan: null,
   targetSpan: null,
@@ -68,16 +69,13 @@ export const applyAnnotation = createAsyncThunk(
   async ({
     entitySpanStart,
     entitySpanEnd,
-    entityLabel,
     entityLabelId,
     sourceEntityId,
-    sourceEntityLabel,
     targetEntityId,
-    targetEntityLabel,
-    relationLabel,
     relationLabelId,
     relationStart,
     relationEnd,
+    relationText,
     targetTokenIds,
     relationTokenIds,
     textId,
@@ -85,41 +83,40 @@ export const applyAnnotation = createAsyncThunk(
     applyAll,
     annotationType,
     suggested,
+    textIds, // Ids of texts on current users page
+    entityText,
   }) => {
     const response = await axios.post(`/api/text/annotation/apply`, {
       entitySpanStart,
       entitySpanEnd,
-      entityLabel,
       entityLabelId,
       sourceEntityId,
-      sourceEntityLabel,
       targetEntityId,
-      targetEntityLabel,
-      relationLabel,
       relationLabelId,
       relationTokenIds, // Array of tokens for open relation extraction. Used to build relation label.
       relationStart,
       relationEnd,
+      relationText, // Surface form of label for open relation annotation
       textId,
       projectId,
       applyAll,
       annotationType,
       suggested,
+      textIds,
+      entityText,
     });
     return {
       response: response.data,
       status: response.status,
       details: {
-        entityLabel,
-        relationLabel,
         applyAll,
         annotationType,
         targetEntityId,
-        targetEntityLabel,
         targetTokenIds,
         relationTokenIds,
         relationStart,
         relationEnd,
+        relationText,
       },
     };
   }
@@ -130,34 +127,37 @@ export const deleteAnnotation = createAsyncThunk(
   async ({
     projectId,
     textId,
+    relationLabelId,
+    sourceEntityId,
+    targetEntityId,
     spanId,
-    entityLabel,
-    relationId,
-    relationLabel,
-    sourceEntityLabel,
-    targetEntityLabel,
     applyAll,
     suggested,
     annotationType,
+    textIds,
+    entityText,
   }) => {
     const response = await axios.patch("/api/text/annotation/delete", {
-      projectId: projectId,
-      textId: textId,
-      spanId: spanId,
-      entityLabel: entityLabel,
-      relationId: relationId,
-      relationLabel: relationLabel,
-      sourceEntityLabel: sourceEntityLabel,
-      targetEntityLabel: targetEntityLabel,
-      applyAll: applyAll,
-      suggested: suggested,
-      annotationType: annotationType,
+      projectId,
+      textId,
+      relationLabelId,
+      sourceEntityId,
+      targetEntityId,
+      spanId,
+      applyAll,
+      suggested,
+      annotationType,
+      textIds,
+      entityText,
     });
     return {
       response: response.data,
       details: {
-        entityLabel,
-        relationLabel,
+        textId,
+        spanId,
+        relationLabelId,
+        sourceEntityId,
+        targetEntityId,
         annotationType,
         applyAll,
       },
@@ -171,37 +171,31 @@ export const acceptAnnotation = createAsyncThunk(
     projectId,
     textId,
     spanId,
-    entityLabel,
-    relationId,
-    relationLabel,
-    sourceEntityLabel,
+    relationLabelId,
     sourceEntityId,
-    targetEntityLabel,
     targetEntityId,
     applyAll,
     suggested,
     annotationType,
+    textIds,
+    entityText,
   }) => {
     const response = await axios.patch("/api/text/annotation/accept", {
-      projectId: projectId,
-      textId: textId,
-      spanId: spanId,
-      entityLabel: entityLabel,
-      relationId: relationId,
-      relationLabel: relationLabel,
-      sourceEntityLabel: sourceEntityLabel,
-      targetEntityLabel: targetEntityLabel,
-      sourceEntityId: sourceEntityId,
-      targetEntityId: targetEntityId,
-      applyAll: applyAll,
-      suggested: suggested,
-      annotationType: annotationType,
+      projectId,
+      textId,
+      spanId,
+      relationLabelId,
+      sourceEntityId,
+      targetEntityId,
+      applyAll,
+      suggested,
+      annotationType,
+      textIds,
+      entityText,
     });
     return {
       response: response.data,
       details: {
-        entityLabel,
-        relationLabel,
         applyAll,
         annotationType,
       },
@@ -270,7 +264,7 @@ export const dataSlice = createSlice({
       console.log("token", token);
       if (state.selectMode.active) {
         //
-        if (state.selectMode.textId === token.text_id) {
+        if (state.selectMode.textId === token.textId) {
           // If tokens already selected, only allow adjacents to be also selected
           state.selectMode.tokenIds = [...state.selectMode.tokenIds, token._id];
           state.selectMode.tokenIndexes = [
@@ -279,11 +273,11 @@ export const dataSlice = createSlice({
 
           // Add new token attributes based on current text
           const newTokens = state.tokens
-            .filter((t) => t.text_id == state.selectMode.textId)
+            .filter((t) => t.textId == state.selectMode.textId)
             .map((t) => (t._id === token._id ? { ...t, selected: true } : t));
 
           state.tokens = [
-            ...state.tokens.filter((t) => t.text_id != state.selectMode.textId),
+            ...state.tokens.filter((t) => t.textId != state.selectMode.textId),
             ...newTokens,
           ];
         }
@@ -299,95 +293,94 @@ export const dataSlice = createSlice({
       }
     },
     setSourceRel: (state, action) => {
-      // There can be n focusTokenIds across a span of n-tokens
-      const focusTokenIds = action.payload.tokenIds;
-      const textId = action.payload.textId;
-      const textTokens = state.tokens.filter((t) => t.text_id === textId);
-      const textTokenIds = textTokens.map((t) => t._id);
+      /**
+       * Updates state of entities (source, related, unrelated) for contextual styling and
+       * Sets source span for relation annotation
+       */
 
-      // Need to check for related span
-      const relatedTokenIds = action.payload.relatedTokenIds;
-
-      const updateTokens = textTokens.map((token) => {
-        if (focusTokenIds.includes(token._id)) {
-          console.log("token includes", token._id);
-          return { ...token, state: "source" };
-        } else if (relatedTokenIds.includes(token._id)) {
-          console.log("related token", token._id);
-          return { ...token, state: "related" };
-        } else {
-          return { ...token, state: "unrelated" };
-        }
-      });
-
-      state.tokens = state.tokens.map((token) => {
-        if (textTokenIds.includes(token._id)) {
-          return updateTokens.filter((t) => t._id === token._id)[0];
-        } else {
-          return token;
-        }
-      });
+      console.log("DEBUG setSourceRel payload", action.payload);
 
       const span = action.payload.span;
-      const label = action.payload.label; // User only clicks one label at a time
-      const labelId = action.payload.labelId;
-      const relatedSpanIdLabelMap = action.payload.relatedSpanIdLabelMap; // Contains mapping to render labels onto spans
+      const textId = action.payload.textId;
+      const textRelations = state.relations[textId]
+        ? state.relations[textId].filter(
+            (r) => r.source.toString() === span._id.toString()
+          )
+        : []; // Relations where span is source.
+
+      // Apply states to entities; not tokens. Any token without an entity is by default unrelated.
+      state.entities[textId] = state.entities[textId].map((entity) => {
+        if (entity._id.toString() === span._id.toString()) {
+          return { ...entity, state: "source" };
+        } else if (
+          textRelations.filter(
+            (r) => r.target.toString() === entity._id.toString()
+          ).length > 0
+        ) {
+          return { ...entity, state: "related" };
+        } else {
+          return { ...entity, state: "unrelated" };
+        }
+      });
 
       state.sourceSpan = {
         _id: span._id,
         start: span.start,
         end: span.end,
-        label: label,
-        labelId: labelId,
-        relatedSpanIdLabelMap: relatedSpanIdLabelMap,
-        textId: textId,
-        value: textTokens
-          .filter((token) => focusTokenIds.includes(token._id))
-          .map((token) => token.value)
-          .join(" "),
+        labelId: action.payload.labelId,
+        textId: action.payload.textId,
       };
     },
     setTargetRel: (state, action) => {
-      const focusTokenIds = action.payload.tokenIds;
-      const textId = action.payload.textId;
-      const textTokens = state.tokens.filter((t) => t.text_id === textId);
-
-      state.tokens = state.tokens.map((token) => {
-        if (token.text_id != textId) {
-          return token;
-        } else if (focusTokenIds.includes(token._id)) {
-          return { ...token, state: "target" };
-        } else if (token.state && token.state === "target") {
-          // Remove any previous target
-          return { ...token, state: "unrelated" };
-        } else {
-          return token;
-        }
-      });
+      console.log("set target", action.payload);
 
       const span = action.payload.span;
-      const label = action.payload.label; // User only clicks one label at a time
       const labelId = action.payload.labelId;
 
       state.targetSpan = {
         _id: span._id,
         start: span.start,
         end: span.end,
-        label: label,
         labelId: labelId,
-        value: textTokens
-          .filter((token) => focusTokenIds.includes(token._id))
-          .map((token) => token.value)
-          .join(" "),
       };
-    },
-    setMatchedSpans: (state, action) => {
-      // Identifies spans that are targets of the focus source span
+
+      // const focusTokenIds = action.payload.tokenIds;
+      // const textId = action.payload.textId;
+      // const textTokens = state.tokens.filter((t) => t.textId === textId);
+
+      // state.tokens = state.tokens.map((token) => {
+      //   if (token.textId != textId) {
+      //     return token;
+      //   } else if (focusTokenIds.includes(token._id)) {
+      //     return { ...token, state: "target" };
+      //   } else if (token.state && token.state === "target") {
+      //     // Remove any previous target
+      //     return { ...token, state: "unrelated" };
+      //   } else {
+      //     return token;
+      //   }
+      // });
+
+      // const label = action.payload.label; // User only clicks one label at a time
+
+      // state.targetSpan = {
+      //   _id: span._id,
+      //   start: span.start,
+      //   end: span.end,
+      //   label: label,
+      //   labelId: labelId,
+      //   value: textTokens
+      //     .filter((token) => focusTokenIds.includes(token._id))
+      //     .map((token) => token.value)
+      //     .join(" "),
+      // };
     },
     unsetSorceRel: (state, action) => {
+      console.log("unsetting source relation", action.payload);
+
       const focusTokenId = action.payload.tokenId;
       const textId = action.payload.textId;
-      const textTokens = state.tokens.filter((t) => t.text_id === textId);
+      const textTokens = state.tokens.filter((t) => t.textId === textId);
       const textTokenIds = textTokens.map((t) => t._id);
 
       const updateTokens = textTokens.map((token) => {
@@ -411,27 +404,40 @@ export const dataSlice = createSlice({
       state.selectMode = { active: false, tokensIds: [], textId: null };
     },
     unsetTargetRel: (state, action) => {
-      const focusTokenIds = action.payload.tokenIds;
-      const textId = action.payload.textId;
-
-      state.tokens = state.tokens.map((token) => {
-        if (token.text_id != textId) {
-          return token;
-        }
-        if (focusTokenIds.includes(token._id) && action.payload.hasRelations) {
-          return { ...token, state: "related" };
-        } else if (focusTokenIds.includes(token._id)) {
-          return { ...token, state: "unrelated" };
-        } else {
-          return token;
-        }
-      });
+      console.log("unsetting target relation", action.payload);
 
       state.targetSpan = null;
+
+      // const focusTokenIds = action.payload.tokenIds;
+      // const textId = action.payload.textId;
+
+      // state.tokens = state.tokens.map((token) => {
+      //   if (token.textId != textId) {
+      //     return token;
+      //   }
+      //   if (focusTokenIds.includes(token._id) && action.payload.hasRelations) {
+      //     return { ...token, state: "related" };
+      //   } else if (focusTokenIds.includes(token._id)) {
+      //     return { ...token, state: "unrelated" };
+      //   } else {
+      //     return token;
+      //   }
+      // });
+
+      // state.targetSpan = null;
     },
     unsetSourceTargetRels: (state, action) => {
       // Will be used when user changes annotationMode
-      state.tokens = state.tokens.map((token) => ({ ...token, state: null }));
+      state.entities = Object.assign(
+        {},
+        ...Object.keys(state.entities).map((textId) => ({
+          [textId]: state.entities[textId].map((e) => ({
+            ...e,
+            state: "active",
+          })),
+        }))
+      );
+
       state.sourceSpan = null;
       state.targetSpan = null;
       state.relatedSpans = null;
@@ -447,144 +453,202 @@ export const dataSlice = createSlice({
       })
       .addCase(fetchTexts.fulfilled, (state, action) => {
         state.textsStatus = "succeeded";
-        state.texts = action.payload;
-
-        console.log(action.payload);
-
-        // Add tokens and relations
-        state.tokens = action.payload.flatMap((text) =>
-          text.tokens.flatMap((token) => ({ ...token, text_id: text._id }))
-        );
-        // Add relations from texts into their own object
-        state.relations = Object.assign(
-          {},
-          ...action.payload.map((text) => ({ [text._id]: text.relations }))
-        );
+        state.texts = action.payload.texts;
+        state.tokens = action.payload.tokens;
+        state.relations = action.payload.relations;
+        state.entities = action.payload.entities;
       })
       .addCase(applyAnnotation.fulfilled, (state, action) => {
         const response = action.payload.response;
         const details = action.payload.details;
-        console.log("response", response, "details", details);
-
+        let label;
         let updatedTextIds;
-        if (details.applyAll) {
-          updatedTextIds = response.data.map((text) => text._id);
 
-          // console.log('updatedTextIds', updatedTextIds)
+        console.log("DATA SLICE response", response);
+        console.log("response", response.data);
 
-          // Update text and ensure position is kept
-          state.texts = state.texts.map((text) => {
-            if (updatedTextIds.includes(text._id)) {
-              // Update relations object (changes if applying new rels)
-              const updatedText = response.data.filter(
-                (t) => t._id == text._id
-              )[0];
+        if (response.data !== null) {
+          if (details.annotationType === "entity") {
+            label = details.applyAll
+              ? response.data[0].name
+              : response.data.name;
+            updatedTextIds = details.applyAll
+              ? response.textIds
+              : [response.data.textId];
+            const entities = details.applyAll ? response.data : [response.data];
 
-              // console.log('updatedText', updatedText)
-
-              state.relations[text._id] = updatedText.relations;
-
-              return updatedText;
-            } else {
-              return text;
-            }
-          });
-        } else {
-          // Update single text object
-          updatedTextIds = [response.data._id];
-          state.texts = state.texts.map((text) => {
-            if (text._id === response.data._id) {
-              return response.data;
-            } else {
-              return text;
-            }
-          });
-
-          if (
+            entities.map((entity) => {
+              const textId = entity.textId;
+              if (Object.keys(state.entities).includes(textId)) {
+                state.entities[textId] = [...state.entities[textId], entity];
+              } else {
+                state.entities[textId] = [entity];
+              }
+            });
+          } else if (
             details.annotationType === "relation" ||
             details.annotationType === "openRelation"
           ) {
-            console.log("Applyin relation specific state changes");
-            state.relations[response.data._id] = response.data.relations;
+            // Apply relation action
+            console.log("applying relation");
+            label = details.applyAll
+              ? response.data[0].name
+              : response.data.name;
 
-            // Update state on tokens (can be a span of n tokens)
-            const targetTokenIds = details.targetTokenIds;
-            state.tokens = state.tokens.map((token) => {
-              if (targetTokenIds.includes(token._id)) {
-                return { ...token, state: "related" };
+            updatedTextIds = details.applyAll
+              ? response.textIds
+              : [response.data.textId];
+
+            const relations = details.applyAll
+              ? response.data
+              : [response.data];
+
+            relations.map((relation) => {
+              const textId = relation.textId;
+              const entityId = details.applyAll ? "x" : relation.target;
+
+              if (Object.keys(state.relations).includes(textId)) {
+                state.relations[textId] = [
+                  ...state.relations[textId],
+                  details.applyAll
+                    ? {
+                        ...relation,
+                        source: relation.source._id,
+                        target: relation.target._id,
+                      }
+                    : relation,
+                ];
               } else {
-                return token;
+                state.relations[textId] = [
+                  details.applyAll
+                    ? {
+                        ...relation,
+                        source: relation.source._id,
+                        target: relation.target._id,
+                      }
+                    : relation,
+                ];
+              }
+
+              // If apply all - need to update entities as they are also created
+              if (Object.keys(state.entities).includes(textId)) {
+                state.entities[textId] = [
+                  ...state.entities[textId],
+                  relation.source,
+                  relation.target,
+                ];
+              } else {
+                state.relations[textId] = [relation.source, relation.target];
+              }
+
+              // Update target entity states
+              if (!details.applyAll) {
+                state.entities[textId] = state.entities[textId].map((e) => ({
+                  ...e,
+                  ...(e._id === entityId ? { state: "target" } : {}),
+                }));
               }
             });
-
-            // Add new relation item to relatedSpanIdLabelMap
-            const newRelatedSpanIdLabelMapItem = {
-              span_id: details.targetEntityId,
-              label: details.targetEntityLabel,
-            };
-            const updatedRelatedSpanIdLabelMap = [
-              ...state.sourceSpan.relatedSpanIdLabelMap,
-              newRelatedSpanIdLabelMapItem,
-            ];
-            state.sourceSpan = {
-              ...state.sourceSpan,
-              relatedSpanIdLabelMap: updatedRelatedSpanIdLabelMap,
-            };
+          } else {
+            // Apply open relation action
+            console.log("hello");
           }
-        }
 
-        // Set toast values and set toast to active for user to see
-        state.toastInfo = {
-          action: "apply",
-          applyAll: details.applyAll,
-          annotationType: details.annotationType,
-          content: {
-            label:
-              details.annotationType === "entity"
-                ? details.entityLabel
-                : details.relationLabel,
-            count: response.count,
-            textIds: updatedTextIds,
-          },
-        };
-        state.showToast = true;
+          // Set toast values and set toast to active for user to see
+          state.toastInfo = {
+            action: "apply",
+            applyAll: details.applyAll,
+            annotationType: details.annotationType,
+            content: {
+              label: label,
+              count: response.count,
+              textIds: updatedTextIds,
+            },
+          };
+          state.showToast = true;
+        }
       })
       .addCase(deleteAnnotation.fulfilled, (state, action) => {
         const response = action.payload.response;
         const details = action.payload.details;
 
-        if (details.applyAll) {
-          const updatedTextIds = response.data.map((text) => text._id);
-          // Update text and ensure position is kept
-          state.texts = state.texts.map((text) => {
-            if (updatedTextIds.includes(text._id)) {
-              // Update relations object (changes if applying new rels)
-              const updatedText = response.data.filter(
-                (t) => t._id == text._id
-              )[0];
-              state.relations[text._id] = updatedText.relations;
-              return response.data.filter((t) => t._id === text._id)[0];
-            } else {
-              return text;
+        if (details.annotationType === "entity") {
+          const entities = details.applyAll
+            ? response.data
+            : [{ textId: details.textId, _id: details.spanId }];
+
+          entities.map((entity) => {
+            state.entities[entity.textId] = state.entities[
+              entity.textId
+            ].filter((e) => e._id != entity._id);
+
+            if (state.relations[entity.textId]) {
+              state.relations[entity.textId] = state.relations[
+                entity.textId
+              ].filter(
+                (r) =>
+                  r.source.toString() != entity._id.toString() &&
+                  r.target.toString() != entity._id.toString()
+              );
             }
+          });
+        } else if (details.annotationType === "relation") {
+          // Apply relation action
+          // Don't have access to the relations _id so use other fields as proxy
+          const relations = details.applyAll
+            ? response.data
+            : [
+                {
+                  textId: details.textId,
+                  labelId: details.relationLabelId,
+                  source: details.sourceEntityId,
+                  target: details.targetEntityId,
+                },
+              ];
+
+          relations.map((r1) => {
+            state.relations[r1.textId] = state.relations[r1.textId].filter(
+              (r2) =>
+                !(
+                  r1.source.toString() === r2.source.toString() &&
+                  r1.target.toString() === r2.target.toString() &&
+                  r1.labelId.toString() === r2.labelId.toString()
+                )
+            );
           });
         } else {
-          state.texts = state.texts.map((text) => {
-            if (text._id === response.data._id) {
-              state.relations[response.data._id] = response.data.relations;
-              return response.data;
-            } else {
-              return text;
-            }
-          });
+          // Apply open relation action
         }
+
+        // if (details.applyAll) {
+
+        //   const updatedTextIds = response.data.map((text) => text._id);
+        //   // Update text and ensure position is kept
+        //   state.texts = state.texts.map((text) => {
+        //     if (updatedTextIds.includes(text._id)) {
+        //       // Update relations object (changes if applying new rels)
+        //       const updatedText = response.data.filter(
+        //         (t) => t._id == text._id
+        //       )[0];
+        //       state.relations[text._id] = updatedText.relations;
+        //       return response.data.filter((t) => t._id === text._id)[0];
+        //     } else {
+        //       return text;
+        //     }
+        //   });
+        // } else {
+        //   if (details.relationId) {
+        //     state.entities[details.textId] = state.relations[
+        //       details.textId
+        //     ].filter((r) => r._id != details.relationId);
+        //   }
+        // }
 
         // Unset anything select on the span that the delete action was applied on
         // Will be used when user changes annotationMode
-        state.tokens = state.tokens.map((token) => ({ ...token, state: null }));
-        state.sourceSpan = null;
-        state.targetSpan = null;
-        state.relatedSpans = null;
+        // state.sourceSpan = null;
+        // state.targetSpan = null;
+        // state.relatedSpans = null;
 
         // Set toast values and set toast to active for user to see
         state.toastInfo = {
@@ -592,10 +656,6 @@ export const dataSlice = createSlice({
           applyAll: details.applyAll,
           annotationType: details.annotationType,
           content: {
-            label:
-              details.annotationType === "entity"
-                ? details.entityLabel
-                : details.relationLabel,
             count: response.count,
             textIds: [],
           },
@@ -607,31 +667,57 @@ export const dataSlice = createSlice({
         const details = action.payload.details;
         let updatedTextIds;
 
-        if (details.applyAll) {
-          updatedTextIds = response.data.map((text) => text._id);
-          // Update text and ensure position is kept
-          state.texts = state.texts.map((text) => {
-            if (updatedTextIds.includes(text._id)) {
-              // Update relations object (changes if applying new rels)
-              const updatedText = response.data.filter(
-                (t) => t._id == text._id
-              )[0];
-              state.relations[text._id] = updatedText.relations;
-              return response.data.filter((t) => t._id === text._id)[0];
+        console.log("accept response", response.data);
+
+        if (details.annotationType === "entity") {
+          updatedTextIds = details.applyAll
+            ? response.data.map((e) => e.textId)
+            : [response.data.textId];
+          const entities = details.applyAll ? response.data : [response.data];
+
+          console.log("accept entities dataSlice", entities);
+
+          // Update entity markup cache
+          entities.map((e1) => {
+            if (
+              state.entities[e1.textId] &&
+              state.entities[e1.textId].length > 0
+            ) {
+              state.entities[e1.textId] = state.entities[e1.textId].map(
+                (e2) => ({
+                  ...e2,
+                  suggested:
+                    e2._id.toString() === e1._id.toString()
+                      ? false
+                      : e2.suggested,
+                })
+              );
             } else {
-              return text;
+              state.entities[e1.textId] = e1;
+            }
+          });
+        } else if (details.annotationType === "relation") {
+          // Apply relation action - update state of relations and entities
+          const markup = response.data;
+          markup.map((m) => {
+            if (m.isEntity) {
+              state.entities[m.textId] = state.entities[m.textId].map((e) => ({
+                ...e,
+                suggested:
+                  e._id.toString() === m._id.toString() ? false : e.suggested,
+              }));
+            } else {
+              state.relations[m.textId] = state.relations[m.textId].map(
+                (r) => ({
+                  ...r,
+                  suggested:
+                    r._id.toString() === m._id.toString() ? false : r.suggested,
+                })
+              );
             }
           });
         } else {
-          updatedTextIds = [response.data._id];
-          state.texts = state.texts.map((text) => {
-            if (text._id === response.data._id) {
-              state.relations[response.data._id] = response.data.relations;
-              return response.data;
-            } else {
-              return text;
-            }
-          });
+          // Apply open relation action
         }
 
         // Set toast values and set toast to active for user to see
@@ -640,10 +726,6 @@ export const dataSlice = createSlice({
           applyAll: details.applyAll,
           annotationType: details.annotationType,
           content: {
-            label:
-              details.annotationType === "entity"
-                ? details.entityLabel
-                : details.relationLabel,
             count: response.count,
             textIds: updatedTextIds,
           },
@@ -653,6 +735,7 @@ export const dataSlice = createSlice({
       })
       .addCase(saveAnnotations.fulfilled, (state, action) => {
         console.log("Saving document(s)");
+        console.log(action.payload);
 
         if (action.payload.count === 1) {
           state.texts = state.texts.map((text) => {
@@ -711,6 +794,7 @@ export const selectClusterMetrics = (state) => state.data.clusterMetrics;
 export const selectShowCluster = (state) => state.data.showCluster;
 export const selectTokens = (state) => state.data.tokens;
 export const selectRelations = (state) => state.data.relations;
+export const selectEntities = (state) => state.data.entities;
 export const selectAnnotationMode = (state) => state.data.annotationMode;
 export const selectSourceSpan = (state) => state.data.sourceSpan;
 export const selectTargetSpan = (state) => state.data.targetSpan;

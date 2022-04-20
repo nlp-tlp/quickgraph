@@ -1,201 +1,135 @@
-import React, { useContext } from "react";
-import "./Landing.css";
-import "../common/Footer.css";
-import history from "../utils/history";
-import { BiSmile } from "react-icons/bi";
-import { IoSpeedometer, IoEnter, IoExpand, IoTrophy } from "react-icons/io5";
-import { IoLogoGithub, IoLogoYoutube } from "react-icons/io5";
-import { Button, Navbar, Container, Row, Col } from "react-bootstrap";
-import Logo from "../../media/quickgraph_logo.png";
-import { selectIsAuthenticated } from "../auth/userSlice";
 import { useSelector } from "react-redux";
+import { selectIsAuthenticated } from "../auth/userSlice";
+import "./Landing.css";
 
-import {
-  IoArrowDownCircleOutline,
-  IoArrowUpCircleOutline,
-} from "react-icons/io5";
+import { AppBar, Button, Grid, Toolbar, IconButton } from "@mui/material";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import YouTubeIcon from "@mui/icons-material/YouTube";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import InfoIcon from "@mui/icons-material/Info";
+
+import Particles from "react-tsparticles";
+import { loadFull } from "tsparticles";
+import ParticlesConfig from "./particle-config";
 
 export const Landing = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const particlesInit = async (main) => {
+    await loadFull(main);
+  };
 
   return (
     <>
-      <Container fluid className="landing">
-        <IoLogoGithub
-          className="nav-logo"
-          id="github"
-          onClick={() =>
-            window.open("https://github.com/nlp-tlp/quickgraph", "_blank")
-          }
-        />
-        <IoLogoYoutube
-          className="nav-logo"
-          id="youtube"
-          onClick={() => window.open("https://youtu.be/ZlzH-AAoGXs", "_blank")}
-        />
-        <Row id="main">
-          <Col>
-            <Row id="row-title">
-              <div id="title-container">
-                <img src={Logo} alt="quickgraph logo" id="title-icon" />
-                <h1>QuickGraph</h1>
-              </div>
-            </Row>
-            <Row id="row-description">
-              <Col xs={12} md={8} lg={8} xl={8}>
-                <h3>
-                  An annotation tool for rapid knowledge graph extraction from
-                  text
-                </h3>
-              </Col>
-            </Row>
-            <Row id="row-signup">
-              <div
-                id="button-group"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <Button
-                  id="signup-button"
-                  href={isAuthenticated ? "/feed" : "/signup"}
-                  // onClick={
-                  //   isAuthenticated
-                  //     ? () => history.push("/feed")
-                  //     : () => history.push("/signup")
-                  // }
+      <Particles
+        id="tsparticles"
+        init={particlesInit}
+        options={ParticlesConfig}
+      />
+      <Grid
+        container
+        alignItems="center"
+        justifyContent="center"
+        style={{ zIndex: 999 }}
+      >
+        <Grid item xs={12} style={{ flexGrow: 1 }}>
+          <AppBar position="fixed" elevation={0} style={{ background: "none" }}>
+            <Toolbar style={{ display: "flex", justifyContent: "right" }}>
+              <div style={{ display: "flex" }}>
+                <IconButton
+                  href="https://github.com/nlp-tlp/quickgraph"
+                  target="_blank"
+                  rel="noreferrer"
+                  alt="Github repository"
                 >
-                  {isAuthenticated ? (
-                    <div>
-                      Enter <IoEnter />
-                    </div>
-                  ) : (
-                    "Sign Up"
-                  )}
-                </Button>
-                {!isAuthenticated && (
-                  <span
-                    style={{
-                      textAlign: "right",
-                      marginRight: "0.5rem",
-                      color: "#263238",
-                    }}
-                  >
-                    or{" "}
-                    <a
-                      style={{
-                        color: "#263238",
-                      }}
-                      href="/login"
-                      // onClick={() => history.push("/login")}
-                    >
-                      <strong style={{ cursor: "pointer" }}>login</strong>
-                    </a>
-                  </span>
-                )}
+                  <GitHubIcon fontSize="large" color="secondary" id="github" />
+                </IconButton>
+                <IconButton
+                  href="https://youtu.be/ZlzH-AAoGXs"
+                  target="_blank"
+                  rel="noreferrer"
+                  alt="YouTube demonstration video"
+                >
+                  <YouTubeIcon
+                    fontSize="large"
+                    color="secondary"
+                    id="youtube"
+                  />
+                </IconButton>
+                <IconButton href="/about" alt="QuickGraph About Page">
+                  <InfoIcon
+                    fontSize="large"
+                    color="secondary"
+                    id="information"
+                  />
+                </IconButton>
               </div>
-            </Row>
-            <Row style={{ justifyContent: "center" }}>
-              <a href="#details">
-                <IoArrowDownCircleOutline id="scroll-button-down" />
-              </a>
-            </Row>
-          </Col>
-        </Row>
-
-        <Row id="details">
-          <Col>
-            <Row id="row-details">
-              <Col xs={12} md={4} lg={4} xl={4}>
-                <div id="box">
-                  <IoSpeedometer id="icon" />
-                  <h3>Fast</h3>
-                  <p>
-                    Accelerates annotation via entity and relation propagation,
-                    and semantic clustering
-                  </p>
-                </div>
-              </Col>
-              <Col xs={12} md={4} lg={4} xl={4}>
-                <div id="box">
-                  <IoExpand id="icon" />
-                  <h3>Powerful</h3>
-                  <p>
-                    Supports complex multi-task entity and open/closed relation
-                    annotation and knowledge graph extraction
-                  </p>
-                </div>
-              </Col>
-            </Row>
-            <Row id="row-details">
-              <Col xs={12} md={4} lg={4} xl={4}>
-                <div id="box">
-                  <BiSmile id="icon" />
-                  <h3>Intuitive</h3>
-                  <p>
-                    Maintains a simple and easy-to-use interface for improved
-                    consistency
-                  </p>
-                </div>
-              </Col>
-              <Col xs={12} md={4} lg={4} xl={4}>
-                <div id="box">
-                  <IoTrophy id="icon" />
-                  <h3>Insightful</h3>
-                  <p>
-                    Builds real-time knowledge graphs from annotations, and
-                    provides three dimensions of inter-annotator agreement
-                  </p>
-                </div>
-              </Col>
-            </Row>
-            <Row style={{ justifyContent: "right" }}>
-              <a href="#main">
-                <IoArrowUpCircleOutline id="scroll-button-up" />
-              </a>
-            </Row>
-            <Row>
-              <Navbar
-                className="footer"
-                style={{
-                  width: "100%",
-                  position: "absolute",
-                  bottom: "0",
-                  display: "flex",
-                  flexDirection: "column",
+            </Toolbar>
+          </AppBar>
+        </Grid>
+        <Grid
+          container
+          item
+          justifyContent="center"
+          alignItems="center"
+          direction="column"
+          style={{ textAlign: "center", height: "100vh", zIndex: 999 }}
+          spacing={2}
+        >
+          <Grid container item spacing={2}>
+            <Grid item xs={12}>
+              <h1>QuickGraph</h1>
+            </Grid>
+            <Grid item xs={12}>
+              <h3 style={{ fontWeight: "normal" }}>
+                An annotation tool for rapid knowledge graph extraction from
+                text
+              </h3>
+            </Grid>
+          </Grid>
+          <Grid item>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Button
+                variant="contained"
+                color="primary"
+                href={isAuthenticated ? "/feed" : "/signup"}
+                sx={{
+                  ":hover": {
+                    bgcolor: "primary.light", // theme.palette.primary.main
+                    color: "white",
+                  },
                 }}
+                endIcon={isAuthenticated ? <ArrowForwardIosIcon /> : null}
               >
-                <p
+                {isAuthenticated ? "Enter" : "Sign up"}
+              </Button>
+              {!isAuthenticated && (
+                <span
                   style={{
-                    color: "black",
-                    fontWeight: "bold",
-                    fontSize: "1rem",
+                    textAlign: "right",
+                    marginRight: "0.5rem",
+                    color: "#263238",
                   }}
                 >
-                  © UWA NLP-TLP Group 2021.
-                </p>
-                <p style={{ fontSize: "0.75rem" }}>
-                  Developer: Tyler Bikaun (
+                  or{" "}
                   <a
-                    href="https://github.com/4theKnowledge"
-                    target="_blank"
-                    rel="noreferrer"
-                    alt="github repository"
                     style={{
                       color: "#263238",
-                      fontWeight: "bold",
                     }}
+                    href="/login"
                   >
-                    4theKnowledge
+                    <strong style={{ cursor: "pointer" }}>login</strong>
                   </a>
-                  )
-                </p>
-              </Navbar>
-            </Row>
-          </Col>
-        </Row>
-      </Container>
+                </span>
+              )}
+            </div>
+          </Grid>
+        </Grid>
+      </Grid>
     </>
   );
 };

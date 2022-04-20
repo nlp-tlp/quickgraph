@@ -41,8 +41,8 @@ const initialState = {
       number: 3,
       saved: false,
       data: {
-        conceptName: "",
-        conceptLabels: [],
+        entityName: "",
+        entityLabels: [],
         relationName: "",
         relationLabels: [],
       },
@@ -123,39 +123,6 @@ export const createStepSlice = createSlice({
         valid: action.payload,
       };
     },
-    addReplacement: (state, action) => {
-      // Adds a new key-value pair to the replacements; {key:value}
-      state.steps.upload.data.replacements = {
-        ...state.steps.upload.data.replacements,
-        ...action.payload,
-      };
-    },
-    patchReplacement: (state, action) => {
-      // Updates either the key or value of a replacement pair; removing the old one
-      // state.steps["upload"].data.replacements =
-    },
-    deleteReplacement: (state, action) => {
-      // Deletes a replacement pair
-      delete state.steps.upload.data.replacements[action.payload];
-    },
-    setMetaTags: (state, action) => {
-      // Sets a single meta-tag
-      state.steps.schema.data.metaTags = {
-        ...state.steps.schema.data.metaTags,
-        ...action.payload,
-      };
-    },
-    deleteMetaTag: (state, action) => {
-      // Deletes a single meta tag
-      delete state.steps.schema.data.metaTags[action.payload];
-    },
-    setMetaTagData: (state, action) => {
-      // Adds external data (uploaded or entered manually) to meta tag
-      state.steps.schema.data.metaTags[action.payload.name].data =
-        action.payload.data;
-      state.steps.schema.data.metaTags[action.payload.name].meta =
-        action.payload.meta;
-    },
   },
 });
 
@@ -168,19 +135,11 @@ export const {
   incrementActiveStep,
   decrementActiveStep,
   setStepValid,
-  addReplacement,
-  patchReplacement,
-  deleteReplacement,
-  setMetaTags,
-  deleteMetaTag,
-  setMetaTagData,
 } = createStepSlice.actions;
 
 export const selectSteps = (state) => state.create.steps;
 export const selectActiveStep = (state) => state.create.activeStep;
 export const selectCorpus = (state) => state.create.steps.upload.data.corpus;
-export const selectReplacements = (state) =>
-  state.create.steps.upload.data.replacements;
 export const selectPreprocessingActions = (state) =>
   state.create.steps.preprocessing.data;
 export const selectMetaTags = (state) =>

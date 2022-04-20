@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Col, Row, Form, Card, Spinner } from "react-bootstrap";
+import { Col, Row, Form, Spinner } from "react-bootstrap";
 import { IoCheckmarkCircleSharp, IoCloseCircle } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -9,6 +9,8 @@ import {
 } from "../../project/projectSlice";
 import "./../Dashboard.css";
 
+import { Grid, Card, CardContent, TextField, Button } from "@mui/material";
+import { grey, red, teal } from "@mui/material/colors";
 /* 
   Component for project settings
 */
@@ -25,174 +27,150 @@ export const Settings = () => {
     charsRemoved: "Characters removed from corpus",
   };
 
-  const handleDetailUpdate = (field, value) => {
-    dispatch(
-      patchProjectDetails({
-        projectId: project._id,
-        field: field,
-        value: value,
-      })
-    );
+  const handleUpdate = () => {
+    if (description !== project.description) {
+      dispatch(
+        patchProjectDetails({
+          projectId: project._id,
+          field: "description",
+          value: description,
+        })
+      );
+    }
+
+    if (name !== project.name) {
+      dispatch(
+        patchProjectDetails({
+          projectId: project._id,
+          field: "name",
+          value: name,
+        })
+      );
+    }
   };
 
   return (
-    <>
-      <Row>
-        <Col>
-          <Card>
-            <Card.Body style={{ borderBottom: "1px solid rgba(0,0,0,.125)" }}>
-              <Card.Title>Preprocessing Operations</Card.Title>
-              <Card.Subtitle
-                style={{ fontSize: "0.8125rem", color: "#607d8b" }}
+    <Grid item container spacing={2}>
+      <Grid item xs={6}>
+        <Card variant="outlined">
+          <CardContent>
+            <Grid item container>
+              <Grid item xs={12}>
+                <h5>Project Details</h5>
+                <span style={{ fontSize: "0.75rem", color: grey[700] }}>
+                  Review or update this projects details
+                </span>
+              </Grid>
+              <Grid item xs={12} sx={{ mt: 4 }}>
+                <TextField
+                  required
+                  id="project-name-text-field"
+                  label="Project Name"
+                  placeholder={project.name}
+                  variant="standard"
+                  fullWidth
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="off"
+                  multiline
+                />
+              </Grid>
+            </Grid>
+            <Grid item xs={12} sx={{ mt: 4 }}>
+              <TextField
+                required
+                id="project-description-text-field"
+                label="Project Description"
+                placeholder={project.description}
+                variant="standard"
+                fullWidth
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                autoComplete="off"
+                multiline
+              />
+            </Grid>
+            <Grid
+              item
+              container
+              xs={12}
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mt: 4 }}
+            >
+              <span style={{ fontSize: "0.75rem", color: grey[700] }}>
+                Last updated: {new Date(project.updatedAt).toDateString()}
+              </span>
+              <Button
+                variant="contained"
+                disableElevation
+                onClick={handleUpdate}
+                disabled={
+                  project.description === description && project.name === name
+                }
               >
-                Review the pre-processing operations applied to this projects
-                corpus.
-              </Card.Subtitle>
-            </Card.Body>
-            <Card.Body>
+                Update
+              </Button>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={6}>
+        <Card variant="outlined">
+          <CardContent>
+            <Grid item container>
+              <Grid item xs={12}>
+                <h5>Preprocessing Operations</h5>
+                <span style={{ fontSize: "0.75rem", color: grey[700] }}>
+                  Review the pre-processing operations applied to this projects
+                  corpus
+                </span>
+              </Grid>
               {project &&
                 Object.keys(project.preprocessing)
                   .filter((measure) => Object.keys(MAPPING).includes(measure))
                   .map((measure) => (
-                    <span
-                      style={{
-                        display: "flex",
-                        padding: "0.25rem 0rem",
-                        alignItems: "center",
-                      }}
-                    >
-                      {project.preprocessing[measure] ? (
-                        <IoCheckmarkCircleSharp style={{ color: "#1b5e20" }} />
-                      ) : (
-                        <IoCloseCircle style={{ color: "#f44336" }} />
-                      )}
-                      <p
-                        style={{
-                          margin: "0rem 0.25rem",
-                          alignItems: "center",
-                          padding: "0",
-                        }}
-                      >
-                        {MAPPING[measure]}
-                        {measure === "charsRemoved" &&
-                          " (" + project.preprocessing["charset"] + ")"}
-                      </p>
-                    </span>
+                    <Grid item xs={12} sx={{ mt: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        {project.preprocessing[measure] ? (
+                          <IoCheckmarkCircleSharp
+                            style={{ color: teal[500] }}
+                          />
+                        ) : (
+                          <IoCloseCircle style={{ color: red[500] }} />
+                        )}
+                        <p
+                          style={{
+                            margin: "0rem 0.25rem",
+                            alignItems: "center",
+                            padding: "0",
+                          }}
+                        >
+                          {MAPPING[measure]}
+                          {measure === "charsRemoved" &&
+                            " (" + project.preprocessing["charset"] + ")"}
+                        </p>
+                      </div>
+                    </Grid>
                   ))}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      <Row style={{ marginTop: "1rem" }}>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      {/* <Row style={{ marginTop: "1rem" }}>
         <Col>
           <Card>
-            <Card.Body style={{ borderBottom: "1px solid rgba(0,0,0,.125)" }}>
-              <Card.Title>Project Details</Card.Title>
-              <Card.Subtitle
-                style={{ fontSize: "0.8125rem", color: "#607d8b" }}
-              >
-                Review or update this projects details.
-              </Card.Subtitle>
-            </Card.Body>
-            <Card.Body>
-              <Row>
-                <Col md={4}>
-                  <Form.Label
-                    style={{ fontWeight: "bold" }}
-                    htmlFor="projectNameForm"
-                  >
-                    Project Name
-                  </Form.Label>
-                </Col>
-                <Col md={6}>
-                  <Form.Control
-                    type="text"
-                    size="sm"
-                    id="projectNameForm"
-                    placeholder={project.name}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </Col>
-                <Col
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "right",
-                  }}
-                >
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleDetailUpdate("name", name)}
-                    disabled={project.name === name}
-                  >
-                    {/* {!changeLoading ? (
-                      <span style={{display: 'flex'}}>
-                        <Spinner animation="border" size="sm" />
-                      </span>
-                    ) : (
-                      "Update"
-                    
-                    )} */}
-                    Update
-                  </Button>
-                </Col>
-              </Row>
-              <Row style={{ marginTop: "1rem" }}>
-                <Col md={4}>
-                  <Form.Label
-                    style={{ fontWeight: "bold" }}
-                    htmlFor="projectDescription"
-                  >
-                    Project Description
-                  </Form.Label>
-                </Col>
-                <Col md={6}>
-                  <Form.Control
-                    size="sm"
-                    type="text"
-                    id="projectDescription"
-                    placeholder={project.description}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </Col>
-                <Col
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "right",
-                  }}
-                >
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      handleDetailUpdate("description", description)
-                    }
-                    disabled={project.description === description}
-                  >
-                    Update
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      <Row style={{ marginTop: "1rem" }}>
-        <Col>
-          <Card>
-            <Card.Body style={{ borderBottom: "1px solid rgba(0,0,0,.125)" }}>
+            <CardContent style={{ borderBottom: "1px solid rgba(0,0,0,.125)" }}>
               <Card.Title>Ontologies</Card.Title>
               <Card.Subtitle
                 style={{ fontSize: "0.8125rem", color: "#607d8b" }}
               >
                 Review or modify this projects ontologies.
               </Card.Subtitle>
-            </Card.Body>
-            <Card.Body>
+            </CardContent>
+            <CardContent>
               <Row>
                 <Col md={8}>
                   <span style={{ display: "flex", flexDirection: "column" }}>
@@ -247,51 +225,54 @@ export const Settings = () => {
                   </Col>
                 </Row>
               )}
-            </Card.Body>
+            </CardContent>
           </Card>
         </Col>
-      </Row>
-      <Row style={{ marginTop: "1rem" }}>
-        <Col>
-          <Card style={{ border: "1px solid #dc3545" }}>
-            <Card.Body style={{ borderBottom: "1px solid #dc3545" }}>
-              <Card.Title style={{ margin: 0, padding: 0, color: "#dc3545" }}>
-                Danger Zone
-              </Card.Title>
-            </Card.Body>
-            <Card.Body>
-              <Row>
-                <Col>
+      </Row> */}
+      <Grid item xs={12}>
+        <Card variant="outlined" style={{ border: `1px solid ${red[500]}` }}>
+          <CardContent>
+            <Grid item container>
+              <Grid item xs={12}>
+                <h5 style={{ color: red[500] }}>Danger Zone</h5>
+                <span style={{ fontSize: "0.75rem", color: grey[700] }}>
+                  Review the pre-processing operations applied to this projects
+                  corpus
+                </span>
+              </Grid>
+              <Grid item container xs={12} sx={{ mt: 4 }}>
+                <Grid item xs={6}>
                   <span style={{ display: "flex", flexDirection: "column" }}>
                     <span style={{ fontWeight: "bold" }}>
                       Delete this project
                     </span>
-                    <span style={{ fontSize: "0.8125rem", color: "black" }}>
+                    <span style={{ fontSize: "0.8125rem", color: grey[700] }}>
                       Once you delete this project, there is no going back.{" "}
                       <strong>Please be certain.</strong>
                     </span>
                   </span>
-                </Col>
-                <Col
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "right",
-                  }}
+                </Grid>
+                <Grid
+                  item
+                  container
+                  xs={6}
+                  alignItems="center"
+                  justifyContent="right"
                 >
                   <Button
-                    variant="danger"
-                    size="sm"
+                    disableElevation
+                    variant="contained"
+                    color="error"
                     onClick={() => dispatch(setActiveModal("delete"))}
                   >
                     Delete this project
                   </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </>
+                </Grid>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid>
   );
 };

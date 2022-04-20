@@ -32,6 +32,7 @@ import {
   selectTextsError,
   selectAnnotationMode,
   selectSelectMode,
+  selectTokens,
 } from "../../../app/dataSlice";
 import "./Table.css";
 
@@ -50,6 +51,7 @@ export const Table = () => {
   const textsStatus = useSelector(selectTextsStatus);
   const textsError = useSelector(selectTextsError);
   const texts = useSelector(selectTexts);
+  const tokens = useSelector(selectTokens);
 
   const [clusterExpanded, setClusterExpanded] = useState(false);
   const pageBeforeViewChange = useSelector(selectPageBeforeViewChange);
@@ -100,9 +102,9 @@ export const Table = () => {
   }, [textsStatus, projectStatus, dispatch]);
 
   const handleMarkupKeyDownEvent = (e) => {
-    if (annotationMode === "concept") {
+    if (annotationMode === "entity") {
       // TODO: Handle for multiple key presses within a certain timeframe... 11, 12, etc. like RedCoat.
-      console.log(e);
+      // console.log(e);
       // User wants to markup a span of text
 
       // If user is holding shift, e.key will be the shift version e.g. 1 -> !; need to correct for this.
@@ -134,16 +136,17 @@ export const Table = () => {
               ? tokens[0].index
               : tokens[tokens.length - 1].index,
           entityLabel: keyBinding[key].name,
-          entityLabelId: keyBinding[key].id,
+          entityLabelId: keyBinding[key]._id,
           textId: textId,
           projectId: project._id,
           applyAll: e.shiftKey,
           annotationType: "entity",
           suggested: false,
+          textIds: texts.map((t) => t._id),
+          entityText: tokens.map((t) => t.value).join(" "),
         };
 
         // console.log("key press payload", payload);
-
         dispatch(applyAnnotation({ ...payload }));
       }
     }
@@ -186,7 +189,7 @@ export const Table = () => {
             <TextContainer
               text={text}
               textIndex={textIndex}
-              setClusterExpanded={setClusterExpanded}
+              tokens={tokens.filter((t) => t.textId === text._id)}
             />
           ))}
       </div>

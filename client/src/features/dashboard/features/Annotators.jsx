@@ -1,13 +1,4 @@
-import React, { useState, useEffect } from "react";
-import {
-  Button,
-  Form,
-  OverlayTrigger,
-  Tooltip,
-  Col,
-  Row,
-  Table,
-} from "react-bootstrap";
+import { useState, useEffect } from "react";
 import {
   IoCheckmarkCircle,
   IoCloseCircle,
@@ -27,6 +18,18 @@ import {
 } from "../../project/projectSlice";
 import axios from "../../utils/api-interceptor";
 import "../Dashboard.css";
+
+import {
+  Button,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 
 export const Annotators = () => {
   const dispatch = useDispatch();
@@ -52,7 +55,8 @@ export const Annotators = () => {
       >
         <p>No annotators assigned to this project</p>
         <Button
-          variant="dark"
+          // variant="dark"
+          variant="contained"
           onClick={() => dispatch(setActiveModal("annotatorInvite"))}
         >
           Invite annotators
@@ -70,37 +74,49 @@ export const Annotators = () => {
           }}
         >
           <Button
-            variant="success"
-            size="sm"
+            disableElevation
+            variant="contained"
+            color="primary"
             onClick={() => dispatch(setActiveModal("annotatorInvite"))}
+            endIcon={<AddCircleOutlineIcon />}
           >
-            + Invite annotators
+            Invite annotators
           </Button>
         </div>
-        <Table striped bordered hover size="sm">
-          <thead>
-            <tr style={{ textAlign: "center" }}>
-              <th></th>
-              <th>Username</th>
-              <th>Role</th>
-              <th>State</th>
-              <th colSpan="3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {project.annotators?.map((annotator, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{annotator.user.username}</td>
-                <td style={{ textTransform: "capitalize" }}>
-                  {annotator.role.replace("_", " ")}
-                </td>
-                <td style={{ textTransform: "capitalize" }}>
-                  {annotator.state}
-                </td>
-                {/* Activated means anon accepted invite otherwise denied and not activated.
+        <TableContainer style={{ display: "flex", justifyContent: "center" }}>
+          <Table sx={{ maxWidth: 1000 }}>
+            <caption>An overview of annotators invited to the current project</caption>
+            <TableHead>
+              <TableRow>
+                <TableCell align="right"></TableCell>
+                <TableCell align="center">Username</TableCell>
+                <TableCell align="center">Role</TableCell>
+                <TableCell align="center">State</TableCell>
+                {/* <TableCell colSpan="3">Actions</TableCell> */}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {project.annotators?.map((annotator, index) => (
+                <TableRow key={index}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell align="center">
+                    {annotator.user.username}
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    style={{ textTransform: "capitalize" }}
+                  >
+                    {annotator.role.replace("_", " ")}
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    style={{ textTransform: "capitalize" }}
+                  >
+                    {annotator.state}
+                  </TableCell>
+                  {/* Activated means anon accepted invite otherwise denied and not activated.
                                   if no accepted state (e.g. undefined) then its in limbo, waiting. */}
-                {/* {annotator.state === "invited" ? (
+                  {/* {annotator.state === "invited" ? (
                       <IoHourglass />
                     ) : annotator.state === "accepted" ? (
                       <IoCheckmarkCircle style={{ margin: "auto 0rem" }} />
@@ -109,32 +125,33 @@ export const Annotators = () => {
                         <IoCloseCircle style={{ margin: "auto 0rem" }} />
                       )
                     )} */}
-                {annotator.role === "projectManager" ? (
-                  <td colSpan="3"></td>
+                  {/* {annotator.role === "projectManager" ? (
+                  <TableCell colSpan="3"></TableCell>
                 ) : (
                   <>
-                    <td>
+                    <TableCell>
                       <Button
-                        variant="secondary"
-                        size="sm"
+                        disableElevation
+                        variant="contained"
                         style={{ margin: "0.25rem" }}
                         onClick={() =>
                           dispatch(setActiveModal("annotatorDocAssign"))
                         }
                         title="Click to view annotators assigned documents"
+                        startIcon={<IoDocuments />}
                       >
                         <span style={{ display: "flex", alignItems: "center" }}>
-                          <IoDocuments style={{ marginRight: "0.25rem" }} />
                           {annotator.assignment.length > 0
                             ? "Modify Assignment"
                             : "Assign Documents"}
                         </span>
                       </Button>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <Button
-                        variant={!annotator.disabled ? "warning" : "success"}
-                        size="sm"
+                        disableElevation
+                        variant="contained"
+                        // variant={!annotator.disabled ? "warning" : "success"}
                         style={{ margin: "0.25rem" }}
                         onClick={() =>
                           dispatch(
@@ -152,22 +169,22 @@ export const Annotators = () => {
                             ? "Click to disable annotator"
                             : "Click to activate annotator"
                         }
-                      >
-                        <span style={{ display: "flex", alignItems: "center" }}>
-                          {!annotator.disabled ? (
+                        startIcon={
+                          !annotator.disabled ? (
                             <IoLockClosed />
                           ) : (
                             <IoLockOpen />
-                          )}
+                          )
+                        }
+                      >
+                        <span style={{ display: "flex", alignItems: "center" }}>
                           {!annotator.disabled ? "Disable" : "Activate"}
                         </span>
                       </Button>
-                    </td>
-                    <td>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        style={{ margin: "0.25rem" }}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        color="error"
                         onClick={() => {
                           dispatch(
                             setModalInfo({
@@ -180,46 +197,16 @@ export const Annotators = () => {
                         }}
                         title="Click to remove annotator from project"
                       >
-                        <IoTrash style={{ fontSize: "1rem" }} />
-                      </Button>
-                    </td>
+                        <IoTrash />
+                      </IconButton>
+                    </TableCell>
                   </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-        {/* <OverlayTrigger
-                      trigger="click"
-                      key={`copy-trigger-${index}`}
-                      placement="right"
-                      rootClose
-                      delay={{ show: 250, hide: 100 }}
-                      overlay={
-                        showCopyTooltip ? (
-                          <Tooltip id={`copy-access-link-${index}`}>
-                            Copied!
-                          </Tooltip>
-                        ) : (
-                          <div />
-                        )
-                      }
-                    >
-                      <IoLink
-                        onClick={() => {
-                          copyButton();
-                          navigator.clipboard.writeText(
-                            `localhost:3000/project/${project._id}/${annotator.accessId}`
-                          );
-                        }}
-                        style={{
-                          color: "#007bff",
-                          margin: "auto 0.5rem",
-                          fontSize: "1.25rem",
-                          cursor: "pointer",
-                        }}
-                      />
-                    </OverlayTrigger> */}
+                )} */}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </>
     );
   }

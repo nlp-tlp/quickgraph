@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Card, Col, Container, Nav, Row, Spinner } from "react-bootstrap";
 import { GiProgression } from "react-icons/gi";
 import { IoGitCommit, IoGitPullRequest, IoShareSocial } from "react-icons/io5";
 import { useSelector } from "react-redux";
@@ -7,6 +6,9 @@ import { selectProject } from "../../project/projectSlice";
 import axios from "../../utils/api-interceptor";
 import "../Dashboard.css";
 import { Labels } from "./Labels";
+
+import { Grid, Tab, Tabs } from "@mui/material";
+import { Loader } from "../../common/Loader";
 
 export const Overview = () => {
   const project = useSelector(selectProject);
@@ -45,7 +47,7 @@ export const Overview = () => {
 
   const DEFAULT_METRICS = [
     {
-      name: "Progress",
+      name: "Project Progress",
       icon: <GiProgression />,
       content: null,
       key: "progress",
@@ -54,7 +56,7 @@ export const Overview = () => {
       display: true,
     },
     {
-      name: "Agreement",
+      name: "Annotator Agreement",
       icon: <GiProgression />,
       content: null,
       key: "averageIAA",
@@ -62,7 +64,7 @@ export const Overview = () => {
       display: true,
     },
     {
-      name: "Entities",
+      name: "Entities Created",
       icon: <IoGitCommit />,
       content: null,
       key: "entities",
@@ -71,7 +73,7 @@ export const Overview = () => {
       display: true,
     },
     {
-      name: "Triples",
+      name: "Triples Created",
       icon: <IoGitPullRequest />,
       content: null,
       key: "triples",
@@ -82,7 +84,11 @@ export const Overview = () => {
   const [metrics, setMetrics] = useState(DEFAULT_METRICS);
   const [measures, setMeasures] = useState(DEFAULT_MEASURES);
   const [metricsLoaded, setMetricsLoaded] = useState(false);
-  const [key, setKey] = useState("overall");
+  const [value, setValue] = useState("overall");
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+    setGraphLoaded(false);
+  };
   const [graphLoaded, setGraphLoaded] = useState(false);
 
   useEffect(() => {
@@ -92,7 +98,7 @@ export const Overview = () => {
           `/api/project/dashboard/overview/${project._id}`
         );
         if (response.status === 200) {
-          const data = response.data[0]; // Comes back as [<Object>]
+          const data = response.data; // Comes back as [<Object>]
           setMetrics((prevState) =>
             prevState.map((m) => {
               let value;
@@ -120,17 +126,6 @@ export const Overview = () => {
               return {
                 ...m,
                 content: value,
-                // m.key === "progress"
-                //   ? `${Math.round(data[m.key])}%`
-                //   : m.key === "averageIAA" &&
-                //     !project.tasks.relationAnnotation
-                //   ? `${data[m.key].entity}%`
-                //   : m.key === "averageIAA" &&
-                //     project.tasks.relationAnnotation
-                //   ? data[m.key].overall === null
-                //     ? "-"
-                //     : `${data[m.key].overall}%`
-                //   : data[m.key],
               };
             })
           );
@@ -141,95 +136,72 @@ export const Overview = () => {
     fetchMeasures();
   }, [project, metricsLoaded]);
 
-  return (
-    <Container fluid style={{}}>
-      <Row>
-        <Col md={9}>
-          <Card>
-            <Card.Body style={{ borderBottom: "1px solid rgba(0,0,0,.125)" }}>
-              <Nav className="justify-content-center">
-                {measures
-                  .filter((m) => !m.disabled)
-                  .map((m) => (
-                    <Nav.Item>
-                      <Nav.Link
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: key === m.name ? "bolder" : "bold",
-                          borderBottom:
-                            key === m.name && "2px solid rgba(0,0,0,.25)",
-                          padding: "8px 16px",
-                        }}
-                        title={m.description}
-                        onClick={() => {
-                          setKey(m.name);
-                          setGraphLoaded(false);
-                        }}
-                      >
-                        <span>
-                          <span>{m.icon}</span>
-                          <span>{m.title}</span>
-                        </span>
-                      </Nav.Link>
-                    </Nav.Item>
-                  ))}
-              </Nav>
-            </Card.Body>
-            <Card.Body>
-              <Labels
-                projectId={project._id}
-                type={key}
-                graphLoaded={graphLoaded}
-                setGraphLoaded={setGraphLoaded}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col>
-          <Card>
-            <Card.Body
-              style={{
-                margin: "1rem 0rem",
-                borderBottom: "1px solid rgba(0,0,0,.125)",
-                alignItems: "center",
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              <Nav>
-                <Nav.Item style={{ padding: "0px 16px", fontWeight: "bold" }}>
-                  Metrics
-                </Nav.Item>
-              </Nav>
-            </Card.Body>
-            <Card.Body>
-              {!metricsLoaded ? (
+  if (!metricsLoaded) {
+    return <Loader message={"Loading metrics"} />;
+  } else {
+    return (
+      <>
+        <Grid item xs={12}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-evenly",
+            }}
+          >
+            {metrics
+              .filter((m) => m.display)
+              .map((m) => (
                 <div
                   style={{
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
+                    padding: "1rem",
+                    cursor: "help",
                   }}
+                  title={m.title}
                 >
-                  <p>Loading...</p>
-                  <Spinner animation="border" />
+                  <span id="overview-metrics-value">
+                    {m.content === null ? "-" : m.content}
+                  </span>
+                  <span id="overview-metrics-name">{m.name}</span>
                 </div>
-              ) : (
-                metrics
-                  .filter((m) => m.display)
-                  .map((m) => (
-                    <div id="overview-metrics-container" title={m.title}>
-                      <span id="overview-metrics-value">
-                        {m.content === null ? "-" : m.content}
-                      </span>
-                      <span id="overview-metrics-name">{m.name}</span>
-                    </div>
-                  ))
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
-  );
+              ))}
+          </div>
+          <hr />
+        </Grid>
+        <Grid item xs={12} container>
+          <Grid item xs={12} sx={{ mb: 4 }}>
+            <Tabs
+              centered
+              value={value}
+              onChange={handleChange}
+              textColor="primary"
+              indicatorColor="primary"
+              aria-label="secondary tabs example"
+            >
+              {measures
+                .filter((m) => !m.disabled)
+                .map((m) => (
+                  <Tab
+                    icon={m.icon}
+                    iconPosition="start"
+                    value={m.name}
+                    label={m.title}
+                  />
+                ))}
+            </Tabs>
+          </Grid>
+          <Grid item xs={12}>
+            <Labels
+              projectId={project._id}
+              type={value}
+              graphLoaded={graphLoaded}
+              setGraphLoaded={setGraphLoaded}
+            />
+          </Grid>
+        </Grid>
+      </>
+    );
+  }
 };

@@ -10,20 +10,29 @@ import PropTypes from "prop-types";
 import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { selectProject } from "../../../project/projectSlice";
-import { fetchGraph, selectGraphFilters, setFilters } from "../graphSlice";
+import { selectProject } from "../../../../project/projectSlice";
+import {
+  fetchGraph,
+  selectFilteredOntology,
+  selectGraphFilters,
+  setFilters,
+} from "../graphSlice";
+import { getFlatOntology } from "../../../../project/utils";
 
 export const FilterSelectHierarchy = ({ ontology }) => {
   const { projectId } = useParams();
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
   const graphFilters = useSelector(selectGraphFilters);
+  const filteredOntology = useSelector(selectFilteredOntology);
+
+  console.log("select hierarchy ontology", filteredOntology);
 
   const renderTree = (nodes) => {
     return (
       <CustomTreeItem
-        key={nodes.id}
-        nodeId={nodes.id}
+        key={nodes._id}
+        nodeId={nodes._id}
         label={nodes.name}
         style={{
           color: nodes.colour,
@@ -67,15 +76,35 @@ export const FilterSelectHierarchy = ({ ontology }) => {
       handleExpansion(event);
     };
 
-    const handleSelectionClick = (event, label, nodeId) => {
+    const handleSelectionClick = (event, nodeId) => {
       handleSelection(event);
-      console.log(label);
+
+      console.log("labelIds before filter", graphFilters.labelIds.length);
+
+      // Get descendents of nodeId as these will be also added/removed from labelIds in filter
+      const branch = getFlatOntology(filteredOntology).filter(
+        (item) => item._id === nodeId
+      );
+      console.log("branch", branch);
+      const flatBranch = getFlatOntology(branch);
+      console.log("flat branch", flatBranch);
+
+      // Update labelId filter
+      let newLabelIds = graphFilters.labelIds;
+      flatBranch.map((item) => {
+        if (newLabelIds.includes(item._id)) {
+          newLabelIds = newLabelIds.filter((c) => c !== item._id);
+        } else {
+          newLabelIds = [...newLabelIds, item._id];
+        }
+      });
+
+      console.log("labelIds after filter", newLabelIds.length);
+
       dispatch(
         setFilters({
           ...graphFilters,
-          entityClasses: graphFilters.entityClasses.includes(label)
-            ? graphFilters.entityClasses.filter((c) => c !== label)
-            : [...graphFilters.entityClasses, label],
+          labelIds: newLabelIds,
         })
       );
       dispatch(fetchGraph({ projectId: projectId }));
@@ -100,11 +129,11 @@ export const FilterSelectHierarchy = ({ ontology }) => {
         <Typography component="div" className={classes.label}>
           {label}
         </Typography>
-        <div onClick={(e) => handleSelectionClick(e, label, nodeId)}>
-          {graphFilters.entityClasses.includes(label) ? (
-            <CheckBoxIcon />
-          ) : (
+        <div onClick={(e) => handleSelectionClick(e, nodeId)}>
+          {graphFilters.labelIds.includes(nodeId) ? (
             <CheckBoxOutlineBlankIcon />
+          ) : (
+            <CheckBoxIcon />
           )}
         </div>
       </div>

@@ -1,47 +1,21 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "../../utils/api-interceptor";
+import axios from "../../../utils/api-interceptor";
 import { v4 as uuidv4 } from "uuid";
 
 const initialState = {
   status: "idle",
   error: null,
   filters: {
-    search: {
-      name: "Search",
-      title: "Filter for searching document contents",
-      value: "",
-      defaultValue: "",
-      display: true,
-    },
-    entityClasses: [],
-    relationClasses: [],
+    searchTerm: "",
+    labelIds: [],
+    showWeak: true,
   },
   options: {
     interaction: {
       tooltipDelay: 200,
-      hideEdgesOnDrag: true,
-      hideEdgesOnZoom: true,
+      selectConnectedEdges: false,
     },
-    // physics: { stabilizations: false, maxVelocity: 10, solver: "barnesHut" },
-    physics: {
-      forceAtlas2Based: {
-        gravitationalConstant: -25,
-        centralGravity: 0.01,
-        springLength: 150,
-        springConstant: 0.5,
-        damping: 1,
-        avoidOverlap: 0.5,
-      },
-      maxVelocity: 50,
-      solver: "forceAtlas2Based",
-      timestep: 0.35,
-      stabilization: {
-        enabled: false,
-        iterations: 2000,
-        updateInterval: 25,
-        fit: true,
-      },
-    },
+    physics: { stablization: { enabled: true, fit: true } },
     layout: {
       randomSeed: 1337,
       improvedLayout: false, //https://github.com/almende/vis/issues/2906
@@ -50,7 +24,6 @@ const initialState = {
     edges: {
       smooth: true,
       length: 250,
-      // width: 0.15,
       font: {
         size: 16,
       },
@@ -68,14 +41,11 @@ const initialState = {
     nodes: {
       shape: "box",
       margin: 5,
-      // font: { size: 20 },
       scaling: {
         label: {
           enabled: true,
           min: 12,
           max: 30,
-          drawThreshold: 12,
-          maxVisible: 30,
         },
         customScalingFunction: function (min, max, total, value) {
           if (max === min) {
@@ -87,13 +57,10 @@ const initialState = {
         },
       },
     },
-    groups: {
-      useDefaultGroups: false,
-    },
   },
   data: {},
   metrics: null,
-  filteredClasses: { entities: [], relations: [] },
+  filteredOntology: null, // Project ontology limited to items that have annotations
   selectedNode: null,
   text: null,
   textId: null,
@@ -334,22 +301,14 @@ export const graphSlice = createSlice({
       })
       .addCase(fetchGraph.fulfilled, (state, action) => {
         state.status = "succeeded";
-        console.log("graph data", action.payload);
         state.graphKey = uuidv4();
-
-        // const hasDuplicatesNodes =
-        //   new Set(action.payload.data.nodes.map((n) => n.id)).size !==
-        //   action.payload.data.nodes.length;
-        // const hasDuplicatesEdges =
-        //   new Set(action.payload.data.edges.map((e) => e.id)).size !==
-        //   action.payload.data.edges.length;
-        // console.log("has duplicates nodes", hasDuplicatesNodes);
-        // console.log("has duplicates edges", hasDuplicatesEdges);
 
         state.data = action.payload.data;
         state.metrics = action.payload.metrics;
-        state.filteredClasses.entities = action.payload.classes.nodes;
-        state.filteredClasses.relations = action.payload.classes.edges;
+        state.filters.labelIds = action.payload.labelIds;
+
+        // Active labels (+ parents) only
+        state.filteredOntology = action.payload.ontology;
       })
       .addCase(fetchGraph.rejected, (state, action) => {
         state.status = "failed";
@@ -379,7 +338,7 @@ export const selectHighlighted = (state) => state.graph.highlighted;
 export const selectAggregate = (state) => state.graph.aggregate;
 export const selectGraphKey = (state) => state.graph.graphKey;
 export const selectGraphFilters = (state) => state.graph.filters;
-export const selectFilterClasses = (state) => state.graph.filteredClasses;
+export const selectFilteredOntology = (state) => state.graph.filteredOntology;
 
 export const selectText = (state) => state.graph.text;
 export const selectTextId = (state) => state.graph.textId;

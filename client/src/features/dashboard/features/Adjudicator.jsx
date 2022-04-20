@@ -1,24 +1,19 @@
-import "../Dashboard.css";
-import { useState, useEffect } from "react";
-import { Pagination, Spinner, Row, Col, Badge } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
-import axios from "../../utils/api-interceptor";
-import {
-  selectProject,
-  selectFlatEntityOntology,
-} from "../../project/projectSlice";
-import { useParams } from "react-router-dom";
-import { hasMarkup, markupPosition, getFontColour } from "../../project/utils"; // project/utils
-import { getSpanLabelPosition } from "../../project/spans/utils";
-import {
-  IoEllipsisVertical,
-  IoTimer,
-  IoInformationCircle,
-} from "react-icons/io5";
-import { BiGitCommit, BiGitCompare } from "react-icons/bi";
+import { useEffect, useState } from "react";
+import { Badge, Pagination } from "react-bootstrap";
 import BootstrapTable from "react-bootstrap-table-next";
 import paginationFactory from "react-bootstrap-table2-paginator";
-import { HiSortDescending, HiSortAscending } from "react-icons/hi";
+import { HiSortAscending, HiSortDescending } from "react-icons/hi";
+import { IoInformationCircle, IoTimer } from "react-icons/io5";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { selectFlatOntology, selectProject } from "../../project/projectSlice";
+import { getSpanLabelPosition } from "../../project/spans/utils";
+import { getFontColour, hasMarkup, markupPosition } from "../../project/utils";
+import axios from "../../utils/api-interceptor";
+import "../Dashboard.css";
+
+import { Grid, Avatar, Stack } from "@mui/material";
+import { Loader } from "../../common/Loader";
 
 /*
   Component for reviewing annotator agreement.
@@ -30,16 +25,6 @@ export const Adjudicator = () => {
   const [totalPages, setTotalPages] = useState();
   const [page, setPage] = useState(1);
   const [sortDirection, setSortDirection] = useState(-1); // Default descending (hi-lo)
-  const flatEntityOntology = useSelector(selectFlatEntityOntology);
-  const entityColourMap =
-    flatEntityOntology &&
-    Object.assign(
-      {},
-      ...flatEntityOntology.map((l) => ({ [l.name]: l.colour }))
-    );
-
-  console.log(entityColourMap);
-
   const [doc, setDoc] = useState();
   const [docLoaded, setDocLoaded] = useState(false);
 
@@ -93,141 +78,119 @@ export const Adjudicator = () => {
     fetchAdjDoc();
   }, [docLoaded, page, sortDirection]);
 
-  return (
-    <>
-      {docLoaded ? (
-        <>
-          <Row style={{ marginBottom: "2rem" }}>
-            <Col
-              sm={12}
-              md={8}
-              lg={8}
-              xl={8}
-              xxl={8}
-              style={{
-                display: "flex",
-                justifyContent: "left",
-                alignItems: "center",
-              }}
-            >
-              <Text tokens={doc.content.tokens} />
-            </Col>
-            <Col
-              style={{
-                display: "flex",
-                justifyContent: "right",
-                alignItems: "end",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    margin: "auto",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  {docLoaded &&
-                    Object.keys(doc.content.iaa)
-                      .filter((measure) => doc.content.iaa[measure] !== null)
-                      .map((measure) => (
-                        <span
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            margin: "0rem 0.25rem",
-                          }}
-                        >
-                          <span>{doc.content.iaa[measure]}%</span>
-                          <span style={{ fontSize: "0.7rem" }}>{measure}</span>
-                        </span>
-                      ))}
-                </div>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <Paginator
-                    page={page}
-                    setPage={setPage}
-                    totalPages={totalPages}
-                    setDocLoaded={setDocLoaded}
-                  />
-                  {sortDirection === -1 ? (
-                    <HiSortDescending
-                      onClick={() => {
-                        setSortDirection(1);
-                        setDocLoaded(false);
-                      }}
-                      id="adj-sort"
-                    />
-                  ) : (
-                    <HiSortAscending
-                      onClick={() => {
-                        setSortDirection(-1);
-                        setDocLoaded(false);
-                      }}
-                      id="adj-sort"
-                    />
-                  )}
-                  {/* <IoEllipsisVertical id="adj-settings" /> */}
-                </div>
-              </div>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={12}>
-              {/* doc.triples includes single entities  */}
-              {doc.triples.length > 0 ? (
-                <AdjTable doc={doc} entityColourMap={entityColourMap} />
-              ) : (
-                <div
-                  style={{
-                    height: "25vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    fontSize: "1.5rem",
-                    fontWeight: "bold",
-                    color: "#607d8b",
-                  }}
-                >
-                  {doc.content.saveCount !== 0 ? (
-                    <>
-                      <IoInformationCircle
-                        style={{ marginRight: "0.5rem", fontSize: "2.5rem" }}
-                      />
-                      <span>No annotations made</span>
-                    </>
-                  ) : (
-                    <>
-                      <IoTimer
-                        style={{ marginRight: "0.5rem", fontSize: "2.5rem" }}
-                      />
-                      <span>No annotations made yet</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </Col>
-          </Row>
-        </>
-      ) : (
-        <div
-          style={{
-            textAlign: "center",
-          }}
+  if (!docLoaded) {
+    return <Loader message="Loading Document" />;
+  } else {
+    return (
+      <Grid item xs={12} container spacing={2}>
+        <Grid
+          item
+          xs={12}
+          container
+          alignItems="center"
+          justifyContent="space-between"
         >
-          <Spinner animation="border" />
-        </div>
-      )}
-    </>
-  );
+          <Grid item xs={10}>
+            <h5 style={{ fontWeight: "bold" }}>Document</h5>
+            <Text tokens={doc.content.tokens} />
+          </Grid>
+          <Grid
+            item
+            xs={2}
+            container
+            justifyContent="center"
+            alignItems="center"
+          >
+            <div
+              style={{
+                display: "flex",
+                margin: "auto",
+                marginBottom: "0.25rem",
+              }}
+            >
+              {Object.keys(doc.content.iaa)
+                .filter((measure) => doc.content.iaa[measure] !== null)
+                .map((measure) => (
+                  <span
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      margin: "0rem 0.25rem",
+                    }}
+                  >
+                    <span>{doc.content.iaa[measure]}%</span>
+                    <span style={{ fontSize: "0.7rem" }}>{measure}</span>
+                  </span>
+                ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <Paginator
+                page={page}
+                setPage={setPage}
+                totalPages={totalPages}
+                setDocLoaded={setDocLoaded}
+              />
+              {sortDirection === -1 ? (
+                <HiSortDescending
+                  onClick={() => {
+                    setSortDirection(1);
+                    setDocLoaded(false);
+                  }}
+                  id="adj-sort"
+                />
+              ) : (
+                <HiSortAscending
+                  onClick={() => {
+                    setSortDirection(-1);
+                    setDocLoaded(false);
+                  }}
+                  id="adj-sort"
+                />
+              )}
+              {/* <IoEllipsisVertical id="adj-settings" /> */}
+            </div>
+          </Grid>
+        </Grid>
+
+        <Grid item xs={12}>
+          {/* doc.triples includes singlular entities  */}
+          {doc.content.saved.length > 0 && doc.triples.length > 0 ? (
+            <AdjTable doc={doc} />
+          ) : (
+            <div
+              style={{
+                height: "25vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontSize: "1.5rem",
+                fontWeight: "bold",
+                color: "#607d8b",
+              }}
+            >
+              {doc.content.saveCount !== 0 ? (
+                <>
+                  <IoInformationCircle
+                    style={{ marginRight: "0.5rem", fontSize: "2.5rem" }}
+                  />
+                  <span>No annotations made</span>
+                </>
+              ) : (
+                <>
+                  <IoTimer
+                    style={{ marginRight: "0.5rem", fontSize: "2.5rem" }}
+                  />
+                  <span>No annotations made yet</span>
+                </>
+              )}
+            </div>
+          )}
+        </Grid>
+      </Grid>
+    );
+  }
 };
 
 const Paginator = ({ page, setPage, totalPages, setDocLoaded }) => {
@@ -257,112 +220,95 @@ const Paginator = ({ page, setPage, totalPages, setDocLoaded }) => {
 
 const Text = ({ tokens }) => {
   return (
-    <div>
-      <h5 style={{ fontWeight: "bold" }}>Document</h5>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          textAlign: "justify",
-          textJustify: "inter-word",
-          fontSize: "1.125rem",
-        }}
-      >
-        {tokens.map((t) => t.value).join(" ")}
-      </div>
-    </div>
-  );
-};
-
-const UserAvatar = ({ username, avatarColour, opacity }) => {
-  return (
     <div
-      id="avatar"
       style={{
-        backgroundColor: avatarColour,
-        borderRadius: "50%",
-        height: "24px",
-        width: "24px",
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        textTransform: "uppercase",
-        fontSize: "12px",
-        fontWeight: "bold",
-        opacity: opacity,
-        margin: "2px 2px",
+        flexWrap: "wrap",
+        textAlign: "justify",
+        textJustify: "inter-word",
+        fontSize: "1.125rem",
       }}
-      title={username}
     >
-      {username ? username[0] : "?"}
+      {tokens.map((t) => t.value).join(" ")}
     </div>
   );
 };
 
-const AdjTable = ({ doc, entityColourMap }) => {
+const AdjTable = ({ doc }) => {
+  const project = useSelector(selectProject);
+  const hasRelationAnnotation = project.tasks.relationAnnotation;
+
   const annotatorFormatter = (cell, row) => {
-    console.log(cell, row);
-
-    console.log("doc", doc);
-
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexWrap: "wrap",
-        }}
+      <Stack
+        direction="row"
+        spacing={2}
+        justifyContent="center"
+        alignItems="center"
       >
-        {row.createdBy.map((annotatorId) => (
-          <UserAvatar
-            username={
-              doc.content.annotators.filter((a) => a._id === annotatorId)[0]
-                .username
-            }
-            avatarColour={
-              doc.content.annotators.filter((a) => a._id === annotatorId)[0]
-                .colour
-            }
-            opacity={"1.0"}
-          />
-        ))}
-      </div>
+        {row.createdBy
+          .filter((a) =>
+            doc.content.saved.map((a2) => a2.createdBy).includes(a)
+          )
+          .map((annotatorId) => {
+            const userDetail = doc.content.saved.filter(
+              (a) => a.createdBy == annotatorId
+            )[0];
+
+            return (
+              <Avatar
+                sx={{
+                  bgcolor: userDetail.colour,
+                  width: 24,
+                  height: 24,
+                }}
+                title={`User: ${userDetail.username}`}
+              >
+                {userDetail.username[0]}
+              </Avatar>
+            );
+          })}
+      </Stack>
     );
   };
 
   const entityFormatter = (cell, row, rowIndex, formatExtraData) => {
-    // console.log(formatExtraData);
-
     const triplePart = formatExtraData.part;
 
-    if (!cell) {
-      return <span></span>;
-    } else {
-      switch (triplePart) {
-        case "source":
-          return (
-            <div
-              id="token-container"
+    console.log("cell", cell, "row", row);
+
+    let label;
+    switch (triplePart) {
+      case "source":
+        label = doc.ontology.filter(
+          (label) => label._id.toString() === row.sourceLabelId
+        )[0];
+        return (
+          <div
+            id="token-container"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <span id="token">{row.sourceToken}</span>
+            <span
+              id="label"
               style={{
-                display: "flex",
-                flexDirection: "column",
+                backgroundColor: label.colour,
+                color: getFontColour(label.colour),
               }}
             >
-              <span id="token">{row.sourceToken}</span>
-              <span
-                id="label"
-                style={{
-                  backgroundColor: entityColourMap[cell],
-                  color: getFontColour(entityColourMap[cell]),
-                }}
-              >
-                {cell}
-              </span>
-            </div>
-          );
+              {label.name}
+            </span>
+          </div>
+        );
 
-        case "target":
+      case "target":
+        if (row.targetLabelId) {
+          label = doc.ontology.filter(
+            (label) => label._id.toString() === row.targetLabelId
+          )[0];
           return (
             <div
               id="token-container"
@@ -375,31 +321,39 @@ const AdjTable = ({ doc, entityColourMap }) => {
               <span
                 id="label"
                 style={{
-                  backgroundColor: entityColourMap[cell],
-                  color: getFontColour(entityColourMap[cell]),
+                  backgroundColor: label.colour,
+                  color: getFontColour(label.colour),
                 }}
               >
-                {cell}
+                {label.name}
               </span>
             </div>
           );
-        case "relation":
-          return <span>{cell}</span>;
-        default:
-          break;
-      }
+        } else {
+          return <></>;
+        }
+      case "relation":
+        if (row.relationLabelId) {
+          label = doc.ontology.filter(
+            (label) => label._id.toString() === row.relationLabelId
+          )[0];
+          return <span>{label.name}</span>;
+        } else return <></>;
+      default:
+        break;
     }
+    // }
   };
 
   const annotationFormatter = (cell, row, rowIndex) => {
-    // console.log(cell, row);
-
     const textProps = {
       text: doc.content,
       textIndex: 1,
       tokens: doc.content.tokens,
       triple: row,
     };
+
+    console.log("text props", textProps);
 
     return <AnnotatedText {...textProps} />;
   };
@@ -439,6 +393,7 @@ const AdjTable = ({ doc, entityColourMap }) => {
       },
       headerAlign: "center",
       sort: true,
+      hidden: !hasRelationAnnotation,
     },
     {
       dataField: "targetLabel",
@@ -448,6 +403,7 @@ const AdjTable = ({ doc, entityColourMap }) => {
         part: "target",
       },
       headerAlign: "center",
+      hidden: !hasRelationAnnotation,
     },
     {
       dataField: "df1",
@@ -498,16 +454,11 @@ const AnnotatedText = ({ text, textIndex, tokens, triple }) => {
   // Component for highlighting annotation
   // Applies ellipsis to tokens +2 from source and target (this helps to identify solo entities)
   // Tokens without annotations have opacity to give focus
-  const focusTokens = [
-    ...new Set([
-      triple.sourceTokenStart,
-      triple.sourceTokenEnd,
-      triple.targetTokenStart,
-      triple.targetTokenEnd,
-    ]),
-  ];
+
+  console.log("triple", triple);
+
   const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-  const entityOnly = !triple.targetLabel;
+  const entityOnly = !triple.targetToken;
   const sliceLower = clamp(triple.sourceTokenStart - 2, 0, tokens.length);
   const sliceUpper = clamp(
     entityOnly ? triple.sourceTokenEnd + 3 : triple.targetTokenEnd + 3,
@@ -515,10 +466,50 @@ const AnnotatedText = ({ text, textIndex, tokens, triple }) => {
     tokens.length
   );
 
+  console.log("text slicing", sliceLower, sliceUpper, tokens.length);
+
+  const entities = [
+    {
+      isEntity: true,
+      start: triple.sourceTokenStart,
+      end: triple.sourceTokenEnd,
+      labelId: triple.sourceLabelId,
+      suggested: false, // TODO: confirm
+    },
+    {
+      isEntity: true,
+      start: triple.targetTokenStart,
+      end: triple.targetTokenEnd,
+      labelId: triple.targetLabelId,
+      suggested: false, // TODO: confirm
+    },
+  ];
+
+  const highlightToken = (tokenIndex) => {
+    if (entityOnly) {
+      return (
+        triple.sourceTokenStart <= tokenIndex &&
+        tokenIndex <= triple.sourceTokenEnd
+      );
+    } else {
+      return (
+        (triple.sourceTokenStart <= tokenIndex &&
+          tokenIndex <= triple.sourceTokenEnd) ||
+        (triple.targetTokenStart <= tokenIndex &&
+          tokenIndex <= triple.targetTokenEnd)
+      );
+    }
+  };
+
+  console.log(
+    "tokens.slice(sliceLower, sliceUpper)",
+    tokens.slice(sliceLower, sliceUpper)
+  );
+
   return (
     <div className="text-container">
       {tokens &&
-        tokens.slice(sliceLower, sliceUpper).map((token) => (
+        tokens.slice(sliceLower, sliceUpper + 1).map((token) => (
           <div
             id="token-container"
             style={{
@@ -529,10 +520,10 @@ const AnnotatedText = ({ text, textIndex, tokens, triple }) => {
             <span
               id="token"
               style={{
-                opacity: !focusTokens.includes(token.index) && "0.25",
+                opacity: !highlightToken(token.index) && "0.25",
               }}
-              annotated={hasMarkup(text, token.index)}
-              pos={markupPosition(text, token.index)}
+              annotated={hasMarkup(entities, token.index)}
+              pos={markupPosition(entities, token.index)}
             >
               {token.value}
             </span>
@@ -550,7 +541,7 @@ const AnnotatedText = ({ text, textIndex, tokens, triple }) => {
 };
 
 const Spans = ({ text, textIndex, token, tokenIndex, triple }) => {
-  const entityOnly = !triple.targetLabel;
+  const entityOnly = !triple.targetToken;
 
   let entities;
   if (entityOnly) {
@@ -559,7 +550,7 @@ const Spans = ({ text, textIndex, token, tokenIndex, triple }) => {
         part: "source",
         start: triple.sourceTokenStart,
         end: triple.sourceTokenEnd,
-        label: triple.sourceLabel,
+        labelId: triple.sourceLabelId,
       },
     ];
   } else {
@@ -568,14 +559,14 @@ const Spans = ({ text, textIndex, token, tokenIndex, triple }) => {
         part: "source",
         start: triple.sourceTokenStart,
         end: triple.sourceTokenEnd,
-        label: triple.sourceLabel,
+        labelId: triple.sourceLabelId,
       },
       {
         part: "target",
         start: triple.targetTokenStart,
         end: triple.targetTokenEnd,
-        label: triple.sourceLabel,
-        relation: triple.relationLabel, // Put here as it's in the target label element
+        labelId: triple.targetLabelId,
+        relationLabelId: triple.relationLabelId, // Put here as it's in the target label element
       },
     ];
   }
@@ -597,42 +588,28 @@ const Spans = ({ text, textIndex, token, tokenIndex, triple }) => {
       );
     });
 
-  // const spanComponentsSuggestedMarkup = entities
-  //   .filter((span) => span.suggested)
-  //   .slice()
-  //   .sort((a, b) => b.end - b.start - (a.end - a.start))
-  //   .filter((span) => span.start <= tokenIndex && tokenIndex <= span.end)
-  //   .map((span) => {
-  //     return (
-  //       <Span
-  //         text={text}
-  //         textIndex={textIndex}
-  //         token={token}
-  //         tokenIndex={tokenIndex}
-  //         span={span}
-  //         spanLabel={span.label}
-  //         suggested={true}
-  //       />
-  //     );
-  //   });
-
-  return <>{[...spanComponentsMarkup]}</>; //, ...spanComponentsSuggestedMarkup
+  return spanComponentsMarkup;
 };
 
 const Span = ({ tokenIndex, span, suggested }) => {
-  const flatEntityOntology = useSelector(selectFlatEntityOntology);
+  const flatOntology = useSelector(selectFlatOntology);
   const spanLabelPos = getSpanLabelPosition(span, tokenIndex);
-  const labelColour = flatEntityOntology.filter(
-    (l) => l.name.toLowerCase() === span.label.toLowerCase()
-  )[0].colour;
-  console.log(labelColour);
+
+  const label = flatOntology.filter(
+    (l) => l._id.toString() === span.labelId.toString()
+  )[0];
+
+  const labelColour = label.colour;
   const fontColour = getFontColour(labelColour);
+
+  console.log("Span", span);
 
   return (
     <span
+      key={tokenIndex}
       id="label"
       suggested={suggested ? "true" : "false"}
-      label-content={span.label}
+      label-content={label.name}
       pos={spanLabelPos}
       style={{
         backgroundColor: labelColour,
@@ -642,10 +619,14 @@ const Span = ({ tokenIndex, span, suggested }) => {
     >
       {span.part === "target" && (
         <Badge id="relation-badge" variant="light">
-          {span.relation}
+          {
+            flatOntology.filter(
+              (l) => l._id.toString() === span.relationLabelId
+            )[0].name
+          }
         </Badge>
       )}
-      {span.label}
+      {label.name}
     </span>
   );
 };

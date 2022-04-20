@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Badge, OverlayTrigger, Tooltip, Popover } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import { selectProject, selectFlatEntityOntology } from "../projectSlice";
+import { selectProject, selectFlatOntology } from "../projectSlice";
 import "./Spans.css";
 import {
   selectAnnotationMode,
@@ -13,26 +13,25 @@ import {
   unsetSorceRel,
   unsetTargetRel,
   unsetSourceTargetRels,
+  selectEntities,
 } from "../../../app/dataSlice";
 import { getFontColour } from "../utils"; // project/utils
 import { EntityTooltipContent } from "./EntityTooltipContent";
 import { RelationTooltipContent } from "./RelationTooltipContent";
 import { getSpanLabelPosition } from "./utils";
 import { IoClose, IoArrowForward } from "react-icons/io5";
-import { selectUserId } from "../../auth/userSlice";
 
 /*
     Component for creating stack of spans from markup
 */
-export const Spans = ({ text, textIndex, token, tokenIndex }) => {
-  const annotationMode = useSelector(selectAnnotationMode);
-  const textHasSpans = text.markup.length > 0;
-  const userId = useSelector(selectUserId);
+export const Spans = ({ text, token, tokenIndex }) => {
+  const entities = useSelector(selectEntities);
+  const textHasSpans =
+    Object.keys(entities).includes(text._id) && entities[text._id].length > 0;
 
   if (textHasSpans) {
-    const spanComponentsMarkup = text.markup
-      .filter((span) => span.createdBy === userId)
-      .filter((span) => !span.suggested)
+    const spanComponentsMarkup = entities[text._id]
+      // .filter((span) => span.createdBy === userId) // TODO: confirm that spans are only for current user
       .slice()
       .sort((a, b) => b.end - b.start - (a.end - a.start)) // Sorting pushes longer spans to the top
       .filter((span) => span.start <= tokenIndex && tokenIndex <= span.end)
@@ -40,37 +39,15 @@ export const Spans = ({ text, textIndex, token, tokenIndex }) => {
         return (
           <Span
             text={text}
-            textIndex={textIndex}
             token={token}
             tokenIndex={tokenIndex}
             span={span}
-            spanLabel={span.label}
-            suggested={false}
+            suggested={span.suggested}
           />
         );
       });
 
-    const spanComponentsSuggestedMarkup = text.markup
-      .filter((span) => span.createdBy === userId)
-      .filter((span) => span.suggested)
-      .slice()
-      .sort((a, b) => b.end - b.start - (a.end - a.start))
-      .filter((span) => span.start <= tokenIndex && tokenIndex <= span.end)
-      .map((span) => {
-        return (
-          <Span
-            text={text}
-            textIndex={textIndex}
-            token={token}
-            tokenIndex={tokenIndex}
-            span={span}
-            spanLabel={span.label}
-            suggested={true}
-          />
-        );
-      });
-
-    return <>{[...spanComponentsMarkup, ...spanComponentsSuggestedMarkup]}</>;
+    return spanComponentsMarkup;
   } else {
     //   Nothing to render if text doesn't have span.
     return <></>;
@@ -80,20 +57,13 @@ export const Spans = ({ text, textIndex, token, tokenIndex }) => {
 /*
     Component for rendering a single span element
 */
-const Span = ({
-  text,
-  textIndex,
-  token,
-  tokenIndex,
-  span,
-  spanLabel,
-  suggested,
-}) => {
+const Span = ({ text, tokenIndex, span, suggested }) => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
   const annotationMode = useSelector(selectAnnotationMode);
-
-  const flatEntityOntology = useSelector(selectFlatEntityOntology);
+  const entities = useSelector(selectEntities);
+  const flatOntology = useSelector(selectFlatOntology);
+  const flatRelationOntology = flatOntology.filter((i) => !i.isEntity);
 
   //   States
   const [showTooltip, setShowTooltip] = useState(false);
@@ -105,14 +75,19 @@ const Span = ({
   const [selectedRelKey, setSelectedRelKey] = useState();
   const [showAddRel, setShowAddRel] = useState(true);
   const [hoveredElement, setHoveredElement] = useState();
+
   const hasSuggestedRelation =
     relations &&
-    relations[text._id].filter((r) => r.suggested)[0] !== undefined;
+    Object.keys(relations).includes(text._id) &&
+    relations[text._id].filter((r) => r.suggested).length > 0;
+
   const isSourceForRelation =
     relations &&
-    relations[text._id].filter(
-      (r) => r.suggested && r.source === span._id
-    )[0] !== undefined;
+    Object.keys(relations).includes(text._id) &&
+    relations[text._id].filter((r) => r.suggested && r.source === span._id)
+      .length > 0;
+
+  // console.log(token, hasSuggestedRelation, isSourceForRelation);
 
   useEffect(() => {
     switch (hoveredElement) {
@@ -131,14 +106,8 @@ const Span = ({
               // console.log("SET TARGET", span);
               dispatch(
                 setTargetRel({
-                  tokenIds: text.tokens
-                    .filter(
-                      (_, index) => span.start <= index && index <= span.end
-                    )
-                    .map((token) => token._id),
                   span: span,
-                  label: spanLabel,
-                  labelId: span.label_id,
+                  labelId: span.labelId,
                   textId: sourceSpan.textId,
                 })
               );
@@ -147,14 +116,8 @@ const Span = ({
             case "SWITCH_TARGET":
               dispatch(
                 setTargetRel({
-                  tokenIds: text.tokens
-                    .filter(
-                      (_, index) => span.start <= index && index <= span.end
-                    )
-                    .map((token) => token._id),
                   span: span,
-                  label: spanLabel,
-                  labelId: span.label_id,
+                  labelId: span.labelId,
                   textId: sourceSpan.textId,
                 })
               );
@@ -181,18 +144,20 @@ const Span = ({
             case "UNSET_TARGET":
               // Click to remove target while source is selected
               // If target has relations on it; it will remain highlighted though.
-              const targetHasRelations =
-                sourceSpan.relatedSpanIdLabelMap.filter(
-                  (s) => s.span_id === targetSpan._id
-                ).length > 0;
+
+              // const targetHasRelations =
+              //   sourceSpan.relatedSpanIdLabelMap.filter(
+              //     (s) => s.span_id === targetSpan._id
+              //   ).length > 0;
+
               dispatch(
                 unsetTargetRel({
-                  tokenIds: text.tokens
-                    .filter(
-                      (_, index) => span.start <= index && index <= span.end
-                    )
-                    .map((token) => token._id),
-                  hasRelations: targetHasRelations,
+                  // tokenIds: text.tokens
+                  //   .filter(
+                  //     (_, index) => span.start <= index && index <= span.end
+                  //   )
+                  //   .map((token) => token._id),
+                  // hasRelations: targetHasRelations,
                   textId: sourceSpan.textId,
                 })
               );
@@ -209,61 +174,37 @@ const Span = ({
 
   //    Get meta-data for span
   const spanLabelPos = getSpanLabelPosition(span, tokenIndex);
-  const labelColour = flatEntityOntology.filter(
-    (l) => l.id === span.label_id
-  )[0].colour;
+  const labelColour = span.colour;
   const fontColour = getFontColour(labelColour);
 
-  const handleMouseDown = (text, span, spanLabel) => {
+  const handleMouseDown = (text, span) => {
     const event = !sourceSpan
       ? "SET_SOURCE"
       : sourceSpan._id === span._id
       ? "UNSET_SOURCE"
-      : "UNKWOWN_SOURCE";
+      : "UNKNOWN_SOURCE";
 
     switch (event) {
       case "SET_SOURCE":
         // User clicked on source span
         // Get all related spans that share a, or set of, relation(s)
-
-        const relatedSpans = relations[text._id].filter(
-          (s) => s.source === span._id
-        );
-        const relatedSpanIds = relatedSpans.map((s) => s.target);
-        const relatedTokenIndexes = text.markup
-          .filter((s) => relatedSpanIds.includes(s._id))
-          .flatMap((s) => [...new Set([s.start, s.end])]);
-        // console.log("relatedTokenIndexes", relatedTokenIndexes);
-
-        const relatedTokenIds = text.tokens
-          .filter((_, index) => relatedTokenIndexes.includes(index))
-          .map((token) => token._id);
-        // console.log("relatedTokenIds", relatedTokenIds);
-
-        // console.log('relatedSpans', relatedSpans);
-
-        // Save span._id -> label mapping
-        const relatedSpanIdLabelMap = relatedSpans.map((s) => ({
-          span_id: s.target,
-          label: s.target_label,
-        }));
-        // console.log("relatedSpanIdLabelMap", relatedSpanIdLabelMap);
-
-        // console.log('SPAN', span);
-
-        dispatch(
-          setSourceRel({
-            textId: text._id,
-            tokenIds: text.tokens
-              .filter((_, index) => span.start <= index && index <= span.end)
-              .map((token) => token._id),
-            span: span,
-            label: spanLabel,
-            labelId: span.label_id,
-            relatedTokenIds: relatedTokenIds,
-            relatedSpanIdLabelMap: relatedSpanIdLabelMap,
-          })
-        );
+        if (Object.keys(relations).includes(text._id)) {
+          dispatch(
+            setSourceRel({
+              textId: text._id,
+              span: span,
+              labelId: span.labelId,
+            })
+          );
+        } else {
+          dispatch(
+            setSourceRel({
+              textId: text._id,
+              span: span,
+              labelId: span.labelId,
+            })
+          );
+        }
         break;
       case "UNSET_SOURCE":
         // User clicks on source to unfocus - unsets source, target and related spans
@@ -276,7 +217,7 @@ const Span = ({
     }
   };
 
-  const conceptTooltip = (props) => {
+  const entityTooltip = (props) => {
     const tooltipContentProps = { tooltipFocusSpan, text };
     return (
       <Tooltip
@@ -304,6 +245,19 @@ const Span = ({
       setSelectedRelKey,
       setShowRelTooltip,
     };
+
+    // Note: Only sourceSpan has textId key
+    const sourceEntityText =
+      sourceSpan &&
+      entities[sourceSpan.textId].filter(
+        (e) => e._id.toString() === sourceSpan._id.toString()
+      )[0].entityText;
+    const targetEntityText =
+      targetSpan &&
+      entities[sourceSpan.textId].filter(
+        (e) => e._id.toString() === targetSpan._id.toString()
+      )[0].entityText;
+
     return (
       <Popover
         className="context-tooltip-relation"
@@ -333,7 +287,7 @@ const Span = ({
                   width: "150px",
                 }}
               >
-                {sourceSpan.value} <IoArrowForward /> {targetSpan.value}
+                {sourceEntityText} <IoArrowForward /> {targetEntityText}
               </span>
             )}
           </span>
@@ -351,25 +305,25 @@ const Span = ({
     );
   };
 
-  if (annotationMode === "concept") {
+  if (annotationMode === "entity") {
+    const showEntityPopover =
+      showTooltip &&
+      span._id === tooltipFocusSpan._id &&
+      ["end", "start-single"].includes(spanLabelPos) &&
+      Object.keys(tooltipFocusSpan).length > 0;
+
     return (
       <OverlayTrigger
         placement="right"
-        show={
-          showTooltip &&
-          span._id === tooltipFocusSpan._id &&
-          spanLabel === tooltipFocusSpan.label &&
-          ["end", "start-single"].includes(spanLabelPos) &&
-          Object.keys(tooltipFocusSpan).length > 0
-        }
+        show={showEntityPopover}
         trigger={["hover", "focus"]}
-        overlay={conceptTooltip}
+        overlay={entityTooltip}
       >
         <span
           id="label"
           key={tokenIndex}
           suggested={suggested ? "true" : "false"}
-          label-content={spanLabel}
+          label-content={span.name}
           pos={spanLabelPos}
           style={{
             backgroundColor: labelColour,
@@ -379,12 +333,12 @@ const Span = ({
           onMouseEnter={() => {
             setTooltipFocusSpan({
               _id: span._id,
-              label: spanLabel,
-              label_id: span.label_id,
+              labelId: span.labelId,
               start: span.start,
               end: span.end,
               pos: spanLabelPos,
               type: suggested ? "suggested" : "accepted",
+              entityText: span.entityText,
             });
             setShowTooltip(annotationMode !== "relation" ? true : false);
           }}
@@ -392,7 +346,7 @@ const Span = ({
             setShowTooltip(false);
           }}
         >
-          {spanLabel}
+          {span.name}
         </span>
       </OverlayTrigger>
     );
@@ -412,145 +366,72 @@ const Span = ({
     project.tasks.relationAnnotationType === "closed" &&
     (!suggested || hasSuggestedRelation)
   ) {
-    const handleRelatedState = (
-      token,
-      span,
-      spanLabel,
-      spanHasRelatedLabel
-    ) => {
-      // Determines elements to fade out
-      const opacityValue = "0.25";
-      if (token.state && token.state === "unrelated") {
-        return opacityValue;
-      } else if (
-        token.state &&
-        targetSpan &&
-        token.state === "target" &&
-        spanLabel !== targetSpan.label
-      ) {
-        // Target token container can have many labels
-        return opacityValue;
-      } else if (
-        token.state &&
-        token.state === "source" &&
-        span._id === sourceSpan._id &&
-        spanLabel !== sourceSpan.label
-      ) {
-        // Source token container can have many labels
-        return opacityValue;
-      } else if (
-        token.state &&
-        token.state === "related" &&
-        !spanHasRelatedLabel
-      ) {
-        // Token is related, but doesnt have a realted label!
-        return opacityValue;
-      } else {
-        // console.log(span);
-        // TODO: What is going on here?
-      }
-    };
-    // Logic: Check if span_id in idlabelmap; if so, see if the current label is within it. Note: there
-    // can be multiple labels per span_id for multi-label span relations.
-
-    // console.log('sourceSpan', sourceSpan);
-
-    const spanRelatedLabels =
-      sourceSpan &&
-      sourceSpan.relatedSpanIdLabelMap.filter(
-        (rsm) => rsm.span_id === span._id && rsm.label === spanLabel
-      );
-    // console.log('spanRelatedLabels', spanRelatedLabels)
-
-    const spanHasRelatedLabel =
-      spanRelatedLabels && spanRelatedLabels.length > 0;
-    // console.log("spanHasRelatedLabel", spanHasRelatedLabel);
-
-    const renderSpanRelationLabels = (
-      spanHasRelatedLabel,
-      relations,
-      text,
-      spanLabel,
-      span
-    ) => {
+    const renderSpanRelationLabels = (relations, text, span) => {
       /* Render full label if only one; else render first character capitalised */
-      if (spanHasRelatedLabel) {
-        const relationLabels = relations[text._id]
-          .filter(
-            (r) =>
-              r.source === sourceSpan._id && // filter for the relations to the current source only otherwise all relations to other non-related spans will be shown.
-              r.target === span._id &&
-              r.target_label === spanLabel
-          )
-          .map((r) => r.label);
+      // Filter for the relations to the current source only otherwise all relations to other non-related spans will be shown.
+      const relationLabelIds = relations[text._id]
+        .filter((r) => r.source === sourceSpan._id && r.target === span._id)
+        .map((r) => r.labelId);
 
-        return relationLabels.map((label) => {
-          return (
-            <Badge
-              id="relation-badge"
-              variant="light"
-              title={`${suggested && "Suggested"} Relation: ${label}`}
-              suggested={suggested ? "true" : "false"}
-            >
-              {relationLabels.length > 2 ? label[0] : label}
-            </Badge>
-          );
-        });
-      }
+      return relationLabelIds.map((rId) => {
+        const label = flatRelationOntology.filter(
+          (r) => r._id.toString() === rId
+        )[0];
+
+        return (
+          <Badge
+            id="relation-badge"
+            variant="light"
+            title={`${suggested ? "Suggested" : ""} Relation: ${label.name}`}
+            suggested={suggested ? "true" : "false"}
+          >
+            {label.name}
+          </Badge>
+        );
+      });
     };
+
+    const showRelationPopover =
+      showRelTooltip &&
+      sourceSpan &&
+      targetSpan &&
+      span._id === targetSpan._id &&
+      ["start", "start-single"].includes(spanLabelPos) &&
+      text._id === sourceSpan.textId;
 
     return (
       <OverlayTrigger
         placement="left"
-        show={
-          showRelTooltip &&
-          sourceSpan &&
-          targetSpan &&
-          span._id === targetSpan._id &&
-          spanLabel === targetSpan.label &&
-          ["start", "start-single"].includes(spanLabelPos) &&
-          text._id === sourceSpan.textId
-        }
+        show={showRelationPopover}
         overlay={relationTooltip}
         rootClose
       >
         <span
           key={tokenIndex}
           id="label"
-          label-content={spanLabel}
+          label-content={span.name}
           pos={spanLabelPos}
           style={{
             backgroundColor: labelColour,
             color: fontColour && fontColour,
             cursor: "pointer",
-            opacity: handleRelatedState(
-              token,
-              span,
-              spanLabel,
-              spanHasRelatedLabel
-            ),
+            opacity:
+              sourceSpan &&
+              (span.state === "unrelated" ||
+                sourceSpan.textId.toString() !== text._id.toString()) &&
+              "0.25",
           }}
-          source={
-            token.state &&
-            token.state === "source" &&
-            span._id === sourceSpan._id &&
-            "true"
-          }
+          source={span.state && span.state === "source" && "true"}
           suggested={suggested ? "true" : "false"}
-          colour={token.state && token.state === "source" && labelColour}
+          colour={span.state && span.state === "source" && labelColour}
           hasSuggestedRelation={suggested && isSourceForRelation && "true"}
-          onClick={() => handleMouseDown(text, span, spanLabel)}
+          onClick={() => handleMouseDown(text, span, span.name)}
           onMouseEnter={() => setHoveredElement("span")}
           onMouseLeave={() => setHoveredElement(null)}
         >
-          {renderSpanRelationLabels(
-            spanHasRelatedLabel,
-            relations,
-            text,
-            spanLabel,
-            span
-          )}
-          {spanLabel}
+          {(span.state === "related" || span.state === "target") &&
+            renderSpanRelationLabels(relations, text, span)}
+          {span.name}
         </span>
       </OverlayTrigger>
     );

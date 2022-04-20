@@ -1,7 +1,6 @@
 import "./Dashboard.css";
 import { useEffect, useState } from "react";
 import history from "../utils/history";
-import { Card, Col, Container, Nav, Row } from "react-bootstrap";
 import { BiNetworkChart } from "react-icons/bi";
 import { FaDownload, FaUsers } from "react-icons/fa";
 import { IoBarChart, IoLayers, IoPulse, IoSettings } from "react-icons/io5";
@@ -11,19 +10,23 @@ import { selectUserId } from "../auth/userSlice";
 import { fetchProject, selectProject } from "../project/projectSlice";
 import { Annotators } from "./features/Annotators";
 import { Downloads } from "./features/Downloads";
-import { CustomGraph } from "./graph/Graph";
+import { CustomGraph } from "./features/graph/Graph";
 import { Overview } from "./features/Overview";
 import { Settings } from "./features/Settings";
 import { Adjudicator } from "./features/Adjudicator";
 import { Corrector } from "./features/Corrector";
+
+// New
+import { Grid, Tabs, Tab, Card, CardContent, Button } from "@mui/material";
+import { Loader } from "../common/Loader";
+import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 
 export const Dashboard = () => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
   const projectStatus = useSelector((state) => state.project.status);
   const { projectId, viewKey } = useParams();
-  const [key, setKey] = useState(viewKey); //  === "" ? "overview" : viewKey;
-  const [components, setComponents] = useState();
+  const [components, setComponents] = useState({});
   const userId = useSelector(selectUserId);
   const [roleLoaded, setRoleLoaded] = useState(false);
   const [userIsPM, setUserIsPM] = useState();
@@ -104,80 +107,77 @@ export const Dashboard = () => {
     }
   }, [roleLoaded]);
 
-  return (
-    <Container fluid className="dashboard-container">
-      <Row>
-        <Col>
-          <Card>
-            {components && (
-              <>
-                <Card.Body
-                  style={{
-                    margin: 0,
-                    borderBottom: "1px solid rgba(0,0,0,.125)",
-                  }}
-                >
-                  <Nav
-                    defaultActiveKey={key}
-                    className="justify-content-center"
-                    onSelect={(k) => setKey(k)}
-                  >
-                    {Object.keys(components)
-                      .filter((c) => components[c].show)
-                      .map((name) => (
-                        <Nav.Item>
-                          <Nav.Link
-                            // href={`/dashboard/${project._id}/${name}`}
-                            onClick={() => setKey(name)}
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: key === name ? "bolder" : "bold",
-                              borderBottom:
-                                key === name && "2px solid rgba(0,0,0,.25)",
-                              padding: "8px 16px",
-                            }}
-                            eventKey={name}
-                            disabled={components[name].disabled}
-                          >
-                            <span
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                              }}
-                            >
-                              <span style={{ marginRight: "0.25rem" }}>
-                                {components[name].icon}
-                              </span>
-                              {components[name].title}
-                            </span>
-                          </Nav.Link>
-                        </Nav.Item>
-                      ))}
-                  </Nav>
-                </Card.Body>
-                <Card.Body id="dashboard-content-container">
-                  <Container fluid>
-                    <Row>
-                      <Col>
-                        <div className="title">
-                          {components[key].title}
-                          <span id="underline" />
-                        </div>
-                      </Col>
-                    </Row>
-                    <Row>
-                      <Col style={{ margin: "0.25rem" }}>
-                        {components[key].body}
-                      </Col>
-                    </Row>
-                  </Container>
-                </Card.Body>
-              </>
-            )}
+  const [value, setValue] = useState("overview");
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
+
+  if (roleLoaded && Object.keys(components).length > 0) {
+    return (
+      <Grid item style={{ width: "75vw", maxWidth: "1600px" }}>
+        <Grid item style={{ margin: "1rem 0rem" }}>
+          <Card variant="outlined">
+            <CardContent
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <h3>{project.name}</h3>
+                <span>{project.description}</span>
+              </div>
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  history.push(`/annotation/${project._id}/page=1`)
+                }
+                endIcon={<ArrowRightIcon />}
+              >
+                Annotate
+              </Button>
+            </CardContent>
           </Card>
-        </Col>
-      </Row>
-    </Container>
-  );
+        </Grid>
+        <Grid item style={{ margin: "1rem 0rem" }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Tabs
+                centered
+                value={value}
+                onChange={handleChange}
+                textColor="primary"
+                indicatorColor="primary"
+                // scrollButtons="auto"
+                // variant="scrollable"
+              >
+                {Object.keys(components)
+                  .filter((key) => components[key].show)
+                  .map((key) => {
+                    return (
+                      <Tab
+                        icon={components[key].icon}
+                        iconPosition="start"
+                        value={key}
+                        label={components[key].title}
+                        disabled={components[key].disabled}
+                      />
+                    );
+                  })}
+              </Tabs>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item>
+          <Card variant="outlined">
+            <CardContent>{components[value].body}</CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    );
+  } else {
+    return <Loader message={"Dashboard loading"} />;
+  }
 };

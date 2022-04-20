@@ -95,23 +95,14 @@ export const declineInvitation = createAsyncThunk(
   }
 );
 
-export const updateAvatarColour = createAsyncThunk(
-  "/user/updateAvatarColour",
-  async ({ colour }) => {
-    const response = await axios.patch("/api/user/profile/avatar/colour", {
-      colour: colour,
-    });
-    return response.data;
-  }
-);
-
 export const updateProfile = createAsyncThunk(
   "/user/updateProfile",
-  async ({ username, email, publicBool }) => {
+  async ({ username, email, publicBool, colour }) => {
     const response = await axios.patch("/api/user/profile", {
       username: username,
       email: email,
       public: publicBool, // Cannot use public as reserved word
+      colour: colour,
     });
     return response.data;
   }
@@ -193,12 +184,9 @@ export const userSlice = createSlice({
           (p) => !p.accepted
         );
       })
-      .addCase(updateAvatarColour.fulfilled, (state, action) => {
-        console.log("updated avatar colour");
-        state.colour = action.payload.colour;
-      })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.username = action.payload.username;
+        state.colour = action.payload.colour;
       });
   },
 });

@@ -11,28 +11,6 @@
   user-select: none;
 }
 
-#avatar-colour-picker-icon {
-  position: absolute;
-  left: 10px;
-  width: 22px;
-  height: 22px;
-  background-color: white;
-  border-radius: 50%;
-  opacity: 0.75;
-  cursor: pointer;
-}
-
-#avatar-colour-picker-icon:hover {
-  opacity: 1;
-}
-
-#avatar-colour-selector {
-  display: flex;
-  justify-content: space-between;
-  overflow-x: auto;
-  max-width: 160px;
-}
-
 #avatar-example {
   border-radius: 50%;
   height: 40px;

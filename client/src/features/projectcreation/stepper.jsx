@@ -1,4 +1,3 @@
-import { getFlatDataFromTree } from "@nosferatu500/react-sortable-tree";
 import { useState } from "react";
 import { Badge, Button, Spinner } from "react-bootstrap";
 import { IoArrowBack, IoCheckmark } from "react-icons/io5";
@@ -133,7 +132,7 @@ export const StepperControls = () => {
       texts: steps.upload.data.corpus,
       entityDictionary: steps.preannotation.data.entityDictionary,
       typedTripleDictionary: steps.preannotation.data.typedTripleDictionary,
-      entityOntology: steps.schema.data.conceptLabels,
+      entityOntology: steps.schema.data.entityLabels,
       relationOntology: steps.details.data.performRelationAnnotation
         ? steps.schema.data.relationLabels
         : [],

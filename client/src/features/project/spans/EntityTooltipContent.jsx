@@ -1,5 +1,3 @@
-import React from "react";
-import { IoSearch } from "react-icons/io5";
 import {
   MdContentPaste,
   MdDelete,
@@ -12,19 +10,21 @@ import {
   acceptAnnotation,
   applyAnnotation,
   deleteAnnotation,
+  selectTexts,
 } from "../../../app/dataSlice";
-import { selectProject, selectFlatEntityOntology } from "../projectSlice";
-import "./Tooltip.css";
+import { selectProject, selectFlatOntology } from "../projectSlice";
 
 export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
-  const flatEntityOntology = useSelector(selectFlatEntityOntology);
+  const flatOntology = useSelector(selectFlatOntology);
+  const flatEntityOntology = flatOntology.filter((i) => i.isEntity);
+  const texts = useSelector(selectTexts);
 
   const labelFullName =
-    flatEntityOntology.filter((e) => e._id == tooltipFocusSpan.label_id)
-      .length > 0 &&
-    flatEntityOntology.filter((e) => e._id == tooltipFocusSpan.label_id)[0]
+    flatEntityOntology.filter((e) => e._id == tooltipFocusSpan.labelId).length >
+      0 &&
+    flatEntityOntology.filter((e) => e._id == tooltipFocusSpan.labelId)[0]
       .fullName;
 
   const handleMarkupAllClick = () => {
@@ -35,6 +35,8 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
         token.index <= tooltipFocusSpan.end
     );
 
+    console.log("handling apply all", tooltipFocusSpan);
+
     dispatch(
       applyAnnotation({
         entitySpanStart: tokens[0].index,
@@ -42,13 +44,14 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
           tokens.length === 1
             ? tokens[0].index
             : tokens[tokens.length - 1].index,
-        entityLabel: tooltipFocusSpan.label,
-        entityLabelId: tooltipFocusSpan.label_id,
+        entityLabelId: tooltipFocusSpan.labelId,
         textId: textId,
         projectId: project._id,
         applyAll: true,
         suggested: false,
         annotationType: "entity",
+        textIds: texts.map((t) => t._id),
+        entityText: tokens.map((t) => t.value).join(" "),
       })
     );
   };
@@ -72,11 +75,11 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   projectId: project._id,
                   textId: text._id,
                   spanId: tooltipFocusSpan._id,
-                  relationId: null,
-                  entityLabel: tooltipFocusSpan.label,
                   applyAll: false,
                   suggested: false,
                   annotationType: "entity",
+                  textIds: texts.map((t) => t._id),
+                  entityText: tooltipFocusSpan.entityText,
                 })
               );
             }}
@@ -92,11 +95,11 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   projectId: project._id,
                   textId: text._id,
                   spanId: tooltipFocusSpan._id,
-                  relationId: null,
-                  entityLabel: tooltipFocusSpan.label,
                   applyAll: true,
                   suggested: false,
                   annotationType: "entity",
+                  textIds: texts.map((t) => t._id),
+                  entityText: tooltipFocusSpan.entityText,
                 })
               );
             }}
@@ -104,13 +107,6 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
           >
             <MdDeleteSweep />
           </span>
-          {/* <span style={{ borderRight: "1px solid grey", width: "4px" }}></span> */}
-          {/* <span
-            id="search"
-            title="Click to quick search for documents with this token or phrase"
-          >
-            <IoSearch />
-          </span> */}
         </>
       ) : (
         <>
@@ -122,11 +118,12 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   projectId: project._id,
                   textId: text._id,
                   spanId: tooltipFocusSpan._id,
-                  entityLabel: tooltipFocusSpan.label,
-                  entityLabelId: tooltipFocusSpan.label_id,
+                  entityLabelId: tooltipFocusSpan.labelId,
                   applyAll: false,
                   annotationType: "entity",
                   suggested: false,
+                  textIds: texts.map((t) => t._id),
+                  entityText: tooltipFocusSpan.entityText,
                 })
               );
             }}
@@ -142,11 +139,12 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   projectId: project._id,
                   textId: text._id,
                   spanId: tooltipFocusSpan._id,
-                  entityLabel: tooltipFocusSpan.label,
-                  entityLabelId: tooltipFocusSpan.label_id,
+                  entityLabelId: tooltipFocusSpan.labelId,
                   applyAll: true,
                   annotationType: "entity",
                   suggested: false,
+                  textIds: texts.map((t) => t._id),
+                  entityText: tooltipFocusSpan.entityText,
                 })
               );
             }}
@@ -163,10 +161,11 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   textId: text._id,
                   spanId: tooltipFocusSpan._id,
                   relationId: null,
-                  entityLabel: tooltipFocusSpan.label,
                   applyAll: false,
                   suggested: true,
                   annotationType: "entity",
+                  textIds: texts.map((t) => t._id),
+                  entityText: tooltipFocusSpan.entityText,
                 })
               );
             }}
@@ -183,10 +182,11 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   textId: text._id,
                   spanId: tooltipFocusSpan._id,
                   relationId: null,
-                  entityLabel: tooltipFocusSpan.label,
                   applyAll: true,
                   suggested: true,
                   annotationType: "entity",
+                  textIds: texts.map((t) => t._id),
+                  entityText: tooltipFocusSpan.entityText,
                 })
               );
             }}
@@ -194,10 +194,6 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
           >
             <MdDeleteSweep />
           </span>
-          {/* <span style={{ borderRight: "1px solid grey", width: "4px" }}></span> */}
-          {/* <span id="search">
-            <IoSearch />
-          </span> */}
         </>
       )}
     </div>

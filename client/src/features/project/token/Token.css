@@ -138,7 +138,7 @@
 }
 
 /* LABELS FOR RELATIONS */
-#label[hasSuggestedRelation="true"]{
+#label[hasSuggestedRelation="true"] {
   border-bottom: 4px dotted rgb(55, 71, 79);
 }
 
@@ -185,4 +185,15 @@
   100% {
     background-color: attr(colour);
   }
+}
+
+/* Open Relation Popover styling */
+.open-relation-tooltip > .tooltip-inner {
+  background-color: #eeeeee !important;
+  border: 1px solid #90a4ae;
+}
+
+.bs-tooltip-top .arrow::before,
+.bs-tooltip-auto[x-placement^="top"] .arrow::before {
+  border-top-color: #90a4ae !important;
 }

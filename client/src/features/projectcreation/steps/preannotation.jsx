@@ -21,6 +21,10 @@ import {
 import { setAlertContent, setAlertActive } from "../../alerts/alertSlice";
 import { BiGitCommit } from "react-icons/bi";
 import { IoWarning } from "react-icons/io5";
+import { flattenOntology } from "../../utils/tools";
+
+import { Grid, Button, Input } from "@mui/material";
+import { grey } from "@mui/material/colors";
 
 export const Preannotation = () => {
   const dispatch = useDispatch();
@@ -35,16 +39,24 @@ export const Preannotation = () => {
   const [eLoading, setELoading] = useState(false);
   const [tLoading, setTLoading] = useState(false);
 
-  const entityOntologyLabels = steps.schema.data.conceptLabels.map((label) =>
-    label.name.toLowerCase()
+  // Flatten ontologies
+  const flatEntityOntology = flattenOntology(steps.schema.data.entityLabels);
+  const flatRelationOntology = flattenOntology(
+    steps.schema.data.relationLabels
   );
-  const relationOntologyLabels = steps.schema.data.relationLabels.map((label) =>
-    label.name.toLowerCase()
+  const entityOntologyLabels = flatEntityOntology.map((l) =>
+    l.fullName.toLowerCase()
+  );
+  const relationOntologyLabels = flatRelationOntology.map((label) =>
+    label.fullName.toLowerCase()
   );
   const txtEntityExample =
     "Jim, Person\ndog, Animal/Mammal\nwhale, Animal/Mammal";
   const txtTypedTripleExample =
     "repair,Activity,hasParticipant,line,Physicalobject,1\nrepair,MaintenanceActivity,hasParticipant,pipe,PhysicalObject,1";
+
+  // console.log("entityOntologyLabels", entityOntologyLabels);
+  // console.log("relationOntologyLabels", relationOntologyLabels);
 
   const readFile = (fileMeta, type) => {
     let reader = new FileReader();
@@ -63,6 +75,7 @@ export const Preannotation = () => {
             setELoading(true);
             setOEntityDictSize(dict.length);
             // Filter based on entity ontology
+            // TODO: FIX ISSUE
             dict = Object.fromEntries(
               dict
                 .filter((line) =>
@@ -231,310 +244,206 @@ export const Preannotation = () => {
   };
 
   return (
-    <Row style={{ margin: "0rem 0.25rem 0rem 0.25rem" }}>
-      <Col sm={12} md={4}>
-        <Card style={{ height: "35vh" }}>
-          <Card.Header id="section-subtitle">
-            {/* <IoInformationCircle />  */}
-            Information
-          </Card.Header>
-          <Card.Body style={{ overflowY: "auto", textAlign: "justify" }}>
-            <span style={{ fontSize: "0.8125rem" }}>
-              Before commencing annotation with QuickGraph, you can upload a
-              dictionary for pre-annotation of entities and triples. The types
-              specified in each dictionary must be consistent with the
-              ontologies specified in this project. The dictionary items must be
-              consistent with relation constraints (if applicable).
-            </span>
-          </Card.Body>
-        </Card>
-      </Col>
-      <Col sm={12} md={8}>
-        <Card style={{ height: "35vh" }}>
-          <Card.Header id="section-subtitle">Actions</Card.Header>
-          <Card.Body
+    <Grid item xs={12}>
+      <Grid item xs={12} style={{ fontSize: "0.8125rem" }} sx={{mb: 2}}>
+        Before commencing annotation with QuickGraph, you can upload a
+        dictionary for pre-annotation of entities and triples. The types
+        specified in each dictionary must be consistent with the ontologies
+        specified in this project. The dictionary items must be consistent with
+        relation constraints (if applicable).
+      </Grid>
+      <Grid
+        item
+        container
+        xs={12}
+        justifyContent="center"
+        alignItems="center"
+        sx={{mt: 4, p: 2}}
+      >
+        <Grid item xs={12} style={{ borderBottom: `1px solid ${grey[300]}` }}>
+          <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-evenly",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+            <div>
+              <h5 id="section-subtitle">Entity Preannotation</h5>
+              <span style={{ fontSize: "0.75rem" }}>
+                Upload a set of known entity annotations to pre-annotate your
+                uploaded corpus.
+              </span>
+            </div>
+            <label htmlFor="contained-button-file">
+              <Input
+                accept="txt"
+                id="contained-button-file"
+                type="file"
+                onChange={(e) => {
+                  readFile(e.target.files[0], "entity");
                 }}
+              />
+              <Button variant="contained" component="span">
+                {steps[activeStep].data.entityDictionaryFileName === null
+                  ? "Upload Entites"
+                  : steps[activeStep].data.entityDictionaryFileName}
+              </Button>
+            </label>
+          </div>
+        </Grid>
+        <Grid item xs={12}>
+          <span
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "1rem",
+              padding: "1rem",
+            }}
+          >
+            {steps[activeStep].data.entityDictionaryFileName === null ? (
+              "Upload dictionary to pre-annotate entities"
+            ) : (
+              <>
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    color: "#607d8b",
+                  }}
+                >
+                  <BiGitCommit style={{ marginRight: "0.25rem" }} />{" "}
+                  <span style={{ fontWeight: "bold" }}>Pairs Uploaded</span>
+                  <span style={{ margin: "0rem 0.5rem", fontWeight: "bold" }}>
+                    {
+                      Object.keys(steps[activeStep].data.entityDictionary)
+                        .length
+                    }
+                  </span>
+                </span>
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    color: "#e65100",
+                  }}
+                >
+                  <IoWarning style={{ marginRight: "0.25rem" }} /> Errors{" "}
+                  <span style={{ margin: "0rem 0.5rem" }}>
+                    {oEntityDictSize -
+                      Object.keys(steps[activeStep].data.entityDictionary)
+                        .length}
+                  </span>
+                </span>
+              </>
+            )}
+          </span>
+        </Grid>
+        {performRelationAnnotation &&
+          steps.details.data.relationAnnotationType === "closed" && (
+            <Grid
+              item
+              container
+              xs={12}
+              justifyContent="center"
+              alignItems="center"
+              style={{ margin: "1rem 0rem 0rem 0rem" }}
+            >
+              <Grid
+                item
+                xs={12}
+                style={{ borderBottom: `1px solid ${grey[300]}` }}
               >
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "left",
+                    justifyContent: "space-between",
                     alignItems: "center",
                   }}
                 >
-                  <OverlayTrigger
-                    placement="left"
-                    trigger={["hover", "click"]}
-                    delay={{ show: 250, hide: 400 }}
-                    overlay={
-                      <Popover id="information-popover">
-                        <Popover.Title>Upload Information</Popover.Title>
-                        <Popover.Content>
-                          Upload a set of known entity annotations to
-                          pre-annotate your uploaded corpus.
-                          <hr />
-                          <div
-                            style={{ display: "flex", flexDirection: "column" }}
-                          >
-                            <span style={{ fontWeight: "bold" }}>.txt</span>
-                            <code style={{ whiteSpace: "pre-wrap" }}>
-                              {txtEntityExample}
-                            </code>
-                            {/* <span style={{ fontWeight: "bold" }}>.json</span>
-                            <code>{JSON.stringify(jsonExample, null, 1)}</code> */}
-                          </div>
-                          <hr />
-                          <span style={{ fontStyle: "italic" }}>
-                            Please note that pre-annotation is case sensitive
-                            and currently only supports 1:1 mapping. Any labels
-                            not in your entity ontology will be ignored.
-                          </span>
-                        </Popover.Content>
-                      </Popover>
-                    }
-                  >
-                    <IoInformationCircle
-                      style={{
-                        cursor: "pointer",
-                        marginRight: "0.25rem",
-                        color: "#455a64",
+                  <div>
+                    <h5 id="section-subtitle">Typed Triple Preannotation</h5>
+                    <span style={{ fontSize: "0.75rem" }}>
+                      Upload a set of known typed triple annotations to
+                      pre-annotate your uploaded corpus. Format: (source span,
+                      source type, relation type, target span, target type,
+                      offset).
+                    </span>
+                  </div>
+                  <label htmlFor="contained-button-file">
+                    <Input
+                      accept="txt"
+                      id="contained-button-file"
+                      type="file"
+                      onChange={(e) => {
+                        readFile(e.target.files[0], "entity");
                       }}
                     />
-                  </OverlayTrigger>
-                  <span id="section-subtitle">Entity Pre-annotation</span>
-                </div>
-                <label id="upload-btn">
-                  {eLoading && (
-                    <Spinner
-                      animation="border"
-                      size="sm"
-                      style={{ marginRight: "0.25rem" }}
-                    />
-                  )}
-                  <input
-                    id="corpus"
-                    type="file"
-                    onChange={(e) => {
-                      readFile(e.target.files[0], "entity");
-                    }}
-                  />
-                  {steps[activeStep].data.entityDictionaryFileName === null
-                    ? "Upload File (.txt)"
-                    : steps[activeStep].data.entityDictionaryFileName}
-                </label>
-              </div>
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: "0.825rem",
-                }}
-              >
-                {steps[activeStep].data.entityDictionaryFileName === null ? (
-                  "Upload dictionary to pre-annotate entities"
-                ) : (
-                  <>
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        color: "#607d8b",
-                      }}
-                    >
-                      <BiGitCommit style={{ marginRight: "0.25rem" }} />{" "}
-                      <span style={{ fontWeight: "bold" }}>Pairs Uploaded</span>
-                      <span
-                        style={{ margin: "0rem 0.5rem", fontWeight: "bold" }}
-                      >
-                        {
-                          Object.keys(steps[activeStep].data.entityDictionary)
-                            .length
-                        }
-                      </span>
-                    </span>
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        color: "#e65100",
-                      }}
-                    >
-                      <IoWarning style={{ marginRight: "0.25rem" }} /> Errors{" "}
-                      <span style={{ margin: "0rem 0.5rem" }}>
-                        {oEntityDictSize -
-                          Object.keys(steps[activeStep].data.entityDictionary)
-                            .length}
-                      </span>
-                    </span>
-                  </>
-                )}
-              </span>
-            </div>
-            {performRelationAnnotation &&
-              steps.details.data.relationAnnotationType === "closed" && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "left",
-                        alignItems: "center",
-                      }}
-                    >
-                      <OverlayTrigger
-                        placement="left"
-                        trigger={["hover", "click"]}
-                        delay={{ show: 250, hide: 400 }}
-                        overlay={
-                          <Popover id="information-popover">
-                            <Popover.Title>Upload Information</Popover.Title>
-                            <Popover.Content>
-                              Upload a set of known typed triple annotations to
-                              pre-annotate your uploaded corpus. Format: (source
-                              span, source type, relation type, target span,
-                              target type, offset).
-                              <hr />
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                }}
-                              >
-                                <span style={{ fontWeight: "bold" }}>.txt</span>
-                                <code style={{ whiteSpace: "pre-wrap" }}>
-                                  {txtTypedTripleExample}
-                                </code>
-                              </div>
-                              <hr />
-                              <span style={{ fontStyle: "italic" }}>
-                                Please note that pre-annotation is case
-                                sensitive and currently only supports 1:1
-                                mapping. Any labels not in your entity and
-                                relation ontology will be ignored.
-                              </span>
-                            </Popover.Content>
-                          </Popover>
-                        }
-                      >
-                        <IoInformationCircle
-                          style={{
-                            cursor: "pointer",
-                            marginRight: "0.25rem",
-                            color: "#455a64",
-                          }}
-                        />
-                      </OverlayTrigger>
-                      <span id="section-subtitle">
-                        Typed Triple Pre-annotation
-                      </span>
-                    </div>
-                    <label id="upload-btn">
-                      {tLoading && (
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                          style={{ marginRight: "0.25rem" }}
-                        />
-                      )}
-                      <input
-                        id="corpus"
-                        type="file"
-                        onChange={(e) => {
-                          readFile(e.target.files[0], "triple");
-                        }}
-                      />
+                    <Button variant="contained" component="span">
                       {steps[activeStep].data.typedTripleDictionaryFileName ===
                       null
-                        ? "Upload File (.txt)"
+                        ? "Upload Triples"
                         : steps[activeStep].data.typedTripleDictionaryFileName}
-                    </label>
-                  </div>
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      fontSize: "0.825rem",
-                    }}
-                  >
-                    {steps[activeStep].data.typedTripleDictionaryFileName ===
-                    null ? (
-                      "Upload dictionary to pre-annotate entities with relations"
-                    ) : (
-                      <>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            color: "#607d8b",
-                          }}
-                        >
-                          <BiGitCommit style={{ marginRight: "0.25rem" }} />{" "}
-                          <span style={{ fontWeight: "bold" }}>
-                            Sets Uploaded
-                          </span>
-                          <span
-                            style={{
-                              margin: "0rem 0.5rem",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            {
-                              steps[activeStep].data.typedTripleDictionary
-                                .length
-                            }
-                          </span>
-                        </span>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            color: "#e65100",
-                          }}
-                        >
-                          <IoWarning style={{ marginRight: "0.25rem" }} />{" "}
-                          Errors{" "}
-                          <span style={{ margin: "0rem 0.5rem" }}>
-                            {oTripleDictSize -
-                              steps[activeStep].data.typedTripleDictionary
-                                .length}
-                          </span>
-                        </span>
-                      </>
-                    )}
-                  </span>
+                    </Button>
+                  </label>
                 </div>
-              )}
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+              </Grid>
+              <Grid item xs={12}>
+                <span
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    fontSize: "1rem",
+                    padding: "1rem",
+                  }}
+                >
+                  {steps[activeStep].data.typedTripleDictionaryFileName ===
+                  null ? (
+                    "Upload dictionary to pre-annotate entities with relations"
+                  ) : (
+                    <>
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          color: "#607d8b",
+                        }}
+                      >
+                        <BiGitCommit style={{ marginRight: "0.25rem" }} />{" "}
+                        <span style={{ fontWeight: "bold" }}>
+                          Sets Uploaded
+                        </span>
+                        <span
+                          style={{
+                            margin: "0rem 0.5rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {steps[activeStep].data.typedTripleDictionary.length}
+                        </span>
+                      </span>
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          color: "#e65100",
+                        }}
+                      >
+                        <IoWarning style={{ marginRight: "0.25rem" }} /> Errors{" "}
+                        <span style={{ margin: "0rem 0.5rem" }}>
+                          {oTripleDictSize -
+                            steps[activeStep].data.typedTripleDictionary.length}
+                        </span>
+                      </span>
+                    </>
+                  )}
+                </span>
+              </Grid>
+            </Grid>
+          )}
+      </Grid>
+    </Grid>
   );
 };

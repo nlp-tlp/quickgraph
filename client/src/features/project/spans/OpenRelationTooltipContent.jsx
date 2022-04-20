@@ -17,9 +17,9 @@ import {
   selectRelations,
   selectSourceSpan,
   selectTargetSpan,
+  selectTexts,
 } from "../../../app/dataSlice";
 import { selectProject } from "../projectSlice";
-import "./Tooltip.css";
 
 export const OpenRelationTooltipContent = ({
   text,
@@ -34,6 +34,7 @@ export const OpenRelationTooltipContent = ({
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
   const relations = useSelector(selectRelations);
+  const texts = useSelector(selectTexts);
 
   const handleRelationInteraction = ({
     relation,
@@ -74,15 +75,14 @@ export const OpenRelationTooltipContent = ({
             projectId: project._id,
             textId: text._id,
             sourceEntityId: sourceSpan._id,
-            sourceEntityLabel: sourceSpan.label,
             targetEntityId: targetSpan._id,
-            targetEntityLabel: targetSpan.label,
-            relationLabel: relationLabel,
+            // relationLabel: relationLabel,
             relationLabelId: null,
             targetTokenIds: targetTokenIds,
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
+            textIds: texts.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);
@@ -100,12 +100,13 @@ export const OpenRelationTooltipContent = ({
             projectId: project._id,
             textId: text._id,
             relationId: relationId,
-            sourceEntityLabel: sourceSpan.label,
-            targetEntityLabel: targetSpan.label,
+            sourceEntityId: sourceSpan._id,
+            targetEntityId: targetSpan._id,
             relationLabel: relationLabel,
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
+            textIds: texts.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);
@@ -122,15 +123,14 @@ export const OpenRelationTooltipContent = ({
             projectId: project._id,
             textId: text._id,
             sourceEntityId: sourceSpan._id,
-            sourceEntityLabel: sourceSpan.label,
             targetEntityId: targetSpan._id,
-            targetEntityLabel: targetSpan.label,
             relationId: relationId,
             relationLabel: relationLabel,
             targetTokenIds: targetTokenIds,
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
+            textIds: texts.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);

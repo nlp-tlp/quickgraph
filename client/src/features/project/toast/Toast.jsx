@@ -125,7 +125,11 @@ export const AnnotationToast = () => {
         </Toast.Header>
         <Toast.Body style={{ borderLeft: `6px solid ${color}`, paddingTop: 0 }}>
           <div>
-            <span style={{ color: "#263238" }}>{content}</span>
+            <span
+              style={{ display: "flex", color: "#263238", textAlign: "left" }}
+            >
+              {content}
+            </span>
             <div
               style={{
                 display: "flex",
@@ -133,12 +137,16 @@ export const AnnotationToast = () => {
                 marginTop: "0.5rem",
               }}
             >
-              <span style={{ color: "#78909c", marginRight: "0.25rem" }}>
-                <MdLabel />
-              </span>
-              <span style={{ fontWeight: "bold", color: "#263238" }}>
-                {info.content.label}
-              </span>
+              {info.content.label && (
+                <>
+                  <span style={{ color: "#78909c", marginRight: "0.25rem" }}>
+                    <MdLabel />
+                  </span>
+                  <span style={{ fontWeight: "bold", color: "#263238" }}>
+                    {info.content.label}
+                  </span>
+                </>
+              )}
             </div>
             <div
               style={{

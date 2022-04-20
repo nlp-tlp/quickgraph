@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../utils/api-interceptor";
+import { getFlatOntology } from "./utils";
 
 const initialState = {
   details: {},
@@ -57,8 +58,7 @@ const initialState = {
   activeEntityClass: 0,
   keyBinding: {},
   deleteProjectStatus: "idle",
-  flatEntityOntology: [],
-  flatRelationOntology: [],
+  flatOntology: [],
 };
 
 export const fetchProject = createAsyncThunk(
@@ -74,14 +74,6 @@ export const deleteProject = createAsyncThunk(
   async ({ projectId }) => {
     const response = await axios.delete(`/api/project/${projectId}`);
     return { response: response.data, details: { projectId: projectId } };
-  }
-);
-
-export const fetchProjectMaps = createAsyncThunk(
-  "/project/fetchProjectMaps",
-  async ({ projectId }) => {
-    const response = await axios.get(`/api/map/${projectId}`);
-    return response.data;
   }
 );
 
@@ -184,6 +176,7 @@ export const projectSlice = createSlice({
       })
       .addCase(fetchProject.fulfilled, (state, action) => {
         state.status = "succeeded";
+        console.log("Fetch project response", action.payload);
         // Add fetched project to details
         state.details = action.payload;
         state.id = action.payload._id;
@@ -192,45 +185,15 @@ export const projectSlice = createSlice({
         // src: https://stackoverflow.com/questions/58908893/flatten-array-of-objects-with-nested-children
 
         // TODO: Add keybinding to each item
-        function flattenEntityOntology(a) {
-          return a.reduce(function (
-            flattened,
-            { id, name, fullName, colour, children }
-          ) {
-            return flattened
-              .concat([{ id, name, fullName, colour }])
-              .concat(children ? flattenEntityOntology(children) : []);
-          },
-          []);
-        }
-
-        function flattenRelationOntology(a) {
-          return a.reduce(function (
-            flattened,
-            { id, name, fullName, domain, range, children }
-          ) {
-            return flattened
-              .concat([{ id, name, fullName, domain, range }])
-              .concat(children ? flattenRelationOntology(children) : []);
-          },
-          []);
-        }
-
-        state.flatEntityOntology = flattenEntityOntology(
-          action.payload.entityOntology
-        );
-
-        state.flatRelationOntology = flattenRelationOntology(
-          action.payload.relationOntology
-        );
-
-
+        state.flatOntology = getFlatOntology(action.payload.ontology);
 
         state.keyBinding = Object.assign(
           {},
-          ...action.payload.entityOntology.map((label, index) => ({
-            [index + 1]: label,
-          }))
+          ...action.payload.ontology
+            .filter((item) => item.isEntity)
+            .map((label, index) => ({
+              [index + 1]: label,
+            }))
         );
 
         // Set cluster filter (if applicable)
@@ -262,13 +225,6 @@ export const projectSlice = createSlice({
       .addCase(deleteProject.fulfilled, (state, action) => {
         console.log("deleted project", action.payload);
         state.deleteProjectStatus = "succeeded";
-      })
-      .addCase(fetchProjectMaps.fulfilled, (state, action) => {
-        state.bgColourMap = action.payload.colour_map;
-        state.activeMaps = Object.keys(action.payload.contents).filter(
-          (key) => action.payload.contents[key].active
-        );
-        state.schema = action.payload; // Entire maps object
       })
       .addCase(fetchMetrics.pending, (state, action) => {
         state.metricsStatus = "loading";
@@ -340,8 +296,6 @@ export const selectFilters = (state) => state.project.filters;
 export const selectActiveEntityClass = (state) =>
   state.project.activeEntityClass;
 export const selectKeyBinding = (state) => state.project.keyBinding;
-export const selectFlatEntityOntology = (state) => state.project.flatEntityOntology;
-export const selectFlatRelationOntology = (state) =>
-  state.project.flatRelationOntology;
+export const selectFlatOntology = (state) => state.project.flatOntology;
 
 export default projectSlice.reducer;

@@ -1,8 +1,6 @@
-import "../Create.css";
 import { useEffect } from "react";
-import { Card, Col, Form, Row, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { IoInformationCircle, IoWarning } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
+import "../Create.css";
 import {
   selectActiveStep,
   selectSteps,
@@ -10,32 +8,16 @@ import {
   setStepValid,
 } from "../createStepSlice";
 
-const information = [
-  {
-    title: "Details",
-    content: "Enter project details including task type and clustering",
-  },
-  {
-    title: "Upload",
-    content: "Create or upload a corpus",
-  },
-  {
-    title: "Preprocessing",
-    content: "Apply text preprocessing to your corpus",
-  },
-  {
-    title: "Schema",
-    content: "Build a schema of concepts/labels for annotation",
-  },
-  {
-    title: "Preannotation",
-    content: "Upload data for pre-annotation",
-  },
-  {
-    title: "Review",
-    content: "Review project before commencing annotation",
-  },
-];
+import {
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
+  FormHelperText,
+  FormLabel,
+  Grid,
+  TextField,
+} from "@mui/material";
 
 export const Details = () => {
   const dispatch = useDispatch();
@@ -55,184 +37,133 @@ export const Details = () => {
   }, [steps]);
 
   return (
-    <Row id="details">
-      <Col>
-        <Row>
-          <Col sm={12} md={6}>
-            <Card>
-              <Card.Header id="section-subtitle">
-                <IoInformationCircle /> Information
-              </Card.Header>
-              <Card.Body className="create-details-card-body">
-                The project creation process involves:
-                {information.map((info, index) => (
-                  <p style={{ padding: "0", margin: "0" }}>
-                    <span>
-                      <strong>
-                        {index + 1}. {info.title}
-                      </strong>
-                    </span>
-                    <br />
-                    <span>{info.content}</span>
-                  </p>
-                ))}
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col sm={12} md={6}>
-            <Card>
-              <Card.Header id="section-subtitle">Details</Card.Header>
-              <Card.Body className="create-details-card-body">
-                <Row>
-                  <Col>
-                    <Form.Group>
-                      <p id="section-subtitle">Name</p>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter project name"
-                        name="projectName"
-                        value={steps[activeStep].data.name}
-                        onChange={(e) =>
-                          dispatch(setStepData({ name: e.target.value }))
-                        }
-                        autoComplete="off"
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>
-                    <Form.Group>
-                      <p id="section-subtitle">Description</p>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter project description"
-                        name="projectDescription"
-                        value={steps[activeStep].data.description}
-                        onChange={(e) =>
-                          dispatch(setStepData({ description: e.target.value }))
-                        }
-                        autoComplete="off"
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>
-                    <Form.Group>
-                      <p id="section-subtitle">Multi-task Options</p>
-                      <Form.Check
-                        id="radio-et-cre"
-                        type="radio"
-                        label="Entity and Closed Relation Annotation"
-                        name="relationAnnotationGroup"
-                        title="Enables project annotators to perform entity and closed relation annotation."
-                        style={{ fontSize: "14px", marginBottom: "0.5rem" }}
-                        checked={
-                          steps[activeStep].data.performRelationAnnotation &&
-                          steps[activeStep].data.relationAnnotationType ===
-                            "closed"
-                        }
-                        onChange={(e) => {
-                          dispatch(
-                            setStepData({
-                              performRelationAnnotation: true,
-                              relationAnnotationType: "closed",
-                            })
-                          );
-                        }}
-                      />
-
-                      <Form.Check
-                        id="radio-et-ore"
-                        type="radio"
-                        label="Entity and Open Relation Annotation"
-                        name="relationAnnotationGroup"
-                        title="Enables project annotators to perform entity and open relation annotation"
-                        style={{ fontSize: "14px", marginBottom: "0.5rem" }}
-                        checked={
-                          steps[activeStep].data.performRelationAnnotation &&
-                          steps[activeStep].data.relationAnnotationType ===
-                            "open"
-                        }
-                        onChange={(e) => {
-                          dispatch(
-                            setStepData({
-                              performRelationAnnotation: true,
-                              relationAnnotationType: "open",
-                            })
-                          );
-                        }}
-                      />
-                      <Form.Check
-                        id="radio-et-nre"
-                        type="radio"
-                        label="Entity Annotation Only"
-                        name="relationAnnotationGroup"
-                        title="Disables project annotators from performing relation annotation"
-                        style={{
-                          fontSize: "14px",
-                          marginBottom: "0.5rem",
-                        }}
-                        checked={
-                          !steps[activeStep].data.performRelationAnnotation
-                        }
-                        onChange={(e) => {
-                          dispatch(
-                            setStepData({
-                              performRelationAnnotation: false,
-                            })
-                          );
-                        }}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>
-                    <Form.Group>
-                      <p id="section-subtitle">
-                        Document Clustering
-                        <OverlayTrigger
-                          // placement="top"
-                          overlay={
-                            <Tooltip id="cluster-tooltip-info">
-                              For large-scale corpora, the clustering process
-                              may take a few minutes.
-                            </Tooltip>
-                          }
-                        >
-                          <IoWarning
-                            style={{
-                              marginLeft: "0.25rem",
-                              color: "orange",
-                              cursor: "help",
-                            }}
-                          />
-                        </OverlayTrigger>
-                      </p>
-                      <Form.Check
-                        id="check-clustering"
-                        type="checkbox"
-                        label="Perform Rank Order Clustering"
-                        name="performClustering"
-                        title="Performs agglomerative clustering using sentence embeddings (SBERT) to enhance annotation rate and consistency."
-                        style={{
-                          fontSize: "14px",
-                          marginBottom: "0.5rem",
-                        }}
-                        checked={steps[activeStep].data.performClustering}
-                        onChange={(e) => {
-                          dispatch(
-                            setStepData({
-                              performClustering:
-                                !steps[activeStep].data.performClustering,
-                            })
-                          );
-                        }}
-                      />
-                    </Form.Group>
-                    {/* {actions.cluster && (
+    <Grid item xs={12}>
+      <Grid item container xs={12} spacing={4}>
+        <Grid item xs={6}>
+          <TextField
+            required
+            id="project-name-text-field"
+            label="Project Name"
+            helperText="This can be modified at any time"
+            placeholder="Enter project name"
+            variant="standard"
+            fullWidth
+            value={steps[activeStep].data.name}
+            onChange={(e) => dispatch(setStepData({ name: e.target.value }))}
+            autoComplete="off"
+          />
+        </Grid>
+        <Grid item xs={6}>
+          <TextField
+            required
+            id="project-description-text-field"
+            label="Project Description"
+            helperText="This can be modified at any time"
+            placeholder="Enter project description"
+            variant="standard"
+            fullWidth
+            value={steps[activeStep].data.description}
+            onChange={(e) =>
+              dispatch(setStepData({ description: e.target.value }))
+            }
+            autoComplete="off"
+          />
+        </Grid>
+      </Grid>
+      <Grid item container xs={12} spacing={4}>
+        <Grid item xs={6}>
+          <FormControl sx={{ mt: 4 }} component="fieldset" variant="standard">
+            <FormLabel component="legend">Multi-task Configuration</FormLabel>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={
+                      steps[activeStep].data.performRelationAnnotation &&
+                      steps[activeStep].data.relationAnnotationType === "closed"
+                    }
+                    onChange={(e) => {
+                      dispatch(
+                        setStepData({
+                          performRelationAnnotation: true,
+                          relationAnnotationType: "closed",
+                        })
+                      );
+                    }}
+                    name="ea-ra-closed"
+                  />
+                }
+                label="Entity and Closed Relation Annotation"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={
+                      steps[activeStep].data.performRelationAnnotation &&
+                      steps[activeStep].data.relationAnnotationType === "open"
+                    }
+                    onChange={(e) => {
+                      dispatch(
+                        setStepData({
+                          performRelationAnnotation: true,
+                          relationAnnotationType: "open",
+                        })
+                      );
+                    }}
+                    name="ea-ra-open"
+                  />
+                }
+                label="Entity and Open Relation Annotation"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!steps[activeStep].data.performRelationAnnotation}
+                    onChange={(e) => {
+                      dispatch(
+                        setStepData({
+                          performRelationAnnotation: false,
+                        })
+                      );
+                    }}
+                    name="ea-only"
+                  />
+                }
+                label="Entity Annotation Only"
+              />
+            </FormGroup>
+            <FormHelperText>
+              Be careful as this choice is irreversible
+            </FormHelperText>
+          </FormControl>
+        </Grid>
+        <Grid item xs={6}>
+          <FormControl sx={{ mt: 4 }} component="fieldset" variant="standard">
+            <FormLabel component="legend">Document Clustering</FormLabel>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={steps[activeStep].data.performClustering}
+                    onChange={(e) => {
+                      dispatch(
+                        setStepData({
+                          performClustering:
+                            !steps[activeStep].data.performClustering,
+                        })
+                      );
+                    }}
+                    name="gilad"
+                  />
+                }
+                label="Perform document clustering"
+              />
+            </FormGroup>
+            <FormHelperText>
+              Be careful as this choice is irreversible
+            </FormHelperText>
+          </FormControl>
+          {/* {actions.cluster && (
                 <>
                   <Form.Group>
                     <Form.Label>Clustering Method</Form.Label>
@@ -258,13 +189,16 @@ export const Details = () => {
                   </Form.Group>
                 </>
               )} */}
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Col>
-    </Row>
+        </Grid>
+      </Grid>
+    </Grid>
   );
 };
+
+{
+  /* <Tooltip title="Delete">
+  <IconButton>
+    <DeleteIcon />
+  </IconButton>
+</Tooltip> */
+}

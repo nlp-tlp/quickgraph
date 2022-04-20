@@ -13,6 +13,10 @@ import store from "./app/store";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 
+import { ThemeProvider } from "@mui/material/styles";
+
+import { theme } from "./theme";
+
 import App from "./App";
 
 let persistor = persistStore(store);
@@ -31,7 +35,9 @@ ReactDOM.render(
           draggable
           pauseOnHover
         />
-        <App />
+        <ThemeProvider theme={theme}>
+          <App />
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   </React.StrictMode>,

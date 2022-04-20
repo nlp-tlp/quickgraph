@@ -40,11 +40,15 @@ export const getFontColour = (colour) => {
     Checks whether span(s) exist and whether the current token
     is marked up (accepted or suggested)
 */
-export const hasMarkup = (text, tokenIndex) => {
-  const markupSpans = text.markup.filter(
+export const hasMarkup = (entities, tokenIndex) => {
+  if (entities === undefined) {
+    return false;
+  } // Text doesn't have entities
+
+  const markupSpans = entities.filter(
     (span) => span.start <= tokenIndex && tokenIndex <= span.end
   );
-  const suggestedMarkupSpans = text.markup.filter(
+  const suggestedMarkupSpans = entities.filter(
     (span) =>
       span.suggested && span.start <= tokenIndex && tokenIndex <= span.end
   );
@@ -60,12 +64,16 @@ export const hasMarkup = (text, tokenIndex) => {
     to a markup event. If the current token is marked up (accepted or suggested),
     determines whether position is 'start', 'single-start', 'middle' or 'end'.
 */
-export const markupPosition = (text, tokenIndex) => {
-  const markupSpans = text.markup.filter(
+export const markupPosition = (entities, tokenIndex) => {
+  if (entities === undefined) {
+    return false;
+  } // Text doesn't have entities
+  const markupSpans = entities.filter(
     (span) => span.start <= tokenIndex && tokenIndex <= span.end
   );
-  const suggestedMarkupSpans = text.markup.filter(
-    (span) => span.suggested && span.start <= tokenIndex && tokenIndex <= span.end
+  const suggestedMarkupSpans = entities.filter(
+    (span) =>
+      span.suggested && span.start <= tokenIndex && tokenIndex <= span.end
   );
   const inMarkupSpan = markupSpans.length > 0;
   const inSuggestedMarkupSpan = suggestedMarkupSpans.length > 0;
@@ -88,5 +96,22 @@ export const markupPosition = (text, tokenIndex) => {
     return position;
   } else {
     return;
+  }
+};
+
+export const getFlatOntology = (a) => {
+  return flattenOntology(a);
+  function flattenOntology(a) {
+    return a.reduce(function (
+      flattened,
+      { _id, name, fullName, colour = null, children, domain, range, isEntity }
+    ) {
+      return flattened
+        .concat([
+          { _id, name, fullName, colour, domain, range, isEntity, children }, // Adds children back in for use elsewhere
+        ])
+        .concat(children ? flattenOntology(children) : []);
+    },
+    []);
   }
 };

@@ -121,6 +121,11 @@ const StackedLabelPlot = ({ graphLoaded, data, type }) => {
         },
         suggestedMax: 10,
       },
+      xAxes: [
+        {
+          maxBarThickness: 100,
+        },
+      ],
     },
   };
 
@@ -131,14 +136,14 @@ const StackedLabelPlot = ({ graphLoaded, data, type }) => {
           ...options,
           scales: {
             x: {
-              stacked: true,
+              stacked: false,
               // type: "time",
               // time: { tooltipFormat: "DD T" },
               title: { display: true, text: "Date Saved" },
               ticks: { maxRotation: 0, minRotation: 0 },
             },
             y: {
-              stacked: true,
+              // stacked: true,
               display: true,
               title: { display: true, text: "Count of Documents Saved" },
               ticks: { stepSize: 2 },

@@ -3,7 +3,6 @@
 */
 
 import { useEffect, useState } from "react";
-import { Card, Col, Form, Row } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import {
   IoDocuments,
@@ -17,6 +16,20 @@ import {
   setStepData,
 } from "../createStepSlice";
 import "../Create.css";
+
+import {
+  Grid,
+  FormControl,
+  FormLabel,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  FormHelperText,
+  TextField,
+  Card,
+  CardContent,
+  CardHeader,
+} from "@mui/material";
 
 export const Preprocessing = () => {
   const dispatch = useDispatch();
@@ -103,159 +116,192 @@ export const Preprocessing = () => {
   }, [corpus]);
 
   return (
-    <Form.Group as={Row} style={{ margin: "0rem 0.25rem 0rem 0.25rem" }}>
-      <Col sm={12} md={3}>
-        <Card>
-          <Card.Header id="section-subtitle">Actions</Card.Header>
-          <Card.Body>
-            <Form.Check
-              id="check-lowercase"
-              type="checkbox"
-              label="Lower case"
-              name="lowerCaseCheck"
-              title="Removes casing from characters. This can reduce annotation effort."
-              style={{ fontSize: "14px", marginBottom: "0.5rem" }}
-              checked={actions.lowercase}
-              onChange={(e) => {
-                dispatch(setStepData({ lowercase: e.target.checked }));
-              }}
-            />
-            <Form.Check
-              id="check-remove-chars"
-              type="checkbox"
-              label="Remove characters"
-              name="removeCharactersCheck"
-              title="Removes special characters from corpus. This can reduce annotation effort."
-              style={{ fontSize: "14px", marginBottom: "0.5rem" }}
-              checked={actions.removeChars}
-              onChange={(e) => {
-                dispatch(setStepData({ removeChars: e.target.checked }));
-              }}
-            />
-            <Form.Control
-              type="text"
-              disabled={!actions.removeChars}
-              placeholder={actions.removeCharSet}
-              name="charsRemove"
-              value={actions.removeCharSet}
-              onChange={(e) => {
-                dispatch(setStepData({ removeCharSet: e.target.value }));
-              }}
-              autoComplete="off"
-              style={{ fontSize: "14px", marginBottom: "0.5rem" }}
-            />
-            <Form.Check
-              id="check-remove-duplicates"
-              type="checkbox"
-              label="Remove duplicates"
-              title="Removes duplicate documents from your corpus. This can reduce annotation effort."
-              name="removeDuplicatesCheck"
-              style={{ fontSize: "14px", marginBottom: "0.5rem" }}
-              checked={actions.removeDuplicates}
-              onChange={(e) => {
-                dispatch(setStepData({ removeDuplicates: e.target.checked }));
-              }}
-            />
-          </Card.Body>
-        </Card>
-        <Card style={{ marginTop: "1rem" }}>
-          <Card.Header id="section-subtitle">Corpus Statistics</Card.Header>
-          <Card.Body>
-            <div>
-              {Object.keys(corpusDetails).map((key) => {
-                return (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
+    <Grid item xs={12}>
+      <Grid container item xs={12}>
+        <Grid item xs={12}>
+          <Card variant="outlined">
+            <CardContent>
+              <FormControl sx={{ m: 1 }} component="fieldset">
+                <FormLabel component="legend">Preprocessing Actions</FormLabel>
+                <FormGroup style={{ display: "flex", flexDirection: "row" }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={actions.lowercase}
+                        onChange={(e) => {
+                          dispatch(
+                            setStepData({ lowercase: e.target.checked })
+                          );
+                        }}
+                        name="remove-casing"
+                        title="Removes casing from characters. This can reduce annotation effort."
+                      />
+                    }
+                    label="Lower Case"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={actions.removeChars}
+                        onChange={(e) => {
+                          dispatch(
+                            setStepData({ removeChars: e.target.checked })
+                          );
+                        }}
+                        title="Removes special characters from corpus. This can reduce annotation effort."
+                        name="remove-chars"
+                      />
+                    }
+                    label="Remove Characters"
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={actions.removeDuplicates}
+                        onChange={(e) => {
+                          dispatch(
+                            setStepData({ removeDuplicates: e.target.checked })
+                          );
+                        }}
+                        title="Removes duplicate documents from your corpus. This can reduce annotation effort."
+                        name="remove-duplicates"
+                      />
+                    }
+                    label="Remove Duplicates"
+                  />
+                  <TextField
+                    id="remove-char-text-field"
+                    label="Characters To Remove"
+                    variant="standard"
+                    size="small"
+                    autoComplete="off"
+                    value={actions.removeCharSet}
+                    onChange={(e) => {
+                      dispatch(setStepData({ removeCharSet: e.target.value }));
                     }}
-                  >
-                    <p
-                      id="section-subtitle"
+                    disabled={!actions.removeChars}
+                    placeholder={actions.removeCharSet}
+                  />
+                </FormGroup>
+              </FormControl>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid item container xs={12} spacing={2}>
+        <Grid
+          item
+          container
+          xs={12}
+          spacing={2}
+          justifyContent="space-evenly"
+          alignItems="center"
+          sx={{ mt: 1 }}
+        >
+          {Object.keys(corpusDetails).map((key) => {
+            return (
+              <Grid item xs={2}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <div
                       style={{
                         display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
                         alignItems: "center",
-                        textTransform: "capitalize",
                       }}
                     >
-                      <IoDocuments style={{ marginRight: "0.25rem" }} />
-                      {key.replace("Size", "")} Size
-                    </p>
-                    {actions.lowercase ||
-                    actions.removeDuplicates ||
-                    actions.removeChars ? (
-                      <div
-                        style={{
-                          margin: "0.5rem 0rem",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-evenly",
-                          fontSize: "12px",
-                        }}
-                      >
-                        <span style={{ color: "#90a4ae" }}>
-                          {originalCorpusDetails[key].toLocaleString()}
-                        </span>
-                        <IoArrowForward style={{ margin: "0rem 0.25rem" }} />
-                        <span style={{}}>
+                      {actions.lowercase ||
+                      actions.removeDuplicates ||
+                      actions.removeChars ? (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "space-evenly",
+                          }}
+                        >
+                          <div
+                            style={{ display: "flex", alignItems: "center" }}
+                          >
+                            <span style={{ color: "#90a4ae" }}>
+                              {originalCorpusDetails[key].toLocaleString()}
+                            </span>
+                            <IoArrowForward
+                              style={{ margin: "0rem 0.25rem" }}
+                            />
+                            <span>{corpusDetails[key].toLocaleString()}</span>
+                          </div>
+                          {/* This operator doesnt seem to avoid showing up/down when original equals processed... TODO */}
+                          {originalCorpusDetails[key] !==
+                            corpusDetails[key] && (
+                            <span
+                              style={{
+                                fontSize: "0.75rem",
+                                color:
+                                  originalCorpusDetails[key] >
+                                  corpusDetails[key]
+                                    ? "#2e7d32"
+                                    : "#c62828",
+                              }}
+                            >
+                              {originalCorpusDetails[key] >
+                              corpusDetails[key] ? (
+                                <IoArrowDown />
+                              ) : (
+                                <IoArrowUp />
+                              )}
+                              {Math.round(
+                                Math.abs(
+                                  ((originalCorpusDetails[key] -
+                                    corpusDetails[key]) *
+                                    100) /
+                                    originalCorpusDetails[key]
+                                )
+                              )}
+                              %
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontWeight: "bold" }}>
                           {corpusDetails[key].toLocaleString()}
                         </span>
-                        {/* This operator doesnt seem to avoid showing up/down when original equals processed... TODO */}
-                        {originalCorpusDetails[key] !== corpusDetails[key] && (
-                          <span
-                            style={{
-                              marginLeft: "0.5rem",
-                              fontSize: "0.75rem",
-                              color:
-                                originalCorpusDetails[key] > corpusDetails[key]
-                                  ? "#2e7d32"
-                                  : "#c62828",
-                            }}
-                          >
-                            {originalCorpusDetails[key] > corpusDetails[key] ? (
-                              <IoArrowDown />
-                            ) : (
-                              <IoArrowUp />
-                            )}
-                            {Math.round(
-                              Math.abs(
-                                ((originalCorpusDetails[key] -
-                                  corpusDetails[key]) *
-                                  100) /
-                                  originalCorpusDetails[key]
-                              )
-                            )}
-                            %
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span style={{}}>{corpusDetails[key]}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
-      <Col sm={12} md={9}>
-        <Card>
-          <Card.Header id="section-subtitle">Preview</Card.Header>
-          <Card.Body
-            style={{
-              display: "flex",
-              justifyContent: "center",
+                      )}
+                      <span
+                        id="section-subtitle"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {key.replace("Size", "")} Size
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            id="outlined-multiline-flexible"
+            label="Corpus Preview"
+            multiline
+            maxRows={10}
+            value={previewContent}
+            fullWidth
+            InputProps={{
+              readOnly: true,
             }}
-          >
-            <div className="preview-container" style={{ width: "100%" }}>
-              <pre>{previewContent}</pre>
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
-    </Form.Group>
+          />
+        </Grid>
+      </Grid>
+    </Grid>
   );
 };
