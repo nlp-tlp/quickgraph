@@ -133,12 +133,20 @@ function App() {
                 </ProtectedRoute>
               );
             } else {
+              console.log(route);
               return (
                 <Route exact path={route.path}>
                   <Helmet>
                     <title>{route.title} | QuickGraph</title>
                   </Helmet>
-                  {route.component}
+                  {route.layout ? (
+                    <Layout
+                      children={route.component}
+                      context={{ name: route.name }}
+                    />
+                  ) : (
+                    route.component
+                  )}
                 </Route>
               );
             }

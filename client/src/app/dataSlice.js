@@ -9,7 +9,14 @@ const initialState = {
   selectedTokens: {},
   relations: null,
   entities: null,
-  selectMode: { active: false, tokenIds: [], tokenIndexes: [], textId: null },
+  selectMode: {
+    active: false,
+    tokenIds: [],
+    tokenIndexes: [],
+    textId: null,
+    startIndex: null,
+    endIndex: null,
+  },
   sourceSpan: null,
   targetSpan: null,
   relatedSpans: null,
@@ -261,25 +268,42 @@ export const dataSlice = createSlice({
     },
     setSelectedTokens: (state, action) => {
       const token = action.payload;
-      console.log("token", token);
+
       if (state.selectMode.active) {
-        //
+        // checking textId to stop cross text token selection
         if (state.selectMode.textId === token.textId) {
-          // If tokens already selected, only allow adjacents to be also selected
-          state.selectMode.tokenIds = [...state.selectMode.tokenIds, token._id];
-          state.selectMode.tokenIndexes = [
-            ...new Set([...state.selectMode.tokenIndexes, token.index]),
-          ].sort((a, b) => a - b);
+          if (state.selectMode.startIndex === null) {
+            state.selectMode.startIndex = token.index;
+            state.selectMode.endIndex = token.index;
+          } else if (token.index !== state.selectMode.startIndex) {
+            state.selectMode.endIndex = token.index;
+          }
 
-          // Add new token attributes based on current text
-          const newTokens = state.tokens
-            .filter((t) => t.textId == state.selectMode.textId)
-            .map((t) => (t._id === token._id ? { ...t, selected: true } : t));
+          console.log(state.selectMode.startIndex, state.selectMode.endIndex);
+          state.tokens = state.tokens.map((t) => {
+            if (
+              t.textId == token.textId &&
+              state.selectMode.startIndex <= t.index &&
+              t.index <= state.selectMode.endIndex
+            ) {
+              return { ...t, selected: true };
+            } else {
+              return t;
+            }
+          });
 
-          state.tokens = [
-            ...state.tokens.filter((t) => t.textId != state.selectMode.textId),
-            ...newTokens,
-          ];
+          const tokenSlice = state.tokens
+            .filter((t) => t.textId == token.textId)
+            .slice(
+              state.selectMode.startIndex > state.selectMode.endIndex
+                ? state.selectMode.endIndex
+                : state.selectMode.startIndex,
+              state.selectMode.startIndex > state.selectMode.endIndex
+                ? state.selectMode.startIndex + 1
+                : state.selectMode.endIndex + 1
+            );
+
+          state.selectMode.tokenIds = tokenSlice.map((t) => t._id);
         }
       }
     },
@@ -290,6 +314,9 @@ export const dataSlice = createSlice({
         state.selectMode.tokenIds = [];
         state.selectMode.textId = action.payload.textId;
         state.selectMode.textIndexes = action.payload.textIndexes;
+
+        state.selectMode.startIndex = null;
+        state.selectMode.endIndex = null;
       }
     },
     setSourceRel: (state, action) => {
@@ -491,6 +518,7 @@ export const dataSlice = createSlice({
           ) {
             // Apply relation action
             console.log("applying relation");
+
             label = details.applyAll
               ? response.data[0].name
               : response.data.name;
@@ -503,9 +531,18 @@ export const dataSlice = createSlice({
               ? response.data
               : [response.data];
 
+            console.log(
+              "relation response",
+              response,
+              "updatedTextIds",
+              updatedTextIds,
+              "relations",
+              relations
+            );
+
             relations.map((relation) => {
               const textId = relation.textId;
-              const entityId = details.applyAll ? "x" : relation.target;
+              const entityId = details.applyAll ? "x" : relation.target; // No entity for applyAll
 
               if (Object.keys(state.relations).includes(textId)) {
                 state.relations[textId] = [
@@ -530,15 +567,39 @@ export const dataSlice = createSlice({
                 ];
               }
 
+              /*
+                If textId isn't in the current store, then entities have been assigned
+                and do not exist. They need to be made and added to the store.
+              */
               // If apply all - need to update entities as they are also created
-              if (Object.keys(state.entities).includes(textId)) {
-                state.entities[textId] = [
-                  ...state.entities[textId],
-                  relation.source,
-                  relation.target,
-                ];
+              // Do nothing; entities are already in the redux store...
+              if (!Object.keys(state.entities).includes(textId)) {
+                // Apply all state where entities are created through relation prop
+                // Payload only gives relation entity _ids, so need to use redux store to find the entities...?
+                // console.log("Apply all - but text has no entities - adding fresh ones!");
+                state.entities[textId] = [relation.source, relation.target]; // These are backpopulated, not just _id's
               } else {
-                state.relations[textId] = [relation.source, relation.target];
+                if (details.applyAll) {
+                  // New entities added to text with existing entities
+                  const textEntityIds = state.entities[textId].map((e) =>
+                    e._id.toString()
+                  );
+
+                  if (!textEntityIds.includes(relation.source._id.toString())) {
+                    console.log("Adding relation source to text entities");
+                    state.entities[textId] = [
+                      ...state.entities[textId],
+                      relation.source,
+                    ];
+                  }
+                  if (!textEntityIds.includes(relation.target._id.toString())) {
+                    console.log("Adding relation target to text entities");
+                    state.entities[textId] = [
+                      ...state.entities[textId],
+                      relation.target,
+                    ];
+                  }
+                }
               }
 
               // Update target entity states
@@ -701,6 +762,8 @@ export const dataSlice = createSlice({
           const markup = response.data;
           markup.map((m) => {
             if (m.isEntity) {
+              console.log(m.textId);
+
               state.entities[m.textId] = state.entities[m.textId].map((e) => ({
                 ...e,
                 suggested:

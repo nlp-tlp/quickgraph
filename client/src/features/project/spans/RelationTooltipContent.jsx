@@ -60,6 +60,8 @@ export const RelationTooltipContent = ({
       const domain = relation.domain;
       const range = relation.range;
 
+      console.log(relation, domain, range);
+
       // console.log(sourceEntityType, targetEntityType);
 
       const domainHasSourceEntityType =
@@ -82,10 +84,10 @@ export const RelationTooltipContent = ({
       } else if (domainHasSourceEntityType && rangeIsOpen) {
         return relation;
       }
-      // else if (domainIsOpen && rangeIsOpen) {
-      //   // Applicable for any entity type
-      //   return relation;
-      // }
+      else if (domainIsOpen && rangeIsOpen) {
+        // Applicable for any entity type
+        return relation;
+      }
       // else {
       //   return undefined;
       // }
@@ -93,6 +95,7 @@ export const RelationTooltipContent = ({
 
     if (filteredRelationLabels.length === 0) {
       // No relation constraints
+      console.log('No relation constraints');
       filteredRelationLabels = flatRelationOntology;
     }
 

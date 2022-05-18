@@ -22,6 +22,7 @@ import {
   Box,
   Chip,
 } from "@mui/material";
+import LoadingButton from "@mui/lab/LoadingButton";
 import { grey, yellow } from "@mui/material/colors";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -53,6 +54,8 @@ export const Downloads = ({ project }) => {
   const [data, setData] = useState();
   const [loaded, setLoaded] = useState(false);
   const [filterApplied, setFilterApplied] = useState(false);
+
+  const [preparingDownload, setPreparingDownload] = useState(false);
 
   const DEFAULT_FILTERS = {
     iaa: 0,
@@ -103,6 +106,8 @@ export const Downloads = ({ project }) => {
   };
 
   const downloadAnnotations = async (project) => {
+    setPreparingDownload(true);
+
     const annotatorNameToId = filters.annotators.map((username) => ({
       username: username,
       _id: data.annotators.filter((a) => a.username === username)[0]._id,
@@ -114,6 +119,8 @@ export const Downloads = ({ project }) => {
     });
 
     if (response.status === 200) {
+      setPreparingDownload(false);
+
       // Prepare for file download
       const fileName = `${project.name}_${filters.annotationType}_annotations_iaa-${filters.iaa}_q-${filters.quality}_s-${filters.saved}`;
       const json = JSON.stringify(response.data, null, 4);
@@ -503,13 +510,21 @@ export const Downloads = ({ project }) => {
         )}
       </Grid>
       <Grid item xs={12} sx={{ mt: 2 }} container justifyContent="right">
-        <Button
+        <LoadingButton
+          loading={preparingDownload}
+          variant="contained"
+          onClick={() => downloadAnnotations(project)}
+          disableElevation
+        >
+          Download Annotations
+        </LoadingButton>
+        {/* <Button
           variant="contained"
           disableElevation
           onClick={() => downloadAnnotations(project)}
         >
           Download Annotations
-        </Button>
+        </Button> */}
       </Grid>
     </Grid>
   );

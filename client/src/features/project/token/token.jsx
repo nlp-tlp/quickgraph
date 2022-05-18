@@ -50,6 +50,7 @@ export const Token = ({ text, token, tokenIndex }) => {
 
   const handleMouseUp = () => {
     if (allowSelect) {
+      dispatch(setSelectedTokens(token));
       dispatch(setSelectMode({ active: false, textId: text._id }));
     }
   };

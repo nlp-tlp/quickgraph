@@ -6,7 +6,7 @@ import {
   selectActiveStep,
   saveStep,
 } from "./createStepSlice";
-// import { Stepper, StepperControls } from "./stepper";
+import { setIdle } from "../feed/feedSlice";
 import { Details } from "./steps/details";
 import { Preannotation } from "./steps/preannotation";
 import { Preprocessing } from "./steps/preprocessing";
@@ -96,6 +96,7 @@ export const Create = () => {
         .then((response) => {
           if (response.status === 200) {
             setFormSubmitted(true);
+            setIdle(true);
             setTimeout(() => {
               history.push("/feed");
             }, 1000);

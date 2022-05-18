@@ -6,10 +6,18 @@ import * as yup from "yup";
 import { Card, Form, Button, Col } from "react-bootstrap";
 import SignUpImage from "../../media/signup.jpeg";
 import { useDispatch, useSelector } from "react-redux";
-import { selectSignupError, selectSignupStatus, signup } from "./userSlice";
+import {
+  selectSignupError,
+  selectSignupStatus,
+  signup,
+  selectIsAuthenticated,
+} from "./userSlice";
 
 const schema = yup.object().shape({
-  username: yup.string().required("Username is required").min(5, "Username must be at least 3 characters long"),
+  username: yup
+    .string()
+    .required("Username is required")
+    .min(5, "Username must be at least 3 characters long"),
   password: yup
     .string()
     .required("Password is required")
@@ -25,9 +33,10 @@ export const SignUp = () => {
   const dispatch = useDispatch();
   const signupStatus = useSelector(selectSignupStatus);
   const signupError = useSelector(selectSignupError);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   useEffect(() => {
-    if (signupStatus === "succeeded") {
+    if (signupStatus === "succeeded" && isAuthenticated) {
       history.push("/feed");
     }
   }, [signupStatus, signupError]);

@@ -44,7 +44,7 @@ export const Landing = () => {
                   <GitHubIcon fontSize="large" color="secondary" id="github" />
                 </IconButton>
                 <IconButton
-                  href="https://youtu.be/ZlzH-AAoGXs"
+                  href="https://youtu.be/DTWrR67-nCU"
                   target="_blank"
                   rel="noreferrer"
                   alt="YouTube demonstration video"

@@ -34,6 +34,7 @@
     "react-graph-vis": "^1.0.7",
     "react-helmet": "^6.1.0",
     "react-icons": "^4.2.0",
+    "react-markdown": "^8.0.3",
     "react-redux": "^7.2.5",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",

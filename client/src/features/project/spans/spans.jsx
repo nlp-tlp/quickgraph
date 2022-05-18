@@ -246,6 +246,14 @@ const Span = ({ text, tokenIndex, span, suggested }) => {
       setShowRelTooltip,
     };
 
+    console.log(
+      "relationTOoltip",
+      "sourceSpan",
+      sourceSpan,
+      "targetSpan",
+      targetSpan
+    );
+
     // Note: Only sourceSpan has textId key
     const sourceEntityText =
       sourceSpan &&

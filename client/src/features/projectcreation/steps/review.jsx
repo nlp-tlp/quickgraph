@@ -12,6 +12,8 @@ import {
   Stack,
 } from "@mui/material";
 
+import { getFlatOntology } from "../../project/utils";
+
 export const Review = () => {
   const steps = useSelector(selectSteps);
 
@@ -51,21 +53,26 @@ export const Review = () => {
             .filter((action) => steps.preprocessing.data[action] === true)
             .map((action) => keyToNaturalMap[action]),
     Schema: [
-      Object.values(steps.schema.data.entityLabels).length <= 6
-        ? Object.values(steps.schema.data.entityLabels)
+      Object.values(getFlatOntology(steps.schema.data.entityLabels)).length <= 6
+        ? Object.values(getFlatOntology(steps.schema.data.entityLabels))
             .map((label) => `${label.name}`)
             .join(", ")
-        : `${Object.values(steps.schema.data.entityLabels).length} entity
+        : `${
+            Object.values(getFlatOntology(steps.schema.data.entityLabels))
+              .length
+          } entity
           types created`,
 
       steps.details.data.relationAnnotationType === "closed" &&
-      Object.values(steps.schema.data.relationLabels).length <= 6
-        ? Object.values(steps.schema.data.relationLabels)
+      Object.values(getFlatOntology(steps.schema.data.relationLabels)).length <=
+        6
+        ? Object.values(getFlatOntology(steps.schema.data.relationLabels))
             .map((label) => `${label.name}`)
             .join(", ")
         : steps.details.data.relationAnnotationType === "closed"
         ? `${
-            Object.values(steps.schema.data.relationLabels).length
+            Object.values(getFlatOntology(steps.schema.data.relationLabels))
+              .length
           } relation types created`
         : null,
     ],

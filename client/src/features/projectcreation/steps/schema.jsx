@@ -1,12 +1,14 @@
 import SortableTree, {
   addNodeUnderParent,
   changeNodeAtPath,
+  getFlatDataFromTree,
+  getNodeAtPath,
   removeNodeAtPath,
 } from "@nosferatu500/react-sortable-tree";
 // Using forked version of react-sortable-tree as version at date 15.12.21 isn't react v17 compatible.
 import "@nosferatu500/react-sortable-tree/style.css";
 import { useEffect, useState } from "react";
-import { Col, Modal, Row } from "react-bootstrap";
+import { Modal } from "react-bootstrap";
 import {
   InteractionMode,
   StaticTreeDataProvider,
@@ -31,6 +33,8 @@ import {
 import { entityOntologies, relationOntologies } from "../data/ontologies";
 import { getRandomColor } from "../data/utils";
 import { v4 as uuidv4 } from "uuid";
+
+import { getFlatOntology } from "../../project/utils";
 
 import {
   Grid,
@@ -293,12 +297,13 @@ const OntologyContainer = ({
             >
               <SortableTree
                 treeData={treeData.treeData}
+                canDrag={false}
                 onChange={(treeData) => {
-                  console.log(treeData);
+                  // console.log(treeData);
                   setTreeData({ treeData });
                 }}
                 generateNodeProps={({ node, path }) => ({
-                  style: { backgroundColor: "orange" },
+                  // Update name of existing node
                   title: (
                     <input
                       style={{
@@ -310,12 +315,22 @@ const OntologyContainer = ({
                       placeholder={node.placeholder}
                       onChange={(event) => {
                         const name = event.target.value;
+                        // console.log('node', node, 'path', path, 'parentKey', path[path.length - 1], 'tree data', treeData.treeData, 'parent node', treeData.treeData[path[path.length-1]]);
+
+                        const rootNode = path.length === 1;
+                        // console.log(path, rootNode);
+                        // console.log(treeData.treeData, path[path.length - 1]);
+
                         setTreeData((state) => ({
                           treeData: changeNodeAtPath({
                             treeData: state.treeData,
                             path,
                             getNodeKey,
-                            newNode: { ...node, name },
+                            newNode: {
+                              ...node,
+                              name: name,
+                              fullName: rootNode ? name : node.fullName + name,
+                            },
                           }),
                         }));
                       }}
@@ -331,7 +346,7 @@ const OntologyContainer = ({
                           marginRight: "0.2rem",
                         }}
                         // title="Click to modify colour of branch."
-                        onClick={() => console.log("hello")}
+                        // onClick={() => console.log("hello")}
                       />
                     ),
                     <IoEllipsisVerticalCircleSharp
@@ -343,7 +358,7 @@ const OntologyContainer = ({
                       }}
                       title="Click to add child leaf"
                       onClick={() => {
-                        console.log(treeData.treeData);
+                        // console.log("adding child leaf");
                         setTreeData((state) => ({
                           treeData: addNodeUnderParent({
                             treeData: state.treeData,
@@ -355,8 +370,9 @@ const OntologyContainer = ({
                                 ? {
                                     name: "",
                                     fullName:
-                                      treeData.treeData[path[path.length - 1]]
-                                        .fullName,
+                                      getFlatOntology(state.treeData)[
+                                        path[path.length - 1]
+                                      ].fullName + "/",
                                     parentKey: path[path.length - 1],
                                     domain: [],
                                     range: [],
@@ -367,8 +383,9 @@ const OntologyContainer = ({
                                 : {
                                     name: "",
                                     fullName:
-                                      treeData.treeData[path[path.length - 1]]
-                                        .fullName,
+                                      getFlatOntology(state.treeData)[
+                                        path[path.length - 1]
+                                      ].fullName + "/",
                                     parentKey: path[path.length - 1],
                                     colour: node.colour,
                                     _id: uuidv4(),
@@ -687,7 +704,7 @@ const DomainRangeTreeSelect = ({
                 display: "flex",
               }}
               onClick={() => {
-                console.log(item);
+                // console.log(item);
                 setSelectList(
                   selectList.includes(item.fullName)
                     ? selectList.filter((n) => n !== item.fullName)
