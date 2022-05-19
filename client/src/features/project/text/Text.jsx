@@ -5,7 +5,7 @@ export const Text = ({ text, textIndex, tokens }) => {
   return (
     <div
       key={textIndex}
-      className="text-container"
+      className="text"
       style={{
         display: "flex",
         flexDirection: "row",

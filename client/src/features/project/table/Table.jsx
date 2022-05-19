@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Spinner } from "react-bootstrap";
 import "react-contexify/dist/ReactContexify.css";
 import { IoSearch } from "react-icons/io5";
@@ -64,6 +64,9 @@ export const Table = () => {
   useEffect(() => {
     dispatch(setPage(pageNumber));
     dispatch(setTextsIdle());
+    // Puts annotation div at the top on page change
+    const element = document.getElementById('text-container-0');
+    element.scrollIntoView();
   }, [pageNumber]);
 
   useEffect(() => {

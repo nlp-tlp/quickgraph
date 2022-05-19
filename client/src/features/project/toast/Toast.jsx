@@ -107,6 +107,7 @@ export const AnnotationToast = () => {
             borderBottom: "none",
             alignItems: "center",
             borderLeft: `6px solid ${color}`,
+            overflowWrap: "break-word",
           }}
         >
           <div
@@ -134,7 +135,7 @@ export const AnnotationToast = () => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                marginTop: "0.5rem",
+                margin: "0.5rem 0rem",
               }}
             >
               {info.content.label && (
@@ -142,7 +143,14 @@ export const AnnotationToast = () => {
                   <span style={{ color: "#78909c", marginRight: "0.25rem" }}>
                     <MdLabel />
                   </span>
-                  <span style={{ fontWeight: "bold", color: "#263238" }}>
+                  <span
+                    style={{
+                      fontWeight: "bold",
+                      color: "#263238",
+                      overflowWrap: "break-word",
+                      width: "80%",
+                    }}
+                  >
                     {info.content.label}
                   </span>
                 </>

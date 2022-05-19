@@ -8,7 +8,6 @@ import {
   selectRelations,
   selectTexts,
   selectTextsStatus,
-  // selectTokens,
 } from "../../../app/dataSlice";
 import { selectUserId } from "../../auth/userSlice";
 import { ClusterIcon } from "../cluster/ClusterIcon";
@@ -58,7 +57,8 @@ export const TextContainer = ({ text, textIndex, tokens }) => {
 
   return (
     <div
-      id="text-container"
+      id={`text-container-${textIndex}`}
+      className="text-container"
       annotated={saved ? "true" : "false"}
       key={textIndex}
     >
