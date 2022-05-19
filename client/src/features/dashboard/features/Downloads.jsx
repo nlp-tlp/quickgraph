@@ -1,7 +1,6 @@
 import "../Dashboard.css";
 import { useEffect, useState } from "react";
 import BootstrapTable from "react-bootstrap-table-next";
-import { useDispatch } from "react-redux";
 import axios from "../../utils/api-interceptor";
 
 import {
@@ -50,7 +49,6 @@ function getStyles(name, annotatorNames, theme) {
 
 export const Downloads = ({ project }) => {
   const theme = useTheme();
-  const dispatch = useDispatch();
   const [data, setData] = useState();
   const [loaded, setLoaded] = useState(false);
   const [filterApplied, setFilterApplied] = useState(false);
@@ -65,6 +63,7 @@ export const Downloads = ({ project }) => {
     annotationType:
       project && project.tasks.relationAnnotation ? "triples" : "entities",
   };
+  const [prevFilters, setPrevFilters] = useState(DEFAULT_FILTERS); // Used to check if filters have been modified
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   useEffect(() => {
@@ -87,10 +86,14 @@ export const Downloads = ({ project }) => {
   const handleFilterApply = () => {
     // Trigger fetch event
     setLoaded(false);
+
+    // Update prevFilters with the filter used for the update
+    setPrevFilters(filters);
   };
 
   const handleFilterReset = () => {
     setFilters(DEFAULT_FILTERS);
+    setPrevFilters(DEFAULT_FILTERS);
     // Trigger fetch event
     setLoaded(false);
   };
@@ -264,7 +267,7 @@ export const Downloads = ({ project }) => {
   };
 
   useEffect(() => {
-    if (JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS)) {
+    if (JSON.stringify(filters) !== JSON.stringify(prevFilters)) {
       setFilterApplied(true);
     } else {
       setFilterApplied(false);
@@ -518,13 +521,6 @@ export const Downloads = ({ project }) => {
         >
           Download Annotations
         </LoadingButton>
-        {/* <Button
-          variant="contained"
-          disableElevation
-          onClick={() => downloadAnnotations(project)}
-        >
-          Download Annotations
-        </Button> */}
       </Grid>
     </Grid>
   );
