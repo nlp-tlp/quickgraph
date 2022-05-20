@@ -326,21 +326,21 @@ const getDashboardOverview = async (projectId) => {
       averageIAA: {
         overall:
           textsWithMinAnnotations.length > 0
-            ? textsWithMinAnnotations
+            ? Math.round(textsWithMinAnnotations
                 .map((t) => t.iaa.overall)
-                .reduce((a, b) => a + b) / textsWithMinAnnotations.length
+                .reduce((a, b) => a + b) / textsWithMinAnnotations.length)
             : null,
         entity:
           textsWithMinAnnotations.length > 0
-            ? textsWithMinAnnotations
+            ? Math.round(textsWithMinAnnotations
                 .map((t) => t.iaa.entity)
-                .reduce((a, b) => a + b) / textsWithMinAnnotations.length
+                .reduce((a, b) => a + b) / textsWithMinAnnotations.length)
             : null,
         relation:
           textsWithMinAnnotations.length > 0
-            ? textsWithMinAnnotations
+            ? Math.round(textsWithMinAnnotations
                 .map((t) => t.iaa.relation)
-                .reduce((a, b) => a + b) / textsWithMinAnnotations.length
+                .reduce((a, b) => a + b) / textsWithMinAnnotations.length)
             : null,
       },
       progress: (textsWithMinAnnotations.length / texts.length) * 100,
@@ -708,13 +708,30 @@ const getDashboardAdjudication = async (payload, limit, skip, sort) => {
 
   console.log("annotatorId2UserDetail", annotatorId2UserDetail);
 
-  const text = await Text.findOne({ projectId: payload.projectId })
-    .sort({
-      saved: sort,
-    })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  let text = await Text.aggregate([
+    {
+      $match: {
+        projectId: mongoose.Types.ObjectId(payload.projectId),
+      },
+    },
+    {
+      $addFields: {
+        save_count: { $size: "$saved" },
+      },
+    },
+    {
+      $sort: { save_count: sort },
+    },
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limit,
+    },
+  ])
+    .allowDiskUse(true)
+    .exec();
+  text = text[0];
 
   const tokens = text.tokens;
 
@@ -916,10 +933,10 @@ const getAnnotatorEffort = async (payload, projectId) => {
     },
     { _id: 1, saved: 1 }
   ).lean();
-  console.log(texts);
+  // console.log(texts);
   const textIds = texts.map((t) => t._id);
 
-  console.log(texts);
+  // console.log(texts);
 
   const markup = await Markup.find({
     textId: { $in: textIds },
@@ -1200,6 +1217,7 @@ const getAnnotationDownload = async (payload, projectId) => {
 
             const payload = {
               docId: text._id,
+              tokens: text.tokens.map((t) => t.value),
               triples: aggregateTriples,
             };
 
@@ -1219,6 +1237,7 @@ const getAnnotationDownload = async (payload, projectId) => {
               )
               .map((r) => {
                 return {
+                  saved: text.saved.filter(s => s.createdBy.toString() === annotatorId.toString()).length > 0,
                   source: {
                     fullLabel: labelId2LabelDetail[r.source.labelId].fullName,
                     label: labelId2LabelDetail[r.source.labelId].name,
@@ -1234,7 +1253,7 @@ const getAnnotationDownload = async (payload, projectId) => {
                     start: r.target.start,
                     end: r.target.end,
                     value: r.target.entityText,
-                    tokens: r.source.entityText.split(" "),
+                    tokens: r.target.entityText.split(" "),
                     quality: r.target.suggested ? "weak" : "silver",
                   },
                   relation: {
@@ -1253,7 +1272,7 @@ const getAnnotationDownload = async (payload, projectId) => {
             if (triples.length > 0) {
               return {
                 docId: text._id,
-                doc: text.tokens.map((t) => t.value),
+                tokens: text.tokens.map((t) => t.value),
                 triples: triples,
                 weight: 1, // Indicates how beliaveable inforamtion is; could be based on user confidence, source of text, etc.
               };
@@ -1362,7 +1381,7 @@ const getAnnotationDownload = async (payload, projectId) => {
 
             const payload = {
               docId: text._id,
-              doc: text.tokens.map((token) => token.value),
+              tokens: text.tokens.map((token) => token.value),
               mentions: aggregateEntities.map((e) => ({
                 start: e.start,
                 end: e.end,
@@ -1376,9 +1395,11 @@ const getAnnotationDownload = async (payload, projectId) => {
 
           return { [annotatorUsername]: goldEntities };
         } else {
+
           const entities = texts.map((text) => ({
             docId: text._id,
-            doc: text.tokens.map((token) => token.value),
+            tokens: text.tokens.map((token) => token.value),
+            saved: text.saved.filter(s => s.createdBy.toString() === annotatorId.toString()).length > 0,
             mentions: markup
               .filter(
                 (m) =>
@@ -1555,7 +1576,7 @@ const getGraphData = async (payload, query, projectId, userId) => {
     // Add additional information to nodes and reduce size to (300)
 
     // console.log(labelId2LabelDetail[n.labelId])
-    nodes = nodes.slice(0, 500).map((n) => {
+    nodes = nodes.slice(0, 2500).map((n) => {
       const nodeColour = labelId2LabelDetail[n.labelId].colour;
       return {
         id: n._id,

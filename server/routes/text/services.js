@@ -208,8 +208,30 @@ const filterTexts = async (payload, skip, limit, userId) => {
         console.log("entities", entities);
 
         response = {
-          texts: filteredTexts,
-          tokens: tokens,
+          texts: Object.assign.apply(
+            null,
+            filteredTexts
+              .map((text) => ({
+                _id: text._id, // Remove everything but _id save, tokens
+                saved: text.saved,
+                // tokens: text.tokens.map((token) => ({
+                //   ...token,
+                //   textId: text._id,
+                //   state: null, // Used to trigger UI markup
+                // })),
+                tokens: Object.assign.apply(
+                  null,
+                  text.tokens
+                    .map((token) => ({
+                      ...token,
+                      textId: text._id,
+                      state: null, // Used to trigger UI markup
+                    }))
+                    .map((x) => ({ [x._id]: x }))
+                ),
+              }))
+              .map((x) => ({ [x._id]: x }))
+          ),
           relations: relations,
           entities: entities,
           ontology: ontology,
@@ -324,6 +346,12 @@ const applySingleAnnotation = async (payload, userId) => {
           labelId: payload.relationLabelId,
           suggested: false,
         });
+
+        // Need to fetch created relation to backref the entities for the Redux store to update
+        // let newRelation = await Markup.findOne({ _id: createdRelation._id })
+        //   .populate("source target")
+        //   .lean();
+
         newRelation = {
           ...newRelation.toObject(),
           name: oClass.name,
@@ -464,10 +492,18 @@ const applyAllAnnotations = async (payload, userId) => {
         appliedFocusEntitySpan = true;
       }
 
+      console.log(
+        "match regex",
+        `\\b${entityText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`
+      );
+
+      // Need to match with word boundaries so if matching on 'oil', a text with 'oils' is not returned
       matchedTexts = await Text.find({
         projectId: payload.projectId,
         original: {
-          $regex: entityText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+          $regex: new RegExp(
+            `\\b${entityText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`
+          ),
           $options: "i",
         },
       }).lean();
@@ -487,6 +523,7 @@ const applyAllAnnotations = async (payload, userId) => {
         [entityText.split(" ").length - 1].toLowerCase();
       const offset = payload.entitySpanEnd - payload.entitySpanStart;
 
+      // Matched Text Spans are those that have markup already
       const matchedTextSpansV2 = await Markup.find({
         textId: { $in: matchedTexts.map((t) => t._id) },
         isEntity: true,
@@ -495,23 +532,29 @@ const applyAllAnnotations = async (payload, userId) => {
       });
       console.log("matchedTextSpansV2", matchedTextSpansV2);
 
-      const spanSegments = matchedTexts.flatMap((text) => {
-        const tokens = text.tokens.map((t) => t.value);
-        const spanIndexes = tokens
-          .map((token, index) =>
-            token.toLowerCase() === startToken &&
-            tokens[index + offset].toLowerCase() === endToken
-              ? index
-              : ""
-          )
-          .filter(String)
-          .map((startIndex) => ({
-            start: startIndex,
-            end: startIndex + offset,
-            textId: text._id,
-          }));
-        return spanIndexes;
-      });
+      const spanSegments = matchedTexts
+        .flatMap((text) => {
+          try {
+            const tokens = text.tokens.map((t) => t.value);
+            const spanIndexes = tokens
+              .map((token, index) =>
+                token.toLowerCase() === startToken &&
+                tokens[index + offset].toLowerCase() === endToken
+                  ? index
+                  : ""
+              )
+              .filter(String)
+              .map((startIndex) => ({
+                start: startIndex,
+                end: startIndex + offset,
+                textId: text._id,
+              }));
+            return spanIndexes;
+          } catch (err) {
+            console.log("Error extracting span segments - text", text);
+          }
+        })
+        .filter((segment) => segment); // Filter out any `undefined` values that may be caused due to errors
       console.log("spanSegments", spanSegments);
 
       // Map over spanSegments and check if they are already marked up
@@ -551,7 +594,7 @@ const applyAllAnnotations = async (payload, userId) => {
         .map((e) => e.toObject())
         .filter((e) => payload.textIds.includes(e.textId.toString()));
 
-      console.log('returnEntities', returnEntities);
+      console.log("returnEntities", returnEntities);
 
       response = {
         data: [...returnEntities, newFocusEntity].map((entity) => ({
@@ -595,7 +638,7 @@ const applyAllAnnotations = async (payload, userId) => {
         fullName: oClass.fullName,
       };
 
-      const focusRelationDetails = await Markup.findById({
+      let focusRelationDetails = await Markup.findById({
         _id: focusRelation._id,
       })
         .populate("source target")
@@ -620,25 +663,40 @@ const applyAllAnnotations = async (payload, userId) => {
       const focusSourceSpanEntityText = focusSourceSpan.entityText;
       const focusTargetSpanEntityText = focusTargetSpan.entityText;
 
+      console.log(
+        "focus source span",
+        focusSourceSpan,
+        "focus target span",
+        focusTargetSpan
+      );
+
       // Create regex to match other texts; index of source/target indicate position of
       // source/target texts. This accounts for directionality of relations.
-      const focusEntityOffset = focusTargetSpan.start - focusSourceSpan.end - 1;
-      const matchRegex =
-        focusSourceSpan.end <= focusTargetSpan.start
-          ? `${focusSourceSpanEntityText.replace(
-              /[.*+?^${}()|[\]\\]/g,
-              "\\$&"
-            )} (\\w+ ){${focusEntityOffset}}${focusTargetSpanEntityText.replace(
-              /[.*+?^${}()|[\]\\]/g,
-              "\\$&"
-            )}`
-          : `${focusTargetSpanEntityText.replace(
-              /[.*+?^${}()|[\]\\]/g,
-              "\\$&"
-            )} (\\w+ ){${focusEntityOffset}}${focusSourceSpanEntityText.replace(
-              /[.*+?^${}()|[\]\\]/g,
-              "\\$&"
-            )}`;
+
+      // Check whether relation is applied from left to right (LR) or right to left.
+      const relationDirLR = focusSourceSpan.end <= focusTargetSpan.start;
+
+      // First get token offset
+      const focusEntityOffset = relationDirLR
+        ? focusTargetSpan.start - focusSourceSpan.end - 1
+        : focusSourceSpan.start - focusTargetSpan.end - 1;
+
+      // const focusEntityOffset = focusTargetSpan.start - focusSourceSpan.end - 1;
+      const matchRegex = relationDirLR
+        ? `\\b${focusSourceSpanEntityText.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          )} (\\w+ ){${focusEntityOffset}}${focusTargetSpanEntityText.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          )}\\b`
+        : `\\b${focusTargetSpanEntityText.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          )} (\\w+ ){${focusEntityOffset}}${focusSourceSpanEntityText.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          )}\\b`;
       console.log("matchRegex", matchRegex);
 
       matchedTexts = await Text.find({
@@ -651,6 +709,9 @@ const applyAllAnnotations = async (payload, userId) => {
       // console.log("matchedTexts", matchedTexts);
       logger.info(`Texts matched: ${matchedTexts.length}`);
 
+      /**
+       * Create objects that will be used to create entities and relations then link them in the db.
+       */
       const relationObjs = matchedTexts.flatMap((textObj) => {
         const text = textObj.original;
 
@@ -680,13 +741,31 @@ const applyAllAnnotations = async (payload, userId) => {
         const matches = [...text.matchAll(new RegExp(matchRegex, "gi"))];
 
         return matches.map((m) => {
-          // Create entities
-          const sourceStartPos = m.index;
-          const sourceEndPos =
-            sourceStartPos + focusSourceSpanEntityText.length - 1;
-          const targetEndPos = m.index + m[0].length - 1;
-          const targetStartPos =
-            targetEndPos - focusTargetSpanEntityText.length + 1;
+          let sourceStartPos;
+          let sourceEndPos;
+          let targetStartPos;
+          let targetEndPos;
+          switch (relationDirLR) {
+            case true:
+              // Create entities
+              sourceStartPos = m.index;
+              sourceEndPos =
+                sourceStartPos + focusSourceSpanEntityText.length - 1;
+              targetEndPos = m.index + m[0].length - 1;
+              targetStartPos =
+                targetEndPos - focusTargetSpanEntityText.length + 1;
+              break;
+            case false:
+              sourceEndPos = m.index + m[0].length - 1;
+              sourceStartPos =
+                sourceEndPos - focusSourceSpanEntityText.length + 1;
+              targetStartPos = m.index;
+              targetEndPos =
+                targetStartPos + focusTargetSpanEntityText.length - 1;
+              break;
+            default:
+              break;
+          }
 
           const sourceEntityBounds = {
             start: charPosToTokenIndex(sourceStartPos, tokenCharArr),
@@ -781,7 +860,7 @@ const applyAllAnnotations = async (payload, userId) => {
                 })
               : matchedTargetEntity[0];
 
-          console.log(newSourceEntity, newTargetEntity);
+          // console.log(newSourceEntity, newTargetEntity);
 
           if (matchedRelation.length === 0) {
             let newRelation = await Markup.create({
@@ -828,6 +907,27 @@ const applyAllAnnotations = async (payload, userId) => {
           }
         })
       );
+
+      console.log("1 - focusRelationDetails", focusRelationDetails);
+
+      // add colour/fullname/name to focusRelation before sending back
+      focusRelationDetails = {
+        ...focusRelationDetails,
+        source: {
+          ...focusRelationDetails.source,
+          name: focusSourceEntityClass.name,
+          fullName: focusSourceEntityClass.fullName,
+          colour: focusSourceEntityClass.colour,
+        },
+        target: {
+          ...focusRelationDetails.target,
+          name: focusTargetEntityClass.name,
+          fullName: focusTargetEntityClass.fullName,
+          colour: focusTargetEntityClass.colour,
+        },
+      };
+
+      console.log("2 - focusRelationDetails", focusRelationDetails);
 
       response = {
         data: [...newRelations.filter((r) => r), focusRelationDetails],
@@ -1346,76 +1446,83 @@ const saveManyTexts = async (payload, userId) => {
 
   const texts = await Text.aggregate(aggQuery).allowDiskUse(true).exec();
 
-  const project = await Project.findById(
-    { _id: texts[0].projectId },
-    { tasks: 1 }
-  ).lean();
+  if (texts.length > 0) {
+    logger.info(`saving ${texts.length} texts`);
+    const project = await Project.findById(
+      { _id: texts[0].projectId },
+      { tasks: 1 }
+    ).lean();
 
-  const markup = await Markup.find({
-    textId: { $in: texts.map((t) => t._id) },
-  }).lean();
+    const markup = await Markup.find({
+      textId: { $in: texts.map((t) => t._id) },
+    }).lean();
 
-  const updateObjs = texts.map((text) => {
-    // TODO: Update IAA SCORE for multiple annotators
-    const iaaScores = utils.getAllIAA(
-      text.annotators.map((a) => a.user),
-      markup.filter(
-        (m) => m.isEntity && m.textId.toString() === text._id.toString()
-      ),
-      // text.markup.map((span) => ({ ...span, _id: span._id.toString() })),
-      markup.filter(
-        (m) => !m.isEntity && m.textId.toString() === text._id.toString()
-      ),
-      // text.relations.map((rel) => ({
-      //   ...rel,
-      //   _id: rel._id.toString(),
-      // })),
-      project && project.tasks.relationAnnotation
-    );
-    return {
-      updateOne: {
-        filter: {
-          _id: text._id,
-        },
-        update: {
-          $push: {
-            saved: { createdBy: userId },
+    const updateObjs = texts.map((text) => {
+      // TODO: Update IAA SCORE for multiple annotators
+      const iaaScores = utils.getAllIAA(
+        text.annotators.map((a) => a.user),
+        markup.filter(
+          (m) => m.isEntity && m.textId.toString() === text._id.toString()
+        ),
+        markup.filter(
+          (m) => !m.isEntity && m.textId.toString() === text._id.toString()
+        ),
+        project && project.tasks.relationAnnotation
+      );
+      return {
+        updateOne: {
+          filter: {
+            _id: text._id,
           },
-          iaa: iaaScores,
+          update: {
+            $push: {
+              saved: { createdBy: userId },
+            },
+            iaa: iaaScores,
+          },
+          options: { upsert: true, new: true },
         },
-        options: { upsert: true, new: true },
-      },
-    };
-  });
+      };
+    });
 
-  await Text.bulkWrite(updateObjs);
+    await Text.bulkWrite(updateObjs);
 
-  const response = await Text.aggregate([
-    {
-      $match: {
-        _id: {
-          $in: payload.textIds.map((id) => mongoose.Types.ObjectId(id)),
+    let response = await Text.aggregate([
+      {
+        $match: {
+          _id: {
+            $in: payload.textIds.map((id) => mongoose.Types.ObjectId(id)),
+          },
         },
       },
-    },
-    {
-      $addFields: {
-        saved: {
-          $filter: {
-            input: "$saved",
-            as: "saved",
-            cond: {
-              $eq: ["$$saved.createdBy", mongoose.Types.ObjectId(userId)],
+      {
+        $addFields: {
+          saved: {
+            $filter: {
+              input: "$saved",
+              as: "saved",
+              cond: {
+                $eq: ["$$saved.createdBy", mongoose.Types.ObjectId(userId)],
+              },
             },
           },
         },
       },
-    },
-  ])
-    .allowDiskUse(true)
-    .exec();
+    ])
+      .allowDiskUse(true)
+      .exec();
 
-  res.json(response);
+    // Filter response for current user
+    response = response.map((t) => ({
+      ...t,
+      saved: t.saved.filter((s) => s.createdBy == userId),
+    }));
+    return { data: { data: response }, status: 200 };
+  } else {
+    // No unsaved texts in payload; send back empty payload.
+    logger.info("No texts to save - all already saved by user.");
+    return { data: { data: null }, status: 200 };
+  }
 };
 
 module.exports = {

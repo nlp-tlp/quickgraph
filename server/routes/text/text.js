@@ -32,7 +32,9 @@ router.post("/filter", authUtils.cookieJwtAuth, async (req, res) => {
     logger.error("Failed to get text pagination results", {
       route: `/api/text/filter/${req.body.projectId}`,
     });
-    res.json({ message: err });
+    res.status(500).send({
+      detail: "Server error - failed to fetch text(s). Please try again.",
+    });
   }
 });
 
@@ -70,7 +72,9 @@ router.post("/annotation/apply", authUtils.cookieJwtAuth, async (req, res) => {
       }
     }
   } catch (err) {
-    res.json({ message: err });
+    res.status(500).send({
+      detail: "Server error - unable to apply annotation(s). Please try again.",
+    });
   }
 });
 
@@ -106,7 +110,10 @@ router.patch(
       }
     } catch (err) {
       logger.error("Failed to accept annotation(s)");
-      res.status(500).send("Something went wrong :(");
+      res.status(500).send({
+        detail:
+          "Server error - unable to accept annotation(s). Please try again.",
+      });
     }
   }
 );
@@ -148,8 +155,11 @@ router.patch(
         }
       }
     } catch (err) {
-      logger.error("Failed to delete entity/entities");
-      res.status(500).send("Failed to delete entity/entities");
+      logger.error("Failed to delete annotations");
+      res.status(500).send({
+        detail:
+          "Server error - unable to delete annotation(s). Please try again.",
+      });
     }
   }
 );
@@ -186,8 +196,10 @@ router.patch("/annotation/save", authUtils.cookieJwtAuth, async (req, res) => {
       }
     }
   } catch (err) {
-    logger.error("Failed to save annotations on single text");
-    res.json({ message: err });
+    logger.error("Failed to save text(s)");
+    res.status(500).send({
+      detail: "Server error - failed to save text(s). Please try again.",
+    });
   }
 });
 

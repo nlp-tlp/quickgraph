@@ -338,9 +338,9 @@ module.exports = {
           // };
         } else {
           scores = {
-            overall: 100,
+            overall: relations.length > 0 ? 100 : null,
             entity: 100,
-            relation: 100,
+            relation: relations.length > 0 ? 100 : null,
           };
         }
         break;
