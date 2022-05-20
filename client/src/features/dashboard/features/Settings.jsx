@@ -235,10 +235,6 @@ export const Settings = () => {
             <Grid item container>
               <Grid item xs={12}>
                 <h5 style={{ color: red[500] }}>Danger Zone</h5>
-                <span style={{ fontSize: "0.75rem", color: grey[700] }}>
-                  Review the pre-processing operations applied to this projects
-                  corpus
-                </span>
               </Grid>
               <Grid item container xs={12} sx={{ mt: 4 }}>
                 <Grid item xs={6}>
