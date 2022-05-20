@@ -169,7 +169,7 @@ const StackedLabelPlot = ({ graphLoaded, data, type }) => {
           },
           plugins: {
             legend: { display: false },
-            title: { display: true, text: "Top 20 Triples Types Annotated" },
+            title: { display: true, text: ["Top 20 Triples Types Annotated", "(W - weak)"] },
             tooltip: { enabled: false },
           },
           scales: {
