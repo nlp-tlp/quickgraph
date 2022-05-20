@@ -175,14 +175,14 @@ export const Adjudicator = () => {
                   <IoInformationCircle
                     style={{ marginRight: "0.5rem", fontSize: "2.5rem" }}
                   />
-                  <span>No annotations made</span>
+                  <span>No annotations saved</span>
                 </>
               ) : (
                 <>
                   <IoTimer
                     style={{ marginRight: "0.5rem", fontSize: "2.5rem" }}
                   />
-                  <span>No annotations made yet</span>
+                  <span>No annotations saved yet</span>
                 </>
               )}
             </div>
@@ -275,7 +275,7 @@ const AdjTable = ({ doc }) => {
   const entityFormatter = (cell, row, rowIndex, formatExtraData) => {
     const triplePart = formatExtraData.part;
 
-    console.log("cell", cell, "row", row);
+    // console.log("cell", cell, "row", row);
 
     let label;
     switch (triplePart) {
@@ -353,7 +353,7 @@ const AdjTable = ({ doc }) => {
       triple: row,
     };
 
-    console.log("text props", textProps);
+    // console.log("text props", textProps);
 
     return <AnnotatedText {...textProps} />;
   };
@@ -455,7 +455,7 @@ const AnnotatedText = ({ text, textIndex, tokens, triple }) => {
   // Applies ellipsis to tokens +2 from source and target (this helps to identify solo entities)
   // Tokens without annotations have opacity to give focus
 
-  console.log("triple", triple);
+  // console.log("triple", triple);
 
   const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
   const entityOnly = !triple.targetToken;
@@ -466,7 +466,7 @@ const AnnotatedText = ({ text, textIndex, tokens, triple }) => {
     tokens.length
   );
 
-  console.log("text slicing", sliceLower, sliceUpper, tokens.length);
+  // console.log("text slicing", sliceLower, sliceUpper, tokens.length);
 
   const entities = [
     {
@@ -501,10 +501,10 @@ const AnnotatedText = ({ text, textIndex, tokens, triple }) => {
     }
   };
 
-  console.log(
-    "tokens.slice(sliceLower, sliceUpper)",
-    tokens.slice(sliceLower, sliceUpper)
-  );
+  // console.log(
+  //   "tokens.slice(sliceLower, sliceUpper)",
+  //   tokens.slice(sliceLower, sliceUpper)
+  // );
 
   return (
     <div className="text-container">
@@ -602,7 +602,7 @@ const Span = ({ tokenIndex, span, suggested }) => {
   const labelColour = label.colour;
   const fontColour = getFontColour(labelColour);
 
-  console.log("Span", span);
+  // console.log("Span", span);
 
   return (
     <span
