@@ -1,6 +1,6 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import storage from "redux-persist/lib/storage";
-import { persistStore, persistReducer } from "redux-persist";
+import { persistReducer } from "redux-persist";
 import projectReducer from "../features/project/projectSlice";
 import userReducer from "../features/auth/userSlice";
 import feedReducer from "../features/feed/feedSlice";

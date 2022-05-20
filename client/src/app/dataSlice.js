@@ -5,7 +5,6 @@ const initialState = {
   textsStatus: "idle",
   textsError: null,
   annotationMode: "entity",
-  tokens: null,
   selectedTokens: {},
   relations: null,
   entities: null,
@@ -261,16 +260,16 @@ export const dataSlice = createSlice({
     setAnnotationMode: (state, action) => {
       state.annotationMode = action.payload;
       // Reset token states when toggling between modes
-      state.tokens = state.tokens.map((token) => ({ ...token, state: null }));
       state.sourceSpan = null;
       state.targetSpan = null;
       state.relatedSpans = null;
     },
     setSelectedTokens: (state, action) => {
       const token = action.payload;
+      state.selectMode.textId = token.textId;
 
       if (state.selectMode.active) {
-        // checking textId to stop cross text token selection
+        // check textId to stop cross text token selection
         if (state.selectMode.textId === token.textId) {
           if (state.selectMode.startIndex === null) {
             state.selectMode.startIndex = token.index;
@@ -279,21 +278,9 @@ export const dataSlice = createSlice({
             state.selectMode.endIndex = token.index;
           }
 
-          console.log(state.selectMode.startIndex, state.selectMode.endIndex);
-          state.tokens = state.tokens.map((t) => {
-            if (
-              t.textId == token.textId &&
-              state.selectMode.startIndex <= t.index &&
-              t.index <= state.selectMode.endIndex
-            ) {
-              return { ...t, selected: true };
-            } else {
-              return t;
-            }
-          });
-
-          const tokenSlice = state.tokens
-            .filter((t) => t.textId == token.textId)
+          const selectedTokenIds = Object.values(
+            state.texts[state.selectMode.textId].tokens
+          )
             .slice(
               state.selectMode.startIndex > state.selectMode.endIndex
                 ? state.selectMode.endIndex
@@ -301,20 +288,28 @@ export const dataSlice = createSlice({
               state.selectMode.startIndex > state.selectMode.endIndex
                 ? state.selectMode.startIndex + 1
                 : state.selectMode.endIndex + 1
-            );
+            )
+            .map((t) => t._id);
 
-          state.selectMode.tokenIds = tokenSlice.map((t) => t._id);
+          // console.log("selectedTokenIds", selectedTokenIds);
+
+          state.selectMode.tokenIds = selectedTokenIds;
+
+          // Update token selected state
+          selectedTokenIds.forEach((tId) => {
+            state.texts[state.selectMode.textId].tokens[tId] = {
+              ...state.texts[state.selectMode.textId].tokens[tId],
+              selected: true,
+            };
+          });
         }
       }
     },
     setSelectMode: (state, action) => {
-      state.selectMode.active = action.payload.active;
+      state.selectMode.active = action.payload;
       if (state.selectMode.active) {
         // Clear token cache
         state.selectMode.tokenIds = [];
-        state.selectMode.textId = action.payload.textId;
-        state.selectMode.textIndexes = action.payload.textIndexes;
-
         state.selectMode.startIndex = null;
         state.selectMode.endIndex = null;
       }
@@ -325,7 +320,7 @@ export const dataSlice = createSlice({
        * Sets source span for relation annotation
        */
 
-      console.log("DEBUG setSourceRel payload", action.payload);
+      // console.log("DEBUG setSourceRel payload", action.payload);
 
       const span = action.payload.span;
       const textId = action.payload.textId;
@@ -359,109 +354,29 @@ export const dataSlice = createSlice({
       };
     },
     setTargetRel: (state, action) => {
-      console.log("set target", action.payload);
-
       const span = action.payload.span;
       const labelId = action.payload.labelId;
-
       state.targetSpan = {
         _id: span._id,
         start: span.start,
         end: span.end,
         labelId: labelId,
       };
-
-      // const focusTokenIds = action.payload.tokenIds;
-      // const textId = action.payload.textId;
-      // const textTokens = state.tokens.filter((t) => t.textId === textId);
-
-      // state.tokens = state.tokens.map((token) => {
-      //   if (token.textId != textId) {
-      //     return token;
-      //   } else if (focusTokenIds.includes(token._id)) {
-      //     return { ...token, state: "target" };
-      //   } else if (token.state && token.state === "target") {
-      //     // Remove any previous target
-      //     return { ...token, state: "unrelated" };
-      //   } else {
-      //     return token;
-      //   }
-      // });
-
-      // const label = action.payload.label; // User only clicks one label at a time
-
-      // state.targetSpan = {
-      //   _id: span._id,
-      //   start: span.start,
-      //   end: span.end,
-      //   label: label,
-      //   labelId: labelId,
-      //   value: textTokens
-      //     .filter((token) => focusTokenIds.includes(token._id))
-      //     .map((token) => token.value)
-      //     .join(" "),
-      // };
-    },
-    unsetSorceRel: (state, action) => {
-      console.log("unsetting source relation", action.payload);
-
-      const focusTokenId = action.payload.tokenId;
-      const textId = action.payload.textId;
-      const textTokens = state.tokens.filter((t) => t.textId === textId);
-      const textTokenIds = textTokens.map((t) => t._id);
-
-      const updateTokens = textTokens.map((token) => {
-        if (token._id === focusTokenId) {
-          return { ...token, state: null };
-        } else {
-          return { ...token, state: null };
-        }
-      });
-
-      state.tokens = state.tokens.map((token) => {
-        if (textTokenIds.includes(token._id)) {
-          return updateTokens.filter((t) => t._id === token._id)[0];
-        } else {
-          return token;
-        }
-      });
-
-      state.sourceSpan = null;
-      state.targetSpan = null;
-      state.selectMode = { active: false, tokensIds: [], textId: null };
     },
     unsetTargetRel: (state, action) => {
-      console.log("unsetting target relation", action.payload);
-
       state.targetSpan = null;
-
-      // const focusTokenIds = action.payload.tokenIds;
-      // const textId = action.payload.textId;
-
-      // state.tokens = state.tokens.map((token) => {
-      //   if (token.textId != textId) {
-      //     return token;
-      //   }
-      //   if (focusTokenIds.includes(token._id) && action.payload.hasRelations) {
-      //     return { ...token, state: "related" };
-      //   } else if (focusTokenIds.includes(token._id)) {
-      //     return { ...token, state: "unrelated" };
-      //   } else {
-      //     return token;
-      //   }
-      // });
-
-      // state.targetSpan = null;
     },
     unsetSourceTargetRels: (state, action) => {
       // Will be used when user changes annotationMode
       state.entities = Object.assign(
         {},
         ...Object.keys(state.entities).map((textId) => ({
-          [textId]: state.entities[textId].map((e) => ({
-            ...e,
-            state: "active",
-          })),
+          [textId]: Array.isArray(state.entities[textId])
+            ? state.entities[textId].map((e) => ({
+                ...e,
+                state: "active",
+              }))
+            : { ...state.entities[textId], state: "active" },
         }))
       );
 
@@ -481,7 +396,6 @@ export const dataSlice = createSlice({
       .addCase(fetchTexts.fulfilled, (state, action) => {
         state.textsStatus = "succeeded";
         state.texts = action.payload.texts;
-        state.tokens = action.payload.tokens;
         state.relations = action.payload.relations;
         state.entities = action.payload.entities;
       })
@@ -491,8 +405,8 @@ export const dataSlice = createSlice({
         let label;
         let updatedTextIds;
 
-        console.log("DATA SLICE response", response);
-        console.log("response", response.data);
+        //console.log("DATA SLICE response", response);
+        //console.log("response", response.data);
 
         if (response.data !== null) {
           if (details.annotationType === "entity") {
@@ -517,7 +431,7 @@ export const dataSlice = createSlice({
             details.annotationType === "openRelation"
           ) {
             // Apply relation action
-            console.log("applying relation");
+            //console.log("applying relation");
 
             label = details.applyAll
               ? response.data[0].name
@@ -531,14 +445,14 @@ export const dataSlice = createSlice({
               ? response.data
               : [response.data];
 
-            console.log(
-              "relation response",
-              response,
-              "updatedTextIds",
-              updatedTextIds,
-              "relations",
-              relations
-            );
+            // console.log(
+            //   "relation response",
+            //   response,
+            //   "updatedTextIds",
+            //   updatedTextIds,
+            //   "relations",
+            //   relations
+            // );
 
             relations.map((relation) => {
               const textId = relation.textId;
@@ -586,14 +500,14 @@ export const dataSlice = createSlice({
                   );
 
                   if (!textEntityIds.includes(relation.source._id.toString())) {
-                    console.log("Adding relation source to text entities");
+                    //console.log("Adding relation source to text entities");
                     state.entities[textId] = [
                       ...state.entities[textId],
                       relation.source,
                     ];
                   }
                   if (!textEntityIds.includes(relation.target._id.toString())) {
-                    console.log("Adding relation target to text entities");
+                    //console.log("Adding relation target to text entities");
                     state.entities[textId] = [
                       ...state.entities[textId],
                       relation.target,
@@ -613,6 +527,7 @@ export const dataSlice = createSlice({
           } else {
             // Apply open relation action
             console.log("hello");
+            // TODO: Some reason this is missing.
           }
 
           // Set toast values and set toast to active for user to see
@@ -728,7 +643,7 @@ export const dataSlice = createSlice({
         const details = action.payload.details;
         let updatedTextIds;
 
-        console.log("accept response", response.data);
+        //console.log("accept response", response.data);
 
         if (details.annotationType === "entity") {
           updatedTextIds = details.applyAll
@@ -736,7 +651,7 @@ export const dataSlice = createSlice({
             : [response.data.textId];
           const entities = details.applyAll ? response.data : [response.data];
 
-          console.log("accept entities dataSlice", entities);
+          //console.log("accept entities dataSlice", entities);
 
           // Update entity markup cache
           entities.map((e1) => {
@@ -762,7 +677,7 @@ export const dataSlice = createSlice({
           const markup = response.data;
           markup.map((m) => {
             if (m.isEntity) {
-              console.log(m.textId);
+              //console.log(m.textId);
 
               state.entities[m.textId] = state.entities[m.textId].map((e) => ({
                 ...e,
@@ -797,17 +712,9 @@ export const dataSlice = createSlice({
         state.showToast = true;
       })
       .addCase(saveAnnotations.fulfilled, (state, action) => {
-        console.log("Saving document(s)");
-        console.log(action.payload);
-
         if (action.payload.count === 1) {
-          state.texts = state.texts.map((text) => {
-            if (text._id === action.payload.data._id) {
-              return { ...text, saved: action.payload.data.saved };
-            } else {
-              return text;
-            }
-          });
+          state.texts[action.payload.data._id].saved =
+            action.payload.data.saved;
 
           state.clusterMetrics[action.payload.data.cluster] =
             action.payload.data.saved
@@ -836,7 +743,6 @@ export const {
   addTokens,
   setSourceRel,
   setTargetRel,
-  unsetSorceRel,
   unsetTargetRel,
   unsetSourceTargetRels,
   setSelectMode,
@@ -855,7 +761,6 @@ export const selectPageBeforeViewChange = (state) =>
   state.data.pageBeforeViewChange;
 export const selectClusterMetrics = (state) => state.data.clusterMetrics;
 export const selectShowCluster = (state) => state.data.showCluster;
-export const selectTokens = (state) => state.data.tokens;
 export const selectRelations = (state) => state.data.relations;
 export const selectEntities = (state) => state.data.entities;
 export const selectAnnotationMode = (state) => state.data.annotationMode;
@@ -866,7 +771,5 @@ export const selectShowQuickView = (state) => state.data.showQuickView;
 
 export const selectTextsStatus = (state) => state.data.textsStatus;
 export const selectTextsError = (state) => state.data.textsError;
-export const selectTokensStatus = (state) => state.data.tokensStatus;
-export const selectTokensError = (state) => state.data.tokensError;
 
 export default dataSlice.reducer;
