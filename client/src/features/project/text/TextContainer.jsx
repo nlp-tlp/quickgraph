@@ -15,7 +15,7 @@ import { selectProject } from "../projectSlice";
 import { Text } from "./Text";
 import "./Text.css";
 
-export const TextContainer = ({ text, textIndex, tokens }) => {
+export const TextContainer = ({ textId, textIndex }) => {
   const project = useSelector(selectProject);
   const texts = useSelector(selectTexts);
   const textsStatus = useSelector(selectTextsStatus);
@@ -29,30 +29,29 @@ export const TextContainer = ({ text, textIndex, tokens }) => {
 
   useEffect(() => {
     if (textsStatus === "succeeded") {
-      setSaved(text.saved.map((s) => s.createdBy).includes(userId));
+      setSaved(texts[textId].saved.map((s) => s.createdBy).includes(userId));
       setRelationCount(
         relations &&
-          Object.keys(relations).includes(text._id) &&
-          relations[text._id].filter((r) => !r.suggested).length
+          Object.keys(relations).includes(textId) &&
+          relations[textId].filter((r) => !r.suggested).length
       );
       setSuggestedRelationCount(
         relations &&
-          Object.keys(relations).includes(text._id) &&
-          relations[text._id].filter((r) => r.suggested).length
+          Object.keys(relations).includes(textId) &&
+          relations[textId].filter((r) => r.suggested).length
       );
     }
   }, [textsStatus, texts, relations]);
 
   const docProps = {
     project,
-    text,
     textIndex,
     saved,
-    tokens,
     page,
     pageLimit,
     relationCount,
     suggestedRelationCount,
+    textId,
   };
 
   return (
@@ -69,16 +68,15 @@ export const TextContainer = ({ text, textIndex, tokens }) => {
 
 const TextCard = ({
   project,
-  text,
   textIndex,
   saved,
-  tokens,
   page,
   pageLimit,
   clusterExpanded,
   setClusterExpanded,
   relationCount,
   suggestedRelationCount,
+  textId,
 }) => {
   const dispatch = useDispatch();
   return (
@@ -145,7 +143,7 @@ const TextCard = ({
               onClick={() => {
                 dispatch(
                   saveAnnotations({
-                    textIds: [text._id],
+                    textIds: [textId],
                   })
                 );
               }}
@@ -160,15 +158,10 @@ const TextCard = ({
           justifyContent: "space-between",
         }}
       >
-        <Text
-          key={textIndex}
-          text={text}
-          textIndex={textIndex}
-          tokens={tokens}
-        />
+        <Text key={textIndex} textId={textId} textIndex={textIndex} />
         <div style={{ margin: "auto 0rem 0rem 0rem" }}>
           {project.settings.performClustering && !clusterExpanded && (
-            <ClusterIcon clusterNo={text.cluster} />
+            <ClusterIcon textId={textId} />
           )}
         </div>
       </div>

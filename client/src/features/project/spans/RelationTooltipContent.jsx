@@ -191,7 +191,7 @@ const ListItemContent = ({
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
-            textIds: texts.map((t) => t._id),
+            textIds: Object.keys(texts),//.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);
@@ -208,7 +208,7 @@ const ListItemContent = ({
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
-            textIds: texts.map((t) => t._id),
+            textIds: Object.keys(texts),//.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);
@@ -224,7 +224,7 @@ const ListItemContent = ({
             applyAll: applyAll,
             suggested: suggested,
             annotationType: "relation",
-            textIds: texts.map((t) => t._id),
+            textIds: Object.keys(texts),//.map((t) => t._id),
           })
         );
         setSelectedRelKey(null);

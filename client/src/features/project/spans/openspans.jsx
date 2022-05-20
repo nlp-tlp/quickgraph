@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Badge, OverlayTrigger, Tooltip, Button } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { selectProject, selectFlatOntology } from "../projectSlice";
@@ -11,7 +11,6 @@ import {
   selectTargetSpan,
   setSourceRel,
   setTargetRel,
-  unsetSorceRel,
   unsetTargetRel,
   unsetSourceTargetRels,
   selectEntities,

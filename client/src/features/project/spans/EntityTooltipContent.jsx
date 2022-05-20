@@ -50,7 +50,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
         applyAll: true,
         suggested: false,
         annotationType: "entity",
-        textIds: texts.map((t) => t._id),
+        textIds: Object.keys(texts),//.map((t) => t._id),
         entityText: tokens.map((t) => t.value).join(" "),
       })
     );
@@ -78,7 +78,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   applyAll: false,
                   suggested: false,
                   annotationType: "entity",
-                  textIds: texts.map((t) => t._id),
+                  textIds: Object.keys(texts),//.map((t) => t._id),
                   entityText: tooltipFocusSpan.entityText,
                 })
               );
@@ -98,7 +98,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   applyAll: true,
                   suggested: false,
                   annotationType: "entity",
-                  textIds: texts.map((t) => t._id),
+                  textIds: Object.keys(texts),//.map((t) => t._id),
                   entityText: tooltipFocusSpan.entityText,
                 })
               );
@@ -122,7 +122,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   applyAll: false,
                   annotationType: "entity",
                   suggested: false,
-                  textIds: texts.map((t) => t._id),
+                  textIds: Object.keys(texts),//.map((t) => t._id),
                   entityText: tooltipFocusSpan.entityText,
                 })
               );
@@ -143,7 +143,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   applyAll: true,
                   annotationType: "entity",
                   suggested: false,
-                  textIds: texts.map((t) => t._id),
+                  textIds: Object.keys(texts),//.map((t) => t._id),
                   entityText: tooltipFocusSpan.entityText,
                 })
               );
@@ -164,7 +164,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   applyAll: false,
                   suggested: true,
                   annotationType: "entity",
-                  textIds: texts.map((t) => t._id),
+                  textIds: Object.keys(texts),//.map((t) => t._id),
                   entityText: tooltipFocusSpan.entityText,
                 })
               );
@@ -185,7 +185,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
                   applyAll: true,
                   suggested: true,
                   annotationType: "entity",
-                  textIds: texts.map((t) => t._id),
+                  textIds: Object.keys(texts),//.map((t) => t._id),
                   entityText: tooltipFocusSpan.entityText,
                 })
               );

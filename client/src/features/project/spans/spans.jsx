@@ -10,7 +10,6 @@ import {
   selectTargetSpan,
   setSourceRel,
   setTargetRel,
-  unsetSorceRel,
   unsetTargetRel,
   unsetSourceTargetRels,
   selectEntities,

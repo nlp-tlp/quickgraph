@@ -1,7 +1,10 @@
 import "./Text.css";
 import { Token } from "../token/token";
+import { selectTexts } from "../../../app/dataSlice";
+import { useSelector } from "react-redux";
 
-export const Text = ({ text, textIndex, tokens }) => {
+export const Text = ({ textId, textIndex }) => {
+  const texts = useSelector(selectTexts);
   return (
     <div
       key={textIndex}
@@ -12,11 +15,11 @@ export const Text = ({ text, textIndex, tokens }) => {
         flexWrap: "wrap",
       }}
     >
-      {tokens &&
-        tokens.map((token, tokenIndex) => {
+      {texts &&
+        Object.keys(texts[textId].tokens).map((tokenId, tokenIndex) => {
           const tokenProps = {
-            text,
-            token,
+            tokenId,
+            textId,
             tokenIndex,
           };
           return <Token {...tokenProps} />;

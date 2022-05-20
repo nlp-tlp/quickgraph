@@ -23,43 +23,40 @@ export const SelectHierarchy = () => {
   const selectMode = useSelector(selectSelectMode);
   const texts = useSelector(selectTexts);
 
-  const handleAnnotation = (label, nodeId) => {
+  const handleAnnotation = (nodeId) => {
     if (selectMode && selectMode.tokenIds.length > 0) {
-      // Note: No enforcement on contiguous tokens is performed here.
-      // BUG: User can select across boundaries (TODO: fix)
-      console.log("span selected");
+      try {
+        const textId = selectMode.textId;
+        const tokenIds = selectMode.tokenIds;
 
-      const textId = selectMode.textId;
-      const tokenIds = selectMode.tokenIds;
+        // Use text object and tokenIds to find token details
+        const tokens = Object.values(texts[textId].tokens).filter((token) =>
+          tokenIds.includes(token._id)
+        );
 
-      // Use text object and tokenIds to find token details
-      const tokens = texts
-        .filter((text) => text._id === textId)[0]
-        .tokens.filter((token) => tokenIds.includes(token._id));
+        const start = tokens[0].index;
+        const end =
+          tokens.length === 1
+            ? tokens[0].index
+            : tokens[tokens.length - 1].index;
 
-      // console.log(
-      //   "user applied single annotation from sidebar - entity id",
-      //   nodeId
-      // );
-
-      const start = tokens[0].index;
-      const end =
-        tokens.length === 1 ? tokens[0].index : tokens[tokens.length - 1].index;
-
-      dispatch(
-        applyAnnotation({
-          entitySpanStart: start,
-          entitySpanEnd: end,
-          entityLabelId: nodeId,
-          textId: textId,
-          projectId: project._id,
-          applyAll: false,
-          suggested: false,
-          annotationType: "entity",
-          entityText: tokens.map((t) => t.value).join(" "),
-          textIds: texts.map((t) => t._id),
-        })
-      );
+        dispatch(
+          applyAnnotation({
+            entitySpanStart: start,
+            entitySpanEnd: end,
+            entityLabelId: nodeId,
+            textId: textId,
+            projectId: project._id,
+            applyAll: false,
+            suggested: false,
+            annotationType: "entity",
+            entityText: tokens.map((t) => t.value).join(" "),
+            textIds: Object.keys(texts),
+          })
+        );
+      } catch (err) {
+        console.log("Failed to apply annotation", selectMode);
+      }
     }
   };
 
@@ -112,11 +109,10 @@ export const SelectHierarchy = () => {
       handleExpansion(event);
     };
 
-    const handleSelectionClick = (event, label, nodeId) => {
-      // console.log(event, label, nodeId);
+    const handleSelectionClick = (event, nodeId) => {
       handleSelection(event);
       dispatch(setActiveEntityClass(nodeId));
-      handleAnnotation(label, nodeId);
+      handleAnnotation(nodeId);
     };
 
     return (
@@ -136,7 +132,7 @@ export const SelectHierarchy = () => {
           {icon}
         </div>
         <Typography
-          onClick={(e) => handleSelectionClick(e, label, nodeId)}
+          onClick={(e) => handleSelectionClick(e, nodeId)}
           component="div"
           className={classes.label}
         >

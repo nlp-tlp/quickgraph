@@ -32,7 +32,6 @@ import {
   selectTextsError,
   selectAnnotationMode,
   selectSelectMode,
-  selectTokens,
 } from "../../../app/dataSlice";
 import "./Table.css";
 
@@ -51,7 +50,6 @@ export const Table = () => {
   const textsStatus = useSelector(selectTextsStatus);
   const textsError = useSelector(selectTextsError);
   const texts = useSelector(selectTexts);
-  const tokens = useSelector(selectTokens);
 
   const [clusterExpanded, setClusterExpanded] = useState(false);
   const pageBeforeViewChange = useSelector(selectPageBeforeViewChange);
@@ -65,8 +63,10 @@ export const Table = () => {
     dispatch(setPage(pageNumber));
     dispatch(setTextsIdle());
     // Puts annotation div at the top on page change
-    const element = document.getElementById('text-container-0');
-    element.scrollIntoView();
+    const element = document.getElementById("text-container-0");
+    if (element) {
+      element.scrollIntoView();
+    }
   }, [pageNumber]);
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export const Table = () => {
       );
       dispatch(fetchClusterMetrics({ projectId: project._id }));
     }
-  }, [textsStatus, projectStatus, dispatch]);
+  }, [textsStatus, projectStatus]);
 
   const handleMarkupKeyDownEvent = (e) => {
     if (annotationMode === "entity") {
@@ -124,12 +124,9 @@ export const Table = () => {
         const tokenIds = selectMode.tokenIds;
 
         // Use text object and tokenIds to find token details
-        const tokens = texts
-          .filter((text) => text._id === textId)[0]
-          .tokens.filter((token) => tokenIds.includes(token._id));
-
-        // CURRENT ASSUMES USER HAS ANNOTATED ADJACENT TOKENS, NOT HACKED TO ANNOTATE ACROSS SPANS!
-        // e.g. ...
+        const tokens = Object.values(texts[textId].tokens).filter((token) =>
+          tokenIds.includes(token._id)
+        );
 
         // Create payload
         const payload = {
@@ -145,11 +142,10 @@ export const Table = () => {
           applyAll: e.shiftKey,
           annotationType: "entity",
           suggested: false,
-          textIds: texts.map((t) => t._id),
+          textIds: Object.keys(texts),
           entityText: tokens.map((t) => t.value).join(" "),
         };
 
-        // console.log("key press payload", payload);
         dispatch(applyAnnotation({ ...payload }));
       }
     }
@@ -165,7 +161,7 @@ export const Table = () => {
         <Spinner animation="border" style={{ marginTop: "50vh" }} />
       </div>
     );
-  } else if (textsStatus === "succeeded" && texts.length === 0) {
+  } else if (textsStatus === "succeeded" && Object.keys(texts).length === 0) {
     return (
       <div
         style={{
@@ -188,12 +184,8 @@ export const Table = () => {
         tabIndex={-1}
       >
         {texts &&
-          texts.map((text, textIndex) => (
-            <TextContainer
-              text={text}
-              textIndex={textIndex}
-              tokens={tokens.filter((t) => t.textId === text._id)}
-            />
+          Object.keys(texts).map((textId, textIndex) => (
+            <TextContainer textId={textId} textIndex={textIndex} />
           ))}
       </div>
     );

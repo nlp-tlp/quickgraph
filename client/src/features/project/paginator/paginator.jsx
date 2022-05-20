@@ -10,7 +10,7 @@ import {
   selectPageLimit,
   setPage,
   selectTexts,
-} from "../../../app/dataSlice"  //"../text/textSlice";
+} from "../../../app/dataSlice"; //"../text/textSlice";
 
 export const Paginator = () => {
   const project = useSelector(selectProject);
@@ -70,7 +70,7 @@ export const Paginator = () => {
     <div id="paginator-container">
       <PaginatorDetail
         totalPages={totalPages}
-        textsCount={texts.length}
+        textsCount={Object.keys(texts).length}
         page={page}
         pageLimit={pageLimit}
       />

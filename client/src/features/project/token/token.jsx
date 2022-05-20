@@ -1,5 +1,4 @@
 import "./Token.css";
-import { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Spans } from "../spans/spans";
 import { OpenSpans } from "../spans/openspans";
@@ -14,13 +13,12 @@ import {
   selectEntities,
   selectTexts,
 } from "../../../app/dataSlice";
-import { hasMarkup, markupPosition } from "../utils"; // project/utils
+import { hasMarkup, markupPosition } from "../utils";
 import { selectProject } from "../projectSlice";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
-
 import { Button } from "@mui/material";
 
-export const Token = ({ text, token, tokenIndex }) => {
+export const Token = ({ tokenId, textId, tokenIndex }) => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
   const selectMode = useSelector(selectSelectMode);
@@ -31,19 +29,19 @@ export const Token = ({ text, token, tokenIndex }) => {
   const sourceSpan = useSelector(selectSourceSpan);
   const targetSpan = useSelector(selectTargetSpan);
   const texts = useSelector(selectTexts);
-
   const entities = useSelector(selectEntities);
+
+  const token = texts[textId].tokens[tokenId];
 
   const handleMouseOver = () => {
     if (allowSelect) {
-      // console.log("selecting token", token._id);
       dispatch(setSelectedTokens(token));
     }
   };
 
   const handleMouseDown = () => {
     if (allowSelect) {
-      dispatch(setSelectMode({ active: true, textId: text._id }));
+      dispatch(setSelectMode(true));
       dispatch(setSelectedTokens(token));
     }
   };
@@ -51,34 +49,22 @@ export const Token = ({ text, token, tokenIndex }) => {
   const handleMouseUp = () => {
     if (allowSelect) {
       dispatch(setSelectedTokens(token));
-      dispatch(setSelectMode({ active: false, textId: text._id }));
+      dispatch(setSelectMode(false));
     }
   };
 
   const handleApplySingleOpenRelation = () => {
-    console.log("Applying single open relation");
-
-    const relationTokens = text.tokens.filter((t) =>
+    const relationTokens = Object.values(texts[textId].tokens).filter((t) =>
       selectMode.tokenIds.includes(t._id.toString())
     );
-
     const relationText = relationTokens.map((t) => t.value).join(" ");
     const relationLabelStartIndex = relationTokens[0].index;
     const relationLabelEndIndex =
       relationTokens[relationTokens.length - 1].index;
 
-    console.log(
-      "relationText",
-      relationText,
-      "relationLabelStartIndex",
-      relationLabelStartIndex,
-      "relationLabelEndIndex",
-      relationLabelEndIndex
-    );
-
     dispatch(
       applyAnnotation({
-        textId: text._id,
+        textId: textId,
         projectId: project._id,
         applyAll: false,
         suggested: false,
@@ -88,7 +74,7 @@ export const Token = ({ text, token, tokenIndex }) => {
         relationStart: relationLabelStartIndex,
         relationEnd: relationLabelEndIndex,
         relationText: relationText,
-        textIds: texts.map((t) => t._id),
+        textIds: Object.keys(texts),
       })
     );
   };
@@ -96,7 +82,7 @@ export const Token = ({ text, token, tokenIndex }) => {
   const showPopOver =
     sourceSpan &&
     targetSpan &&
-    text._id === sourceSpan.textId &&
+    textId === sourceSpan.textId &&
     allowSelect &&
     selectMode &&
     selectMode.tokenIds[selectMode.tokenIds.length - 1] === token._id;
@@ -136,8 +122,8 @@ export const Token = ({ text, token, tokenIndex }) => {
               ? "true"
               : "false"
           }
-          annotated={hasMarkup(entities[text._id], tokenIndex)}
-          pos={markupPosition(entities[text._id], tokenIndex)}
+          annotated={hasMarkup(entities[textId], tokenIndex)}
+          pos={markupPosition(entities[textId], tokenIndex)}
           onMouseOver={handleMouseOver}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
@@ -147,9 +133,9 @@ export const Token = ({ text, token, tokenIndex }) => {
       </OverlayTrigger>
 
       {project.tasks.relationAnnotationType === "open" ? (
-        <OpenSpans text={text} token={token} tokenIndex={tokenIndex} />
+        <OpenSpans text={texts[textId]} token={token} tokenIndex={tokenIndex} />
       ) : (
-        <Spans text={text} token={token} tokenIndex={tokenIndex} />
+        <Spans text={texts[textId]} token={token} tokenIndex={tokenIndex} />
       )}
     </div>
   );

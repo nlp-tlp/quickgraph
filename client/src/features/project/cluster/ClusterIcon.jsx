@@ -11,6 +11,7 @@ import {
   setPage,
   setPageBeforeViewChange,
   setShowCluster,
+  selectTexts,
 } from "../../../app/dataSlice";
 import {
   CircularProgressbarWithChildren,
@@ -18,12 +19,14 @@ import {
 } from "react-circular-progressbar";
 import { teal } from "@mui/material/colors";
 
-export const ClusterIcon = ({ clusterNo }) => {
+export const ClusterIcon = ({ textId }) => {
   const dispatch = useDispatch();
   const project = useSelector(selectProject);
   const filters = useSelector(selectFilters);
   const page = useSelector(selectPage);
   const clusterMetrics = useSelector(selectClusterMetrics);
+  const texts = useSelector(selectTexts);
+  const clusterNo = texts[textId].cluster;
 
   const handleClusterExpansion = () => {
     dispatch(setActiveCluster(clusterNo));
