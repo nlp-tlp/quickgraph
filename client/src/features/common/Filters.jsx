@@ -24,6 +24,7 @@ import {
   MenuItem,
   IconButton,
 } from "@mui/material";
+import { grey } from "@mui/material/colors";
 
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -73,8 +74,9 @@ export const Filters = () => {
         alignItems="center"
         sx={{ p: 2 }}
         spacing={2}
+        style={{ borderBottom: `1px solid ${grey[400]}` }}
       >
-        <Grid item xs={1}>
+        <Grid item xs={3} sm={3} md={1} lg={2} xl={1}>
           <TextField
             id="outlined-basic"
             label="Text Search"
@@ -154,15 +156,13 @@ export const Filters = () => {
           .map((key) => {
             const filter = filters[key];
             return (
-              <Grid item xs={1}>
+              <Grid item xs={2} sm={2} md={2} lg={2} xl={1}>
                 <Stack direction="row" spacing={2}>
                   <FormControl fullWidth size="small">
-                    <InputLabel id="cluster-select-label">
-                      {filter.name}
-                    </InputLabel>
+                    <InputLabel id="select-label">{filter.name}</InputLabel>
                     <Select
-                      labelId="cluster-select-label"
-                      id="cluster-select"
+                      labelId="select-label"
+                      id="select"
                       label={filter.name}
                       title={filter.title}
                       size="small"
@@ -197,8 +197,11 @@ export const Filters = () => {
             );
           })}
 
-        <Grid item xs={1}>
-          <Stack direction="row">
+        <Grid item xs={2} sm={2} md={2} lg={2} xl={1}>
+          <Stack
+            direction="row"
+            style={{ alignItems: "center", justifyContent: "center" }}
+          >
             <IconButton
               size="small"
               variant="outlined"
