@@ -6,9 +6,12 @@ import { Filters } from "./features/Filters";
 import { KnowledgeGraph } from "./features/KnowledgeGraph";
 import { Overview } from "./features/Overview";
 import "./Graph.css";
-import { fetchGraph, selectGraphData, selectGraphStatus } from "./graphSlice";
-
-// New
+import {
+  fetchGraph,
+  selectGraphData,
+  selectGraphStatus,
+  selectGraphMetrics,
+} from "./graphSlice";
 import { Grid } from "@mui/material";
 
 export const CustomGraph = () => {
@@ -18,6 +21,8 @@ export const CustomGraph = () => {
   const graphData = useSelector(selectGraphData);
   const targetRef = useRef();
   const [dimensions, setDimensions] = useState(null);
+  const [disabled, setDisabled] = useState(true);
+  const metrics = useSelector(selectGraphMetrics);
 
   useLayoutEffect(() => {
     if (targetRef.current) {
@@ -38,13 +43,17 @@ export const CustomGraph = () => {
         })
       );
     }
+
+    if (graphStatus === "succeeded") {
+      setDisabled(metrics.totalDocs === 0); // Disables filters etc if no documents returned.
+    }
   }, [graphStatus]);
 
   return (
     <Grid container spacing={2}>
       <Grid item xs={3} ref={targetRef}>
         <Grid item xs={12}>
-          <Filters />
+          <Filters disabled={disabled} />
           <Overview />
         </Grid>
       </Grid>
@@ -83,13 +92,23 @@ export const CustomGraph = () => {
                   margin: "0",
                 }}
               >
-                Graph not loaded
+                {disabled ? "Graph requires annotations" : "Graph not loaded"}
               </span>
               <span style={{ display: "flex", alignItems: "center" }}>
-                <IoArrowBack
-                  style={{ fontSize: "1rem", textAlign: "center" }}
-                />
-                <span>Click and apply class filters to visualise graph</span>
+                {disabled ? (
+                  <span>
+                    Annotations must be made before the graph can be constructed
+                  </span>
+                ) : (
+                  <>
+                    <IoArrowBack
+                      style={{ fontSize: "1rem", textAlign: "center" }}
+                    />
+                    <span>
+                      Click and apply class filters to visualise graph
+                    </span>
+                  </>
+                )}
               </span>
             </span>
           </div>

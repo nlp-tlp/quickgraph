@@ -28,7 +28,7 @@ import {
 } from "@mui/material";
 import { grey } from "@mui/material/colors";
 
-export const Filters = () => {
+export const Filters = ({ disabled }) => {
   const project = useSelector(selectProject);
   const dispatch = useDispatch();
   const filteredOntology = useSelector(selectFilteredOntology);
@@ -121,6 +121,7 @@ export const Filters = () => {
                 <SearchBar
                   setSearchTouched={setSearchTouched}
                   setSearchTerm={setSearchTerm}
+                  disabled={disabled}
                 />
               </Box>
             </Grid>
@@ -133,6 +134,7 @@ export const Filters = () => {
                         size="small"
                         checked={aggregate}
                         onChange={() => handleGraphAggregation(!aggregate)}
+                        disabled={disabled}
                       />
                     }
                     label="Aggregate Graph"
@@ -151,21 +153,32 @@ export const Filters = () => {
                         onChange={() =>
                           setShowWeakAnnotations(!showWeakAnnotations)
                         }
+                        disabled={disabled}
                       />
                     }
-                    label="Show Weak Annotations"
+                    label="Include Weak Annotations"
                   />
                 </FormGroup>
               </Box>
             </Grid>
             <Grid xs={12}>
               <p style={{ margin: "0.25rem", fontWeight: "bold" }}>Entities</p>
-              <FilterSelectHierarchy
-                ontology={filteredOntology.filter((i) => i.isEntity)}
-                rootName={"Entities"}
-              />
+              {disabled ? (
+                <span style={{ margin: "0.25rem", color: grey[400] }}>
+                  No entities created
+                </span>
+              ) : (
+                <FilterSelectHierarchy
+                  ontology={filteredOntology.filter((i) => i.isEntity)}
+                  rootName={"Entities"}
+                />
+              )}
               <p style={{ margin: "0.25rem", fontWeight: "bold" }}>Relations</p>
-              {filteredOntology.filter((i) => !i.isEntity).length === 0 ? (
+              {disabled ? (
+                <span style={{ margin: "0.25rem", color: grey[400] }}>
+                  No relations created
+                </span>
+              ) : filteredOntology.filter((i) => !i.isEntity).length === 0 ? (
                 <span
                   style={{
                     margin: "0.25rem",
@@ -189,7 +202,7 @@ export const Filters = () => {
   }
 };
 
-const SearchBar = ({ setSearchTouched, setSearchTerm }) => {
+const SearchBar = ({ setSearchTouched, setSearchTerm, disabled }) => {
   return (
     <Box sx={{ display: "flex", alignItems: "flex-end" }}>
       <SearchIcon sx={{ color: "action.active", mr: 1, my: 0 }} />
@@ -203,6 +216,7 @@ const SearchBar = ({ setSearchTouched, setSearchTerm }) => {
           setSearchTouched(true);
           setSearchTerm(e.target.value);
         }}
+        disabled={disabled}
       />
     </Box>
   );

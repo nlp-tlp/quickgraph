@@ -8,7 +8,7 @@ const initialState = {
   filters: {
     searchTerm: "",
     labelIds: [],
-    showWeak: true,
+    showWeak: false,
   },
   options: {
     interaction: {
@@ -28,14 +28,14 @@ const initialState = {
         size: 16,
       },
       scaling: {
-        customScalingFunction: function (min, max, total, value) {
-          if (min === max) {
-            return 0.1;
-          } else {
-            var scale = 0.5 / (max - min);
-            return Math.max(0, (value - min) * scale);
-          }
-        },
+        // customScalingFunction: function (min, max, total, value) {
+        //   if (min === max) {
+        //     return 0.1;
+        //   } else {
+        //     var scale = 0.5 / (max - min);
+        //     return Math.max(0, (value - min) * scale);
+        //   }
+        // },
       },
     },
     nodes: {
@@ -47,14 +47,14 @@ const initialState = {
           min: 12,
           max: 30,
         },
-        customScalingFunction: function (min, max, total, value) {
-          if (max === min) {
-            return 0.5;
-          } else {
-            var scale = 1 / (max - min);
-            return Math.max(0, (value - min) * scale);
-          }
-        },
+        // customScalingFunction: function (min, max, total, value) {
+        //   if (max === min) {
+        //     return 0.5;
+        //   } else {
+        //     var scale = 1 / (max - min);
+        //     return Math.max(0, (value - min) * scale);
+        //   }
+        // },
       },
     },
   },
@@ -65,7 +65,7 @@ const initialState = {
   text: null,
   textId: null,
   highlighted: false,
-  aggregate: false,
+  aggregate: true, // Lets the graph load faster by defaulting
   graphKey: null,
 };
 
