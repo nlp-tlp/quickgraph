@@ -84,9 +84,9 @@ export default function Layout({ children, context }) {
 
   return (
     <Grid container>
-      <Grid item xs={12} style={{ flexGrow: 1 }}>
+      <Grid item xs={12}>
         <AppBar
-          position="fixed"
+          position="sticky"
           elevation={0}
           style={{
             background: grey[200],
@@ -167,9 +167,10 @@ export default function Layout({ children, context }) {
               title={projectProgress}
             />
           )}
-          {showFilters && <Filters />}
         </AppBar>
       </Grid>
+      {/* Filter component that is wrapped in a Grid component */}
+      {showFilters && <Filters />}
       {/* Child component */}
       <Grid
         container
@@ -177,8 +178,7 @@ export default function Layout({ children, context }) {
         alignItems="center"
         direction="column"
         style={{
-          height: "calc(100vh - 128px)",
-          marginTop: "64px",
+          height: `calc(100vh - ${showFilters ? "219px" : "140px"})`,
           marginBottom: "64px",
           overflowY: "auto",
         }}
@@ -197,6 +197,7 @@ export default function Layout({ children, context }) {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "0rem 4rem",
+          zIndex: 2000,
         }}
       >
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -288,12 +289,13 @@ const AnnotationItems = ({ showFilters, setShowFilters }) => {
     setAnchorEl(null);
   };
 
+  // TODO: review whether this is necessary; it triggers whenever the state of the tokens change.
   useEffect(() => {
     const textsNotAnnotated =
       texts &&
-      texts.filter((text) =>
+      Object.values(texts).filter((text) =>
         text.saved.map((s) => s.createdBy).includes(userId)
-      ).length !== texts.length;
+      ).length !== Object.values(texts).length;
     setSavePending(textsNotAnnotated);
 
     dispatch(fetchMetrics({ projectId: project._id }));
@@ -318,7 +320,7 @@ const AnnotationItems = ({ showFilters, setShowFilters }) => {
       fnc: () => {
         dispatch(
           saveAnnotations({
-            textIds: texts.map((text) => text._id),
+            textIds: Object.keys(texts), //.map((text) => text._id),
           })
         );
         dispatch(setTextsIdle());
