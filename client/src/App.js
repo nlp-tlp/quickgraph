@@ -15,11 +15,11 @@ import { Create } from "./features/projectcreation/create";
 import { Project } from "./features/project/project";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import About from "./features/about/About";
-// import { Anonpage } from "./features/auth/anonpage";
 import { Profile } from "./features/profile/Profile";
 import history from "./features/utils/history";
 
-import { Dev } from "./features/dev/dev";
+// import { Anonpage } from "./features/auth/anonpage";
+// import { Dev } from "./features/dev/dev";
 
 import Layout from "./features/common/Layout";
 
@@ -133,7 +133,7 @@ function App() {
                 </ProtectedRoute>
               );
             } else {
-              console.log(route);
+              // console.log(route);
               return (
                 <Route exact path={route.path}>
                   <Helmet>
