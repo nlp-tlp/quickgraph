@@ -28,8 +28,8 @@ Annotation with QuickGraph under entity annotation, and entity and closed relati
 - [ ] Inter-annotator agreement not aggregating correctly
 - [ ] Plots for open relation annotation do not work
 - [ ] Graph performance for thousands of nodes/edges
-- [ ] Contiguous token selection for pages with massive numbers of tokens
-- [ ] Relation badges when accepting all suggested relations
+- [ ] Contiguous token selection for pages with massive numbers of tokens is slow
+- [ ] Relation badges when accepting all suggested relations look similar to those that are accepted
 
 ## Future features
 - [ ] Plots in dashboard overview to be improved to include distribution of entities, relations and triples created by each user rather than aggregating over all users
