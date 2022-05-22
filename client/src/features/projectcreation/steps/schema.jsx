@@ -1,12 +1,12 @@
-import SortableTree, {
+import "react-sortable-tree/style.css";
+import {
   addNodeUnderParent,
   changeNodeAtPath,
   getFlatDataFromTree,
   getNodeAtPath,
   removeNodeAtPath,
-} from "@nosferatu500/react-sortable-tree";
-// Using forked version of react-sortable-tree as version at date 15.12.21 isn't react v17 compatible.
-import "@nosferatu500/react-sortable-tree/style.css";
+} from "react-sortable-tree";
+import SortableTree from "react-sortable-tree";
 import { useEffect, useState } from "react";
 import { Modal } from "react-bootstrap";
 import {
@@ -296,6 +296,7 @@ const OntologyContainer = ({
               }}
             >
               <SortableTree
+                isVirtualized={false}
                 treeData={treeData.treeData}
                 canDrag={false}
                 onChange={(treeData) => {
