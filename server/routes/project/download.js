@@ -74,10 +74,10 @@ router.post("/download/result", authUtils.cookieJwtAuth, async (req, res) => {
 
     res.json({ results: results, count: count });
   } catch (err) {
-    res.json({ message: err });
     logger.error("Failed to download project results", {
       route: "/api/project/download/result",
     });
+    res.status(500).send({ detail: "Failed to download" });
   }
 });
 

@@ -212,13 +212,9 @@ const filterTexts = async (payload, skip, limit, userId) => {
             null,
             filteredTexts
               .map((text) => ({
-                _id: text._id, // Remove everything but _id save, tokens
+                _id: text._id,
+                cluster: text.cluster,
                 saved: text.saved,
-                // tokens: text.tokens.map((token) => ({
-                //   ...token,
-                //   textId: text._id,
-                //   state: null, // Used to trigger UI markup
-                // })),
                 tokens: Object.assign.apply(
                   null,
                   text.tokens

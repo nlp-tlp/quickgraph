@@ -140,7 +140,7 @@ router.post(
       }
     } catch (err) {
       logger.error("Failed to download results");
-      res.status(500).send({ message: "Failed to download annotations" });
+      res.status(500).send({ detail: "Failed to download annotations" });
     }
   }
 );

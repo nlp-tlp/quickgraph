@@ -134,7 +134,7 @@ const createProject = async (payload, userId) => {
                       dictionary[ngram].toLowerCase()
                   )[0]._id,
                   suggested: true,
-                  createdBy: userId, // Assigns pre-annotated documents to the project-manager... #TODO revise this...
+                  createdBy: userId, // Assigns pre-annotated documents to the project-manager... #TODO review
                   isEntity: true,
                   entityText: tokens.slice(index, index + ngramOrder).join(" "),
                 };
@@ -150,7 +150,7 @@ const createProject = async (payload, userId) => {
                       dictionary[ngram].toLowerCase()
                   )[0]._id,
                   suggested: true,
-                  createdBy: userId, // Assigns pre-annotated documents to the project-manager... #TODO revise this...
+                  createdBy: userId, // Assigns pre-annotated documents to the project-manager... #TODO review
                   isEntity: true,
                   entityText: tokens.slice(index, index + 1).join(" "),
                 };
@@ -169,21 +169,21 @@ const createProject = async (payload, userId) => {
     return annotatedEntities;
   };
 
-  logger.info("Performing semantic clustering");
   let textClusterMapping;
   let clusterDetails;
   if (payload.performClustering) {
     // Send corpus to rank cluster server to get sentence ranking and cluster assignment
     // NOTE: Documents do not have IDS and are only associated by position indexing.
-    console.log("Getting rank order clusters");
+    logger.info("Performing clustering");
+
     async function fetchCorpusClusters() {
       return axios({
         headers: { "Content-Type": "application/json" },
         proxy: false,
-        url: "http://192.168.1.104:8000/rank_cluster", // TODO: Figure out why this doesn't work with localhost, 0.0.0.0, etc.
+        url: "http://server_cluster:8000/rank_cluster",
         method: "post",
         data: {
-          corpus: filteredTexts,
+          corpus: filteredTexts.map((text) => text.replace('"', '\\"')), // Need to escape quotes otherwise this call will fail.
         },
       });
     }
@@ -191,9 +191,6 @@ const createProject = async (payload, userId) => {
     textClusterMapping = clusterResponse.data.clustered_corpus;
     clusterDetails = clusterResponse.data.cluster_details;
   }
-
-  console.log("textClusterMapping", textClusterMapping);
-  console.log("clusterDetails", clusterDetails);
 
   // text objects
   logger.info("Creating text objects");
@@ -326,21 +323,27 @@ const getDashboardOverview = async (projectId) => {
       averageIAA: {
         overall:
           textsWithMinAnnotations.length > 0
-            ? Math.round(textsWithMinAnnotations
-                .map((t) => t.iaa.overall)
-                .reduce((a, b) => a + b) / textsWithMinAnnotations.length)
+            ? Math.round(
+                textsWithMinAnnotations
+                  .map((t) => t.iaa.overall)
+                  .reduce((a, b) => a + b) / textsWithMinAnnotations.length
+              )
             : null,
         entity:
           textsWithMinAnnotations.length > 0
-            ? Math.round(textsWithMinAnnotations
-                .map((t) => t.iaa.entity)
-                .reduce((a, b) => a + b) / textsWithMinAnnotations.length)
+            ? Math.round(
+                textsWithMinAnnotations
+                  .map((t) => t.iaa.entity)
+                  .reduce((a, b) => a + b) / textsWithMinAnnotations.length
+              )
             : null,
         relation:
           textsWithMinAnnotations.length > 0
-            ? Math.round(textsWithMinAnnotations
-                .map((t) => t.iaa.relation)
-                .reduce((a, b) => a + b) / textsWithMinAnnotations.length)
+            ? Math.round(
+                textsWithMinAnnotations
+                  .map((t) => t.iaa.relation)
+                  .reduce((a, b) => a + b) / textsWithMinAnnotations.length
+              )
             : null,
       },
       progress: (textsWithMinAnnotations.length / texts.length) * 100,
@@ -365,6 +368,9 @@ const getDashboardOverviewPlot = async (payload, projectId) => {
   const flatOntology = getFlatOntology(project.ontology);
 
   logger.info(`Flat ontology size: ${flatOntology.length}`);
+
+  const taskIsClosedRelationAnnotation =
+    project.tasks.relationAnnotationType === "closed";
 
   let labels;
   let datasets;
@@ -541,13 +547,23 @@ const getDashboardOverviewPlot = async (payload, projectId) => {
 
       silverLabels = relations
         .filter((relation) => !relation.suggested)
-        .map((relation) => labelId2LabelDetail[relation.labelId].fullName);
+        .map((relation) =>
+          taskIsClosedRelationAnnotation
+            ? labelId2LabelDetail[relation.labelId].fullName
+            : relation.labelText
+        );
 
       // console.log(silverLabels);
 
       weakLabels = relations
         .filter((relation) => relation.suggested)
-        .map((relation) => labelId2LabelDetail[relation.labelId].fullName);
+        .map((relation) =>
+          taskIsClosedRelationAnnotation
+            ? labelId2LabelDetail[relation.labelId].fullName
+            : relation.labelText
+        );
+
+      console.log("silverlabels", silverLabels, "weaklabels", weakLabels);
 
       break;
     case "triple":
@@ -567,13 +583,17 @@ const getDashboardOverviewPlot = async (payload, projectId) => {
         .populate("source target")
         .lean();
 
-      // console.log("triples", triples);
+      console.log("triples", triples);
 
       // Minify triples
       const minTriples = triples.map((t) => ({
         triple: `(${labelId2LabelDetail[t.source.labelId].fullName}, ${
           labelId2LabelDetail[t.target.labelId].fullName
-        }, ${labelId2LabelDetail[t.labelId].fullName})`,
+        }, ${
+          taskIsClosedRelationAnnotation
+            ? labelId2LabelDetail[t.labelId].fullName
+            : t.labelText
+        })`,
         suggested: t.suggested,
       }));
 
@@ -1106,6 +1126,9 @@ const getAnnotationDownload = async (payload, projectId) => {
         const annotatorId = annotatorInfo._id;
         logger.info(`Processing annotation for ${annotatorUsername}`);
 
+        const taskIsClosedRelationAnnotation =
+          project.tasks.relationAnnotationType === "closed";
+
         if (annotatorId.toLowerCase() === "gold") {
           // These are aggregate annotations.
           const savedTexts = texts.filter(
@@ -1227,6 +1250,10 @@ const getAnnotationDownload = async (payload, projectId) => {
           return { [annotatorUsername]: goldTriples };
         } else {
           // Filter texts for those that have relations and include the annotator
+
+          // if (project.tasks.relationAnnotationType === "open") {
+          //   logger.info("Generating open relation triples for users");
+          // } else {
           const allTriples = texts.map((text) => {
             let triples = markup
               .filter(
@@ -1237,7 +1264,10 @@ const getAnnotationDownload = async (payload, projectId) => {
               )
               .map((r) => {
                 return {
-                  saved: text.saved.filter(s => s.createdBy.toString() === annotatorId.toString()).length > 0,
+                  saved:
+                    text.saved.filter(
+                      (s) => s.createdBy.toString() === annotatorId.toString()
+                    ).length > 0,
                   source: {
                     fullLabel: labelId2LabelDetail[r.source.labelId].fullName,
                     label: labelId2LabelDetail[r.source.labelId].name,
@@ -1257,8 +1287,18 @@ const getAnnotationDownload = async (payload, projectId) => {
                     quality: r.target.suggested ? "weak" : "silver",
                   },
                   relation: {
-                    fullLabel: labelId2LabelDetail[r.labelId].fullName,
-                    label: labelId2LabelDetail[r.labelId].name,
+                    ...(taskIsClosedRelationAnnotation && {
+                      fullLabel: labelId2LabelDetail[r.labelId].fullName,
+                    }),
+                    label: taskIsClosedRelationAnnotation
+                      ? labelId2LabelDetail[r.labelId].name
+                      : r.labelText,
+                    ...(!taskIsClosedRelationAnnotation && {
+                      start: parseInt(r.labelStart),
+                    }),
+                    ...(!taskIsClosedRelationAnnotation && {
+                      end: parseInt(r.labelEnd),
+                    }),
                     quality: r.suggested ? "weak" : "silver",
                   },
                   surfaceText: markupSurfaceText(
@@ -1274,10 +1314,11 @@ const getAnnotationDownload = async (payload, projectId) => {
                 docId: text._id,
                 tokens: text.tokens.map((t) => t.value),
                 triples: triples,
-                weight: 1, // Indicates how beliaveable inforamtion is; could be based on user confidence, source of text, etc.
+                weight: 1, // Indicates how beliaveable information is; could be based on user confidence, source of text, etc.
               };
             }
           });
+          // }
 
           return { [annotatorUsername]: allTriples };
         }
@@ -1395,11 +1436,13 @@ const getAnnotationDownload = async (payload, projectId) => {
 
           return { [annotatorUsername]: goldEntities };
         } else {
-
           const entities = texts.map((text) => ({
             docId: text._id,
             tokens: text.tokens.map((token) => token.value),
-            saved: text.saved.filter(s => s.createdBy.toString() === annotatorId.toString()).length > 0,
+            saved:
+              text.saved.filter(
+                (s) => s.createdBy.toString() === annotatorId.toString()
+              ).length > 0,
             mentions: markup
               .filter(
                 (m) =>
@@ -1430,10 +1473,21 @@ const getAnnotationDownload = async (payload, projectId) => {
       break;
     default:
       failed = true;
-      response = { message: "Oops. Something went wrong." };
+      response = {
+        detail: "Server error - failed to create download. Please try again.",
+      };
   }
 
-  return { data: response, status: failed ? 500 : 200 };
+  if (failed) {
+    return {
+      data: {
+        detail: response,
+      },
+      status: 500,
+    };
+  } else {
+    return { data: response, status: 200 };
+  }
 };
 
 const getGraphData = async (payload, query, projectId, userId) => {
@@ -1442,7 +1496,7 @@ const getGraphData = async (payload, query, projectId, userId) => {
 
   const project = await Project.findById(
     { _id: projectId },
-    { ontology: 1, _id: 0 }
+    { ontology: 1, _id: 0, tasks: 1 }
   ).lean();
 
   // Flatten entity and relation ontologies
@@ -1453,6 +1507,11 @@ const getGraphData = async (payload, query, projectId, userId) => {
       [label._id]: label,
     }))
   );
+
+  const taskIsClosedRelationAnnotation =
+    project.tasks.relationAnnotationType === "closed";
+
+  console.log("closed RE task", taskIsClosedRelationAnnotation);
 
   /*
     Get all classes that are used and filter ontologies for these
@@ -1472,11 +1531,16 @@ const getGraphData = async (payload, query, projectId, userId) => {
     { _id: 1 }
   ).lean();
 
+  console.log("textsWithIds", textsWithIds);
+
   const activeMarkup = await Markup.find({
     textId: { $in: textsWithIds.map((t) => t._id) },
     createdBy: payload.aggregate ? { $exists: true } : userId,
     suggested: payload.filters.showWeak ? { $exists: true } : false,
   }).lean();
+
+  console.log("activeMarkup", activeMarkup);
+
   const activeLabelIds = [...new Set(activeMarkup.map((m) => m.labelId))];
   const activelabelFullNames = [
     ...new Set(activeLabelIds.map((i) => labelId2LabelDetail[i].fullName)),
