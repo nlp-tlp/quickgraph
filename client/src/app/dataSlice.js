@@ -408,7 +408,7 @@ export const dataSlice = createSlice({
         //console.log("DATA SLICE response", response);
         //console.log("response", response.data);
 
-        if (response.data !== null) {
+        if (response.data !== null && response.count !== 0) {
           if (details.annotationType === "entity") {
             label = details.applyAll
               ? response.data[0].name
@@ -444,15 +444,6 @@ export const dataSlice = createSlice({
             const relations = details.applyAll
               ? response.data
               : [response.data];
-
-            // console.log(
-            //   "relation response",
-            //   response,
-            //   "updatedTextIds",
-            //   updatedTextIds,
-            //   "relations",
-            //   relations
-            // );
 
             relations.map((relation) => {
               const textId = relation.textId;

@@ -98,6 +98,7 @@ export const Details = () => {
               <FormControlLabel
                 control={
                   <Checkbox
+                    disabled
                     checked={
                       steps[activeStep].data.performRelationAnnotation &&
                       steps[activeStep].data.relationAnnotationType === "open"
@@ -133,7 +134,8 @@ export const Details = () => {
               />
             </FormGroup>
             <FormHelperText>
-              Be careful as this choice is irreversible. Open relation annotation is currently single-user only.
+              Be careful as this choice is irreversible. Open relation
+              annotation is currently single-user only.
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -163,32 +165,6 @@ export const Details = () => {
               Be careful as this choice is irreversible.
             </FormHelperText>
           </FormControl>
-          {/* {actions.cluster && (
-                <>
-                  <Form.Group>
-                    <Form.Label>Clustering Method</Form.Label>
-                    <Form as="select">
-                      <option id="1">
-                        Sentence Embeddings (SBERT) + Agglomerative Clustering
-                      </option>
-                      <option id="2">Latent Dirichlet Allocation (LDA)</option>
-                    </Form>
-                  </Form.Group>
-                  <Form.Group>
-                    <Form.Label>Parameters</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Clusters"
-                      name="projectName"
-                      // value={steps[activeStep].data.name}
-                      // onChange={(e) =>
-                      //   dispatch(setStepData({ name: e.target.value }))
-                      // }
-                      autoComplete="off"
-                    />
-                  </Form.Group>
-                </>
-              )} */}
         </Grid>
       </Grid>
     </Grid>

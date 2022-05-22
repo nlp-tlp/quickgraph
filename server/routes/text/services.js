@@ -618,8 +618,8 @@ const applyAllAnnotations = async (payload, userId) => {
           
           */
 
-      // Add relation between focus entities
-      let focusRelation = await Markup.create({
+      // Check if relation already exists; will return null if it doesn't exist.
+      let focusRelationDetails = await Markup.findOne({
         textId: payload.textId,
         isEntity: false,
         createdBy: userId,
@@ -627,18 +627,36 @@ const applyAllAnnotations = async (payload, userId) => {
         target: payload.targetEntityId,
         labelId: payload.relationLabelId,
         suggested: false,
-      });
-      focusRelation = {
-        ...focusRelation.toObject(),
-        name: oClass.name,
-        fullName: oClass.fullName,
-      };
-
-      let focusRelationDetails = await Markup.findById({
-        _id: focusRelation._id,
       })
         .populate("source target")
         .lean();
+
+      const focusRelationExists = focusRelationDetails !== null;
+
+      if (focusRelationDetails === null) {
+        let focusRelation = await Markup.create({
+          textId: payload.textId,
+          isEntity: false,
+          createdBy: userId,
+          source: payload.sourceEntityId,
+          target: payload.targetEntityId,
+          labelId: payload.relationLabelId,
+          suggested: false,
+        });
+        focusRelation = {
+          ...focusRelation.toObject(),
+          name: oClass.name,
+          fullName: oClass.fullName,
+        };
+
+        focusRelationDetails = await Markup.findById({
+          _id: focusRelation._id,
+        })
+          .populate("source target")
+          .lean();
+      }
+
+      // Add relation between focus entities
 
       // Get entity label details from ontology for response
       const focusSourceEntityClass = ontology.filter(
@@ -925,12 +943,20 @@ const applyAllAnnotations = async (payload, userId) => {
 
       console.log("2 - focusRelationDetails", focusRelationDetails);
 
+      // If reation exists, do not add it to response.
       response = {
-        data: [...newRelations.filter((r) => r), focusRelationDetails],
-        count: [...newRelations.filter((r) => r), focusRelationDetails].length,
-        textIds: [...newRelations.filter((r) => r), focusRelationDetails].map(
-          (r) => r.textId
-        ),
+        data: [
+          ...newRelations.filter((r) => r),
+          ...(focusRelationExists ? [] : [focusRelationDetails]),
+        ],
+        count: [
+          ...newRelations.filter((r) => r),
+          ...(focusRelationExists ? [] : [focusRelationDetails]),
+        ].length,
+        textIds: [
+          ...newRelations.filter((r) => r),
+          ...(focusRelationExists ? [] : [focusRelationDetails]),
+        ].map((r) => r.textId),
       };
 
       break;
