@@ -3,7 +3,7 @@
 <h2>
 QuickGraph: A Rapid Annotation Tool for Knowledge Graph Extraction from Technical Text</h2>
 </div>
-QuickGraph is a rapid multi-user annotation tool for multi-task information extraction tasks. It is built on the full-stack web-based framework MERN (MongoDB-Express-React-Node). A live demonstration of the tool can be found at https://quickgraph.nlp-tlp.org and a systems demonstration video at https://youtu.be/DTWrR67-nCU. An overview of how to use QuickGraph can be found <a href="https://github.com/nlp-tlp/quickgraph/blob/main/About.md">here</a> and frequently asked questions <a href="here](https://github.com/nlp-tlp/quickgraph/blob/main/About.md">here</a> (both are still being completed so please be patient 🙂).
+QuickGraph is a rapid multi-user annotation tool for multi-task information extraction tasks. It is built on the full-stack web-based framework MERN (MongoDB-Express-React-Node). A live demonstration of the tool can be found at https://quickgraph.nlp-tlp.org and a systems demonstration video at https://youtu.be/DTWrR67-nCU. An overview of how to use QuickGraph can be found <a href="https://github.com/nlp-tlp/quickgraph/blob/main/About.md">here</a> and frequently asked questions <a href="https://github.com/nlp-tlp/quickgraph/blob/main/FAQ.md">here</a> (both are still being completed so please be patient 🙂).
 
 ## Getting started
 
