@@ -55,7 +55,12 @@ export const Landing = () => {
                     id="youtube"
                   />
                 </IconButton>
-                <IconButton href="https://github.com/nlp-tlp/quickgraph/blob/main/About.md" alt="QuickGraph About Page">
+                <IconButton
+                  href="https://github.com/nlp-tlp/quickgraph/blob/main/About.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  alt="QuickGraph About Page"
+                >
                   <InfoIcon
                     fontSize="large"
                     color="secondary"
