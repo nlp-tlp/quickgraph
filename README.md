@@ -32,6 +32,7 @@ Annotation with QuickGraph under entity annotation, and entity and closed relati
 - [ ] Relation badges when accepting all suggested relations look similar to those that are accepted
 
 ## Future features
+- [ ] Allow relation propagation for open relation annotation
 - [ ] Plots in dashboard overview to be improved to include distribution of entities, relations and triples created by each user rather than aggregating over all users
 - [ ] Improved document distribution method(s)
 - [ ] Extend open relation extraction for multi-user environments
