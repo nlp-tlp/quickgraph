@@ -194,11 +194,3 @@ export const Details = () => {
     </Grid>
   );
 };
-
-{
-  /* <Tooltip title="Delete">
-  <IconButton>
-    <DeleteIcon />
-  </IconButton>
-</Tooltip> */
-}

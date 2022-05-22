@@ -58,7 +58,9 @@ export const Dashboard = () => {
           description:
             "View and interact with knowledge graph as its constructed",
           body: <CustomGraph />,
-          disabled: project && !project.tasks.relationAnnotation,
+          disabled:
+            (project && !project.tasks.relationAnnotation) ||
+            project.tasks.relationAnnotationType === "open",
           show: true,
         },
         annotators: {

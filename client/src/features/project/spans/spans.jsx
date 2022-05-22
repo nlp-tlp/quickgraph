@@ -123,7 +123,7 @@ const Span = ({ text, tokenIndex, span, suggested }) => {
               setShowRelTooltip(true);
               break;
             default:
-              console.log("Default case for mouse enter span");
+              // console.log("Default case for mouse enter span");
               break;
           }
         }
@@ -163,7 +163,7 @@ const Span = ({ text, tokenIndex, span, suggested }) => {
               setShowRelTooltip(false);
               break;
             default:
-              console.log("Default case for mouse leave span label");
+              // console.log("Default case for mouse leave span label");
               break;
           }
         }
@@ -211,7 +211,7 @@ const Span = ({ text, tokenIndex, span, suggested }) => {
         dispatch(unsetSourceTargetRels());
         break;
       default:
-        console.log("default case for mouse down");
+        // console.log("default case for mouse down");
         break;
     }
   };
@@ -246,13 +246,13 @@ const Span = ({ text, tokenIndex, span, suggested }) => {
       setShowRelTooltip,
     };
 
-    console.log(
-      "relationTOoltip",
-      "sourceSpan",
-      sourceSpan,
-      "targetSpan",
-      targetSpan
-    );
+    // console.log(
+    //   "relationTOoltip",
+    //   "sourceSpan",
+    //   sourceSpan,
+    //   "targetSpan",
+    //   targetSpan
+    // );
 
     // Note: Only sourceSpan has textId key
     const sourceEntityText =

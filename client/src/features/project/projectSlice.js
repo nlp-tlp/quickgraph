@@ -23,14 +23,14 @@ const initialState = {
       defaultValue: "all",
       display: true,
     },
-    annotated: {
-      name: "Annotated",
-      title: "Filter for annotation state of documents",
-      value: "all",
-      options: ["all", "silver", "weak", "none"], // "silver and weak",
-      defaultValue: "all",
-      display: true,
-    },
+    // annotated: {
+    //   name: "Annotated",
+    //   title: "Filter for annotation state of documents",
+    //   value: "all",
+    //   options: ["all", "silver", "weak", "none"], // "silver and weak",
+    //   defaultValue: "all",
+    //   display: true,
+    // },
     cluster: {
       name: "Cluster",
       title: "Filter for clusters based on top-n terms",
@@ -176,7 +176,7 @@ export const projectSlice = createSlice({
       })
       .addCase(fetchProject.fulfilled, (state, action) => {
         state.status = "succeeded";
-        console.log("Fetch project response", action.payload);
+        // console.log("Fetch project response", action.payload);
         // Add fetched project to details
         state.details = action.payload;
         state.id = action.payload._id;
@@ -223,7 +223,7 @@ export const projectSlice = createSlice({
         state.deleteProjectStatus = "loading";
       })
       .addCase(deleteProject.fulfilled, (state, action) => {
-        console.log("deleted project", action.payload);
+        // console.log("deleted project", action.payload);
         state.deleteProjectStatus = "succeeded";
       })
       .addCase(fetchMetrics.pending, (state, action) => {

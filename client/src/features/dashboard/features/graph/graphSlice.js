@@ -284,10 +284,10 @@ export const graphSlice = createSlice({
               : e
           );
 
-          console.log("aggregate node select data", {
-            nodes: allNodes,
-            edges: allEdges,
-          });
+          // console.log("aggregate node select data", {
+          //   nodes: allNodes,
+          //   edges: allEdges,
+          // });
 
           state.data = { nodes: allNodes, edges: allEdges };
         }

@@ -116,14 +116,17 @@ export const Downloads = ({ project }) => {
       _id: data.annotators.filter((a) => a.username === username)[0]._id,
     }));
 
+    // console.log("downloading data...");
+
     const response = await axios.post("/api/project/dashboard/download", {
       projectId: project._id,
       filters: { ...filters, annotators: annotatorNameToId },
     });
 
-    if (response.status === 200) {
-      setPreparingDownload(false);
+    // console.log("download response", response);
 
+    if (response && response.status === 200) {
+      setPreparingDownload(false);
       // Prepare for file download
       const fileName = `${project.name}_${filters.annotationType}_annotations_iaa-${filters.iaa}_q-${filters.quality}_s-${filters.saved}`;
       const json = JSON.stringify(response.data, null, 4);
@@ -135,6 +138,10 @@ export const Downloads = ({ project }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    } else {
+      // Unsuccessful download
+      // console.log("download failed");
+      setPreparingDownload(false);
     }
   };
 
@@ -191,7 +198,7 @@ export const Downloads = ({ project }) => {
 
         break;
       case "entities":
-        console.log(data.results[row._id].entities);
+        // console.log(data.results[row._id].entities);
 
         const eMetrics = [
           { value: data.results[row._id].entities.total, name: "total" },
@@ -519,7 +526,8 @@ export const Downloads = ({ project }) => {
           onClick={() => downloadAnnotations(project)}
           disableElevation
         >
-          Download Annotations
+          Download {filters.annotationType === "triples" ? "triple" : "entity"}{" "}
+          Annotations
         </LoadingButton>
       </Grid>
     </Grid>

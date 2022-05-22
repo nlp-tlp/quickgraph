@@ -350,7 +350,7 @@ const AnnotationItems = ({ showFilters, setShowFilters }) => {
         dispatch(
           setAnnotationMode(annotationMode === "entity" ? "relation" : "entity")
         );
-        console.log("switched from annotation mode", annotationMode);
+        // console.log("switched from annotation mode", annotationMode);
       },
       display: project.tasks && project.tasks.relationAnnotation,
       color: annotationMode === "entity" ? grey[900] : teal[500],

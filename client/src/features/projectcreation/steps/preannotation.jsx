@@ -67,7 +67,7 @@ export const Preannotation = () => {
       if (fileExt === "txt") {
         // TODO: Handle errors; if user uploads triple dict to entities it will still load...
         let dict = reader.result.split("\n").filter((line) => line !== "");
-        console.log(dict);
+        // console.log(dict);
 
         let successMsg;
         switch (type) {
@@ -88,7 +88,7 @@ export const Preannotation = () => {
                   line.split(",")[1].toLowerCase().trim(),
                 ])
             );
-            console.log("entityDictionary", dict);
+            // console.log("entityDictionary", dict);
 
             dispatch(
               setStepData({
@@ -159,7 +159,7 @@ export const Preannotation = () => {
                 targetLabel: line.split(",")[4].toLowerCase().trim(),
                 offset: parseInt(line.split(",")[5].toLowerCase().trim()),
               }));
-            console.log("typedTripleDictionary", dict);
+            // console.log("typedTripleDictionary", dict);
 
             dispatch(
               setStepData({

@@ -31,7 +31,7 @@ export const Labels = ({ projectId }) => {
         `/api/project/labels/distribution/${projectId}`
       );
       if (response.status === 200) {
-        console.log(response.data);
+        // console.log(response.data);
         setData(response.data);
       }
     };

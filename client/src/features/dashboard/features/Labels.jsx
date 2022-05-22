@@ -34,7 +34,7 @@ export const Labels = ({ projectId, type, graphLoaded, setGraphLoaded }) => {
           { type: type }
         );
         if (response.status === 200) {
-          console.log(response.data);
+          // console.log(response.data);
           setData(response.data);
           setGraphLoaded(true);
         }
@@ -81,7 +81,6 @@ export const Labels = ({ projectId, type, graphLoaded, setGraphLoaded }) => {
 };
 
 const StackedLabelPlot = ({ graphLoaded, data, type }) => {
-  console.log(data);
   let options = {
     plugins: {
       legend: {
@@ -169,7 +168,13 @@ const StackedLabelPlot = ({ graphLoaded, data, type }) => {
           },
           plugins: {
             legend: { display: false },
-            title: { display: true, text: ["Top 20 Triples Types Annotated", "(W - weak)"] },
+            title: {
+              display: true,
+              text: [
+                "Top 20 Triples Types Annotated",
+                "(subject, object, relation) | (W refers to weak)",
+              ],
+            },
             tooltip: { enabled: false },
           },
           scales: {

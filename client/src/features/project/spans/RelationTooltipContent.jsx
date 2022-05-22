@@ -60,7 +60,7 @@ export const RelationTooltipContent = ({
       const domain = relation.domain;
       const range = relation.range;
 
-      console.log(relation, domain, range);
+      // console.log(relation, domain, range);
 
       // console.log(sourceEntityType, targetEntityType);
 
@@ -95,11 +95,11 @@ export const RelationTooltipContent = ({
 
     if (filteredRelationLabels.length === 0) {
       // No relation constraints
-      console.log('No relation constraints');
+      // console.log('No relation constraints');
       filteredRelationLabels = flatRelationOntology;
     }
 
-    console.log("filteredRelationLabels", filteredRelationLabels);
+    // console.log("filteredRelationLabels", filteredRelationLabels);
 
     return (
       <ListGroup className="tooltip-relation-container">
@@ -179,7 +179,7 @@ const ListItemContent = ({
 
     switch (action) {
       case "apply":
-        console.log("Applying relation(s)");
+        // console.log("Applying relation(s)");
 
         dispatch(
           applyAnnotation({
@@ -230,7 +230,7 @@ const ListItemContent = ({
         setSelectedRelKey(null);
         break;
       default:
-        console.log("oops something went wrong...");
+        // console.log("oops something went wrong...");
         break;
     }
   };

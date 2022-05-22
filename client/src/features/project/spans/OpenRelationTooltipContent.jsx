@@ -65,7 +65,7 @@ export const OpenRelationTooltipContent = ({
       .filter((_, index) => targetTokenIndexes.includes(index))
       .map((token) => token._id);
     // console.log("targetTokenIds", targetTokenIds);
-    console.log("relation", relation);
+    // console.log("relation", relation);
 
     let relationId;
     switch (action) {
@@ -136,7 +136,7 @@ export const OpenRelationTooltipContent = ({
         setSelectedRelKey(null);
         break;
       default:
-        console.log("oops something went wrong...");
+        // console.log("oops something went wrong...");
         break;
     }
   };

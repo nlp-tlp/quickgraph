@@ -20,7 +20,7 @@ export const AnnotatorInvite = ({ projectId, projectAnnotators }) => {
       if (!usersLoaded) {
         const response = await axios.get("/api/user/management/users");
         if (response.status === 200) {
-          console.log(response.data);
+          // console.log(response.data);
           setUsers(response.data);
           setUsersLoaded(true);
         }
@@ -30,7 +30,7 @@ export const AnnotatorInvite = ({ projectId, projectAnnotators }) => {
   }, [usersLoaded]);
 
   const handleAddAnnotators = async () => {
-    console.log("adding users", inviteList);
+    // console.log("adding users", inviteList);
     dispatch(
       inviteAnnotators({
         projectId: projectId,

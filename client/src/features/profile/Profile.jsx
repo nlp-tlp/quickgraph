@@ -67,7 +67,7 @@ export const Profile = () => {
   }, [profileLoaded]);
 
   const handleSave = (values) => {
-    console.log(values);
+    // console.log(values);
 
     dispatch(
       updateProfile({

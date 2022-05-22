@@ -24,7 +24,7 @@ import { IoClose, IoArrowForward } from "react-icons/io5";
 /*
     Component for creating stack of spans from markup
 */
-export const OpenSpans = ({ text, textIndex, token, tokenIndex }) => {
+export const OpenSpans = ({ text, token, tokenIndex }) => {
   const entities = useSelector(selectEntities);
   const textHasSpans =
     Object.keys(entities).includes(text._id) && entities[text._id].length > 0;
@@ -46,7 +46,7 @@ export const OpenSpans = ({ text, textIndex, token, tokenIndex }) => {
         );
       });
 
-    console.log(spanComponentsMarkup);
+    // console.log(spanComponentsMarkup);
 
     return spanComponentsMarkup;
   } else {
@@ -111,7 +111,7 @@ const Span = ({
       ? "UNSET_SOURCE"
       : "UNKNOWN_EVENT";
 
-    console.log(event);
+    // console.log(event);
 
     switch (event) {
       case "SET_SOURCE":
@@ -162,7 +162,7 @@ const Span = ({
         setShowRelTooltip(true);
         break;
       default:
-        console.log("default case for mouse down");
+        // console.log("default case for mouse down");
         break;
     }
   };
@@ -269,7 +269,7 @@ const Span = ({
     // };
 
     const renderSpanRelationLabels = (relations, text, span) => {
-      console.log("renderSpanRelationLabels - relations", relations);
+      // console.log("renderSpanRelationLabels - relations", relations);
 
       const matchedRelations = relations[text._id].filter(
         (r) => r.source === sourceSpan._id && r.target === span._id

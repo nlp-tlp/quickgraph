@@ -23,9 +23,9 @@ export const Download = ({ projectId, projectName }) => {
     include_weak_entities: "yes",
   });
 
-  useEffect(() => {
-    console.log(filter);
-  });
+  // useEffect(() => {
+  //   console.log(filter);
+  // });
 
   const handleDownload = async () => {
     const response = await axios.post("/api/project/dashboard/download", {
@@ -37,7 +37,7 @@ export const Download = ({ projectId, projectName }) => {
     });
     if (response.status === 200) {
       // Prepare for file download
-      console.log(response.data);
+      // console.log(response.data);
 
       // const fileName = `${projectName}_annotations`;
       // const json = JSON.stringify(resultRes.data.results, null, 4);
@@ -153,9 +153,9 @@ export const Downloads1 = ({ projectId, projectName }) => {
   // const [annotated, setAnnotated] = useState(false);
   const [resultCount, setResultCount] = useState();
 
-  useEffect(() => {
-    console.log(includeWeakLabels);
-  }, [includeWeakLabels]);
+  // useEffect(() => {
+  //   console.log(includeWeakLabels);
+  // }, [includeWeakLabels]);
 
   const downloadResults = async (project) => {
     // Fetch results

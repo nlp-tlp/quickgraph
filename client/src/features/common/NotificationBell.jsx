@@ -33,13 +33,13 @@ export const NotificationBell = () => {
   };
 
   const handleInviteAccept = (projectId) => {
-    console.log("accepted invitation", projectId);
+    // console.log("accepted invitation", projectId);
     dispatch(acceptInvitation({ projectId: projectId }));
     dispatch(setFeedIdle());
   };
 
   const handleInviteDecline = (projectId) => {
-    console.log("declined invitation");
+    // console.log("declined invitation");
     dispatch(declineInvitation({ projectId: projectId }));
   };
 

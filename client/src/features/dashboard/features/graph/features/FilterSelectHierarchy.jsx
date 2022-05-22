@@ -26,7 +26,7 @@ export const FilterSelectHierarchy = ({ ontology }) => {
   const graphFilters = useSelector(selectGraphFilters);
   const filteredOntology = useSelector(selectFilteredOntology);
 
-  console.log("select hierarchy ontology", filteredOntology);
+  // console.log("select hierarchy ontology", filteredOntology);
 
   const renderTree = (nodes) => {
     return (
@@ -79,15 +79,15 @@ export const FilterSelectHierarchy = ({ ontology }) => {
     const handleSelectionClick = (event, nodeId) => {
       handleSelection(event);
 
-      console.log("labelIds before filter", graphFilters.labelIds.length);
+      // console.log("labelIds before filter", graphFilters.labelIds.length);
 
       // Get descendents of nodeId as these will be also added/removed from labelIds in filter
       const branch = getFlatOntology(filteredOntology).filter(
         (item) => item._id === nodeId
       );
-      console.log("branch", branch);
+      // console.log("branch", branch);
       const flatBranch = getFlatOntology(branch);
-      console.log("flat branch", flatBranch);
+      // console.log("flat branch", flatBranch);
 
       // Update labelId filter
       let newLabelIds = graphFilters.labelIds;
@@ -99,7 +99,7 @@ export const FilterSelectHierarchy = ({ ontology }) => {
         }
       });
 
-      console.log("labelIds after filter", newLabelIds.length);
+      // console.log("labelIds after filter", newLabelIds.length);
 
       dispatch(
         setFilters({

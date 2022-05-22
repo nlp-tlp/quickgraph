@@ -6,7 +6,6 @@ import { selectProject } from "../../project/projectSlice";
 import axios from "../../utils/api-interceptor";
 import "../Dashboard.css";
 import { Labels } from "./Labels";
-
 import { Grid, Tab, Tabs } from "@mui/material";
 import { Loader } from "../../common/Loader";
 

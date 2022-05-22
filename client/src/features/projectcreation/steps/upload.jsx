@@ -35,7 +35,7 @@ export const Upload = () => {
         );
         setLoading(false);
       } else {
-        console.log("incorrect format");
+        // console.log("incorrect format");
         setLoading(false);
         dispatch(
           setAlertContent({

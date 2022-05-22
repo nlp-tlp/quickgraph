@@ -35,7 +35,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
         token.index <= tooltipFocusSpan.end
     );
 
-    console.log("handling apply all", tooltipFocusSpan);
+    // console.log("handling apply all", tooltipFocusSpan);
 
     dispatch(
       applyAnnotation({

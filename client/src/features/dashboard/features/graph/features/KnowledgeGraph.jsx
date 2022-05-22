@@ -15,9 +15,9 @@ export const KnowledgeGraph = ({ dimensions }) => {
   const graphData = useSelector(selectGraphData);
   const graphOptions = useSelector(selectGraphOptions);
 
-  const handleNodeSelect = (e) => {
-    console.log("node selected", e);
-  };
+  // const handleNodeSelect = (e) => {
+  //   console.log("node selected", e);
+  // };
 
   return (
     <Graph
@@ -25,7 +25,7 @@ export const KnowledgeGraph = ({ dimensions }) => {
       options={graphOptions} //{{ ...options, groups: graphGroups }}
       key={graphKey} // See: https://github.com/crubier/react-graph-vis/issues/92 // Doesn't allow interactivity...
       events={{
-        selectNode: handleNodeSelect,
+        // selectNode: handleNodeSelect,
         // selectNode: (e) => dispatch(setSelectedNode({ params: e })), //handleNodeSelect,
         doubleClick: (e) => dispatch(resetGraph()), //handleGraphReset,
       }}
