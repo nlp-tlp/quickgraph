@@ -45,5 +45,5 @@ mongoose.connect(DB_CONNECTION, { useNewUrlParser: true }, () => {
 });
 
 // Create listener
-const port = 3001;
+const port = 3010;
 app.listen(port, () => console.log(`Server started on port ${port}`));

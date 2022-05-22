@@ -5,7 +5,7 @@ services:
     build: ./client/
     stdin_open: true
     ports:
-      - "3000:3000"
+      - "3020:3000"
     networks:
       - quickgraph-app
     volumes:
@@ -18,7 +18,7 @@ services:
     build: ./server/
     stdin_open: true
     ports:
-      - "3001:3001"
+      - "3010:3010"
     networks:
       - quickgraph-app
     volumes:
