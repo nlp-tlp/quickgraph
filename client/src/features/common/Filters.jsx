@@ -108,11 +108,10 @@ export const Filters = () => {
                 <Select
                   labelId="cluster-select-label"
                   id="cluster-select"
-                  // value={age}
                   label="Cluster"
-                  // onChange={handleChange}
                   title={filters["cluster"].title}
-                  sx={{ bgcolor: "white" }}
+                  sx={{ bgcolor: "white"}}
+                  MenuProps={{ PaperProps: { sx: { maxHeight: 200 } } }}
                 >
                   {Object.keys(filters["cluster"].options).map((clusterNo) => (
                     <MenuItem
