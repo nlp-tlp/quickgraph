@@ -24,10 +24,10 @@ QuickGraph is currently under active development with only a single developer, s
 
 ### Known Issues/Bugs
 Annotation with QuickGraph under entity annotation, and entity and closed relation annotation has been widely tested for single users, however a few bugs still exist in the multi-user environment and for open relation annotation. The following are currently being resolved:
-- [ ] Download summary for multiple users not showing correct summaries for each user
-- [ ] Inter-annotator agreement not aggregating correctly
-- [ ] Plots for open relation annotation do not work
-- [ ] Graph performance for thousands of nodes/edges
+- [ ] Download summary for multiple users not showing correct summaries for each user reliably
+- [ ] Inter-annotator agreement not aggregating reliably
+- [x] ~~Plots for open relation annotation do not work~~
+- [ ] Graph performance for thousands of nodes/edges is not optimal
 - [ ] Contiguous token selection for pages with massive numbers of tokens is slow
 - [ ] Relation badges when accepting all suggested relations look similar to those that are accepted
 
