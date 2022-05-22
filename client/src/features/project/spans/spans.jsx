@@ -218,6 +218,7 @@ const Span = ({ text, tokenIndex, span, suggested }) => {
 
   const entityTooltip = (props) => {
     const tooltipContentProps = { tooltipFocusSpan, text };
+
     return (
       <Tooltip
         className="context-tooltip"

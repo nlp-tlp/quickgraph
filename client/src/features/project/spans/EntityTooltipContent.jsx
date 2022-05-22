@@ -29,7 +29,7 @@ export const EntityTooltipContent = ({ tooltipFocusSpan, text }) => {
 
   const handleMarkupAllClick = () => {
     const textId = text._id;
-    const tokens = text.tokens.filter(
+    const tokens = Object.values(text.tokens).filter(
       (token) =>
         tooltipFocusSpan.start <= token.index &&
         token.index <= tooltipFocusSpan.end
