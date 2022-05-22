@@ -133,7 +133,7 @@ export const Details = () => {
               />
             </FormGroup>
             <FormHelperText>
-              Be careful as this choice is irreversible
+              Be careful as this choice is irreversible. Open relation annotation is currently single-user only.
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -160,7 +160,7 @@ export const Details = () => {
               />
             </FormGroup>
             <FormHelperText>
-              Be careful as this choice is irreversible
+              Be careful as this choice is irreversible.
             </FormHelperText>
           </FormControl>
           {/* {actions.cluster && (
