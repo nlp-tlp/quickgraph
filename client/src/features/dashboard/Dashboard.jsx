@@ -68,7 +68,7 @@ export const Dashboard = () => {
           })`,
           description: "Manage project annotators",
           body: <Annotators />,
-          disabled: false,
+          disabled: project && project.tasks.relationAnnotationType === "open",
           show: userIsPM,
         },
         adjudicator: {
@@ -76,7 +76,7 @@ export const Dashboard = () => {
           title: "Adjudicator",
           description: "hello world",
           body: <Adjudicator />,
-          disabled: false,
+          disabled: project && project.tasks.relationAnnotationType === "open",
           show: true,
         },
         corrector: {
