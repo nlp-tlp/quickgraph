@@ -3,7 +3,15 @@
 <h2>
 QuickGraph: A Rapid Annotation Tool for Knowledge Graph Extraction from Technical Text</h2>
 </div>
-QuickGraph is a rapid multi-user annotation tool for multi-task information extraction tasks. It is built on the full-stack web-based framework MERN (MongoDB-Express-React-Node). A live demonstration of the tool can be found at https://quickgraph.nlp-tlp.org and a systems demonstration video at https://youtu.be/DTWrR67-nCU. An overview of how to use QuickGraph can be found <a href="https://github.com/nlp-tlp/quickgraph/blob/main/About.md">here</a> and frequently asked questions <a href="https://github.com/nlp-tlp/quickgraph/blob/main/FAQ.md">here</a> (both are still being completed so please be patient 🙂).
+QuickGraph is a collaborative annotation tool for rapid multi-task information extraction. Key features of QuickGraph include entity and relation propagation which mimics weak supervision, and the use of text clustering to aid with annotation consistency. <br/><br/>
+
+  🖥 [Try out QuickGraph online](https://quickgraph.nlp-tlp.org)
+  🎥 [QuickGraph systems demonstration video](https://youtu.be/DTWrR67-nCU)
+  📌 [Overview of how to use QuickGraph](https://github.com/nlp-tlp/quickgraph/blob/main/About.md)
+  📌 [Frequently Asked Questions (FAQ)](https://github.com/nlp-tlp/quickgraph/blob/main/FAQ.md)
+  📨 Feel free to reach out if you have any questions by emailing tyler.bikaun@research.uwa.edu.au
+
+Note: the Overview and FAQ are still being completed so please be patient 🙂
 
 ## Getting started
 
@@ -20,7 +28,7 @@ $ docker-compose -f docker-compose.yml up
 ```
 
 ## Issues, Bugs and Feedback
-QuickGraph is currently under active development with only a single developer, so bugs are still being squashed. If you come across any issues, bugs or have any general feedback please feel free to reach out (email: tyler.bikaun@research.uwa.edu.au). Alternatively, feel free to raise a issue, or better yet, a pull request 🙂.
+QuickGraph is currently under active development with only a single developer, so bugs are still being squashed. If you come across any issues, bugs or have any general feedback please feel free to reach out (email: tyler.bikaun@research.uwa.edu.au). Alternatively, feel free to raise an issue, or better yet, make a pull request 🙂.
 
 ### Known Issues/Bugs
 Annotation with QuickGraph under entity annotation, and entity and closed relation annotation has been widely tested for single users, however a few bugs still exist in the multi-user environment and for open relation annotation. The following are currently being resolved:
