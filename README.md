@@ -5,11 +5,11 @@ QuickGraph: A Rapid Annotation Tool for Knowledge Graph Extraction from Technica
 </div>
 QuickGraph is a collaborative annotation tool for rapid multi-task information extraction. Key features of QuickGraph include entity and relation propagation which mimics weak supervision, and the use of text clustering to aid with annotation consistency. <br/><br/>
 
-  🖥 [Try out QuickGraph online](https://quickgraph.nlp-tlp.org)
-  🎥 [QuickGraph systems demonstration video](https://youtu.be/DTWrR67-nCU)
-  📌 [Overview of how to use QuickGraph](https://github.com/nlp-tlp/quickgraph/blob/main/About.md)
-  📌 [Frequently Asked Questions (FAQ)](https://github.com/nlp-tlp/quickgraph/blob/main/FAQ.md)
-  📨 Feel free to reach out if you have any questions by emailing tyler.bikaun@research.uwa.edu.au
+  🖥 [Try out QuickGraph online](https://quickgraph.nlp-tlp.org)<br/>
+  🎥 [QuickGraph systems demonstration video](https://youtu.be/DTWrR67-nCU)<br/>
+  📌 [Overview of how to use QuickGraph](https://github.com/nlp-tlp/quickgraph/blob/main/About.md)<br/>
+  📌 [Frequently Asked Questions (FAQ)](https://github.com/nlp-tlp/quickgraph/blob/main/FAQ.md)<br/>
+  📨 Feel free to reach out if you have any questions by emailing tyler.bikaun@research.uwa.edu.au<br/>
 
 Note: the Overview and FAQ are still being completed so please be patient 🙂
 
