@@ -59,8 +59,14 @@ const initialState = {
       },
       valid: true, // No mandatory steps here, all optional.
     },
-    review: {
+    invite: {
       number: 5,
+      saved: false,
+      data: { invitedUsers: [], annotatorsPerDoc: 1 },
+      valid: true, // No mandatory steps here, all optional.
+    },
+    review: {
+      number: 6,
       saved: false,
       data: { name: "", description: "" },
       valid: false,

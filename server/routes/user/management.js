@@ -14,7 +14,7 @@ router.get("/management/users", authUtils.cookieJwtAuth, async (req, res) => {
     const userId = authUtils.getUserIdFromToken(req.cookies.token);
     const response = await User.find(
       { _id: { $ne: userId }, public: true },
-      { _id: 1, public: 1, username: 1 }
+      { _id: 1, public: 1, username: 1, colour: 1 }
     ).lean();
     res.json(response);
   } catch (err) {
@@ -48,13 +48,12 @@ router.post("/management/invite/:projectId", authUtils.cookieJwtAuth, async (req
         default:
           res
             .status(500)
-            .send("Failed to assign documents - please try again.");
+            .send({message: "Failed to assign documents - please try again."});
       }
     };
 
     // Add users to project
-    // Note: No accessId is created yet.
-    // TODO: Implement
+    // Note: No accessId is created yet - TODO
     const annotators = userIds.map((id) => ({
       user: id,
       accessId: "",
@@ -97,7 +96,7 @@ router.post("/management/invite/:projectId", authUtils.cookieJwtAuth, async (req
     res.json(response);
   } catch (err) {
     logger.error("Failed to invite annotators to project");
-    res.json({ message: err });
+    res.status(500).send({ message: err });
   }
 });
 

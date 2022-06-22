@@ -64,7 +64,7 @@ export const Preannotation = () => {
     reader.onload = () => {
       const fileExt = fileMeta.name.split(".").slice(-1)[0];
 
-      if (fileExt === "txt") {
+      if (fileExt === "txt" || fileExt === 'csv') {
         // TODO: Handle errors; if user uploads triple dict to entities it will still load...
         let dict = reader.result.split("\n").filter((line) => line !== "");
         // console.log(dict);

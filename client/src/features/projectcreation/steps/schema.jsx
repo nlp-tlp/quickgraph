@@ -2,8 +2,6 @@ import "react-sortable-tree/style.css";
 import {
   addNodeUnderParent,
   changeNodeAtPath,
-  getFlatDataFromTree,
-  getNodeAtPath,
   removeNodeAtPath,
 } from "react-sortable-tree";
 import SortableTree from "react-sortable-tree";

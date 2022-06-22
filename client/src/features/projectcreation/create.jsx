@@ -13,11 +13,11 @@ import { Preprocessing } from "./steps/preprocessing";
 import { Review } from "./steps/review";
 import { Schema } from "./steps/schema";
 import { Upload } from "./steps/upload";
+import { Invite } from "./steps/invite";
 
 import axios from "../utils/api-interceptor";
 import history from "../utils/history";
 
-// New
 import {
   Grid,
   Card,
@@ -44,6 +44,7 @@ export const Create = () => {
     preprocessing: <Preprocessing />,
     schema: <Schema />,
     preannotation: <Preannotation />,
+    invite: <Invite />,
     review: <Review />,
   };
 
@@ -53,6 +54,7 @@ export const Create = () => {
     preprocessing: "Apply text preprocessing to your corpus",
     schema: "Build an ontology/schema for entity/relation annotation",
     preannotation: "Upload data for pre-annotation",
+    invite: "Invite users to join annotation",
     review: "Review project before creation",
   };
 
