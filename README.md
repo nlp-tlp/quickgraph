@@ -6,7 +6,7 @@ QuickGraph: A Rapid Annotation Tool for Knowledge Graph Extraction from Technica
 
 > [!IMPORTANT]
 > QuickGraph v2 is currently being released publicly 🚧
-> We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only. Please check back for updates.
+> We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only. Please check back for updates. Feel free to checkout `v2` branch to checkout the new release, however please expect there to be issues until its merged into `main`.
 
 QuickGraph is a collaborative annotation tool for rapid multi-task information extraction. Key features of QuickGraph include entity and relation propagation which mimics weak supervision, and the use of text clustering to aid with annotation consistency. <br/><br/>
 
