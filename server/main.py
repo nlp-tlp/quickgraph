@@ -1,32 +1,28 @@
-"""
-main.py
-"""
+"""Entry point of the QuickGraph server."""
 
 import os
-
-from motor.motor_asyncio import AsyncIOMotorClient
-import uvicorn
 from contextlib import asynccontextmanager
+
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING
-from mangum import Mangum
 
+from dependencies import get_current_active_user
 from routers import (
-    resources,
     dashboard,
-    graph,
-    projects,
     dataset,
-    user,
+    demo,
+    graph,
     markup,
     notifications,
-    demo,
+    projects,
+    resources,
     social,
-    cleaner,
+    user,
 )
 from settings import settings
-from dependencies import get_current_active_user
 from utils import mock_authenticate_user
 
 # from loguru import logger
@@ -39,10 +35,6 @@ from utils import mock_authenticate_user
 
 origins = [
     "http://localhost:3000",
-    "http://quickgraph.tech",
-    "https://quickgraph.tech",
-    "http://staging.quickgraph.tech",
-    "https://staging.quickgraph.tech",
 ]
 
 app = FastAPI(
@@ -124,17 +116,16 @@ async def startup():
         await create_indexes(db)
 
 
+app.include_router(user.router)
+app.include_router(dataset.router)
 app.include_router(resources.router)
 app.include_router(dashboard.router)
 app.include_router(graph.router)
 app.include_router(projects.router)
-app.include_router(user.router)
-app.include_router(dataset.router)
 app.include_router(markup.router)
 app.include_router(notifications.router)
 app.include_router(demo.router)
 app.include_router(social.router)
-# app.include_router(cleaner.router)
 
 
 bypass_auth = os.environ.get("BYPASS_AUTH", False)
