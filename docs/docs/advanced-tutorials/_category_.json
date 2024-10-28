@@ -1,0 +1,8 @@
+{
+  "label": "Advanced Tutorials",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Level up your QuickGraph skills by learning about its advanced features."
+  }
+}

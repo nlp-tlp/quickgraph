@@ -1,0 +1,8 @@
+{
+  "label": "Dataset Creator",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Dataset Creator - Create new datasets with custom configurations."
+  }
+}

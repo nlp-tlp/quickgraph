@@ -1,0 +1,8 @@
+{
+  "label": "Dashboard",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Discover how the various components of the project dashboard synergize to facilitate the annotation process."
+  }
+}

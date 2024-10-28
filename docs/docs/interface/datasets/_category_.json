@@ -1,0 +1,8 @@
+{
+  "label": "Datasets",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Explore the details of creating and managing datasets in QuickGraph."
+  }
+}
