@@ -1,5 +1,5 @@
 export const DocsBaseURL =
-  process.env.REACT_APP_DOC_BASE_URL ?? "https://docs.quickgraph.tech";
+  import.meta.env.VITE_DOC_BASE_URL ?? "https://docs.quickgraph.tech";
 
 const createDocsURL = (path) => `${DocsBaseURL}${path}`;
 

@@ -9,8 +9,8 @@ import Editor from "./components/Editor";
 import Create from "../../shared/components/Create/Create";
 import Review from "../../shared/components/Create/Review";
 
-import { validateCSV, validateEntityOntologyData } from "./components/utils";
-import { countTreeItemsAndMaxDepth } from "../../shared/utils/treeView";
+// import { validateCSV, validateEntityOntologyData } from "./components/utils";
+// import { countTreeItemsAndMaxDepth } from "../../shared/utils/treeView";
 import useResources from "../../shared/hooks/api/resources";
 
 const resourceValidator = ({

@@ -40,11 +40,11 @@ const CreateDataset = () => {
   };
 
   const validationFunctions = (values) => ({
-    details: values.name !== "",
-    editor:
-      (values.data !== "" || values.data !== []) && values.errors.length === 0,
+    details: values.name.trim() !== "",
+    editor: Array.isArray(values.data)
+      ? values.data.length > 0 && values.errors.length === 0
+      : values.data.trim() !== "" && values.errors.length === 0,
   });
-
   const reviewValidationFunction = (values) =>
     [
       validationFunctions(values)["details"],
