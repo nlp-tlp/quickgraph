@@ -1,6 +1,9 @@
-from typing import List, Dict
-from pydantic import BaseModel, Field
+"""Graph models."""
+
 from enum import Enum
+from typing import Dict, List
+
+from pydantic import BaseModel, Field
 
 from models.resources import OntologyItem
 

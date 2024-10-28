@@ -1,10 +1,13 @@
-from bson import ObjectId
-from pydantic import BaseModel, Field
-from typing import Optional, List, Union, Dict
+"""Resources models."""
+
 from datetime import datetime
 from enum import Enum
+from typing import List, Optional, Union
 
-from models.utils import PyObjectId
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, Field
+
+from models.base import PydanticObjectIdAnnotated
 
 
 class EntityPreannotation(BaseModel):
@@ -49,7 +52,9 @@ class OntologyItem(BaseModel):
     example_terms: List[str] = Field(
         default=[], description="List of example terms classified by the ontology item."
     )
-    color: str = "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
+    color: str = (
+        "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
+    )
     active: bool
     # https://docs.pydantic.dev/usage/postponed_annotations/#self-referencing-models
     children: List["OntologyItem"] = []
@@ -111,11 +116,7 @@ class BaseResourceModel(BaseModel):
         description="The datetime the resource was last updated",
     )
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class CreatePreannotationResource(BaseModel):
@@ -140,8 +141,7 @@ class CreatePreannotationResource(BaseModel):
         default_factory=datetime.utcnow, description="Date resource was created"
     )
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class CreateResourceModel(BaseResourceModel):
@@ -152,8 +152,8 @@ class CreateResourceModel(BaseResourceModel):
 
 
 class ResourceModel(BaseResourceModel):
-    id: PyObjectId = Field(
-        default_factory=PyObjectId,
+    id: PydanticObjectIdAnnotated = Field(
+        default_factory=ObjectId,
         alias="_id",
         description="The UUID of the resource",
     )
@@ -171,10 +171,9 @@ class ResourceModel(BaseResourceModel):
         List[Constraint],
     ] = Field(description="The content of the resource")
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(
+        use_enum_values=True, populate_by_name=True, arbitrary_types_allowed=True
+    )
 
 
 class UpdateResourceModel(BaseModel):
@@ -188,19 +187,11 @@ class UpdateResourceModel(BaseModel):
     )
     content: List[OntologyItem] = Field(description="The content of the resource")
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class ResourceModelWithReadStatus(ResourceModel):
     read_only: bool = Field(default=True)
-
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 
 class AggregateOntologyResources(BaseModel):
@@ -217,8 +208,3 @@ class AggregateResourcesModel(BaseModel):
     ontology: AggregateOntologyResources = []
     preannotation: AggregatePreannotationResources = []
     constraints: List[Constraint] = []
-
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}

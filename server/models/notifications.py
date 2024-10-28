@@ -1,15 +1,13 @@
-"""
-Notifications model that will house project invitations, activity information, etc.
-"""
+"""Notifications models."""
+
+from datetime import datetime
+from enum import Enum
+from typing import Union
 
 from bson import ObjectId
-from typing import Union
-from pydantic import BaseModel, Field
-from enum import Enum
-from pydantic import BaseModel, Field
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
 
-from models.utils import PyObjectId
+from models.base import PydanticObjectIdAnnotated
 
 
 class NotificationTextTemplates(Enum):
@@ -41,8 +39,8 @@ class CreateNotification(BaseModel):
     seen: bool = Field(
         default=False, description="Whether the user has seen this notification"
     )
-    content_id: Union[None, PyObjectId] = Field(
-        default_factory=PyObjectId,
+    content_id: Union[None, PydanticObjectIdAnnotated] = Field(
+        default_factory=ObjectId,
         description="The UUID associated with notification content",
     )
     status: Union[None, NotificationStates] = Field(
@@ -50,22 +48,13 @@ class CreateNotification(BaseModel):
         description="The state associated with the notification (if applicable)",
     )
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class Notification(CreateNotification):
-    id: PyObjectId = Field(
-        default_factory=PyObjectId,
+    id: PydanticObjectIdAnnotated = Field(
         alias="_id",
         description="The UUID of the notification",
     )
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)

@@ -1,15 +1,16 @@
-from typing import Optional, List, Union, Dict
-from enum import Enum
-from pydantic import BaseModel, Field
-from bson import ObjectId
+"""Project models."""
+
 from datetime import datetime
+from enum import Enum
+from typing import Dict, List, Optional, Union
 
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, Field
 
-from models.utils import PyObjectId
-from models.resources import OntologyItem
 from models.dataset import Preprocessing
 from models.markup import Entity, Relation
-
+from models.resources import OntologyItem
+from models.base import PydanticObjectIdAnnotated
 
 # class ResourceConstraints(BaseModel):
 #     # Resource constraints are private to projects only.
@@ -18,7 +19,7 @@ from models.markup import Entity, Relation
 
 
 class SaveState(BaseModel):
-    dataset_item_id: PyObjectId = Field(
+    dataset_item_id: PydanticObjectIdAnnotated = Field(
         description="The UUID of the dataset item this save state refers to",
     )
     created_at: datetime = Field(
@@ -28,6 +29,8 @@ class SaveState(BaseModel):
     created_by: str = Field(
         description="The username of the annotator who created the save state"
     )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class Settings(BaseModel):
@@ -89,11 +92,13 @@ class AnnotatorStates(Enum):
 
 
 class ScopeItem(BaseModel):
-    dataset_item_id: PyObjectId = Field(
-        default_factory=PyObjectId,
+    dataset_item_id: PydanticObjectIdAnnotated = Field(
+        ...,
         description="Scope of documents assigned assigned to annotator (item identifiers)",
     )
     visible: bool
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class Annotator(BaseModel):
@@ -103,11 +108,7 @@ class Annotator(BaseModel):
     state: AnnotatorStates = Field(description="Current state of annotator")
     scope: List[ScopeItem]
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class FlagState(str, Enum):
@@ -119,8 +120,7 @@ class FlagState(str, Enum):
 class BaseFlag(BaseModel):
     state: FlagState = Field(description="The state of the flag")
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class CreateFlag(BaseFlag):
@@ -178,13 +178,13 @@ class CreateProject(BaseProject):
         description="The UUID of blueprint resources to assign to this project to facilitate annotation of the selected task(s)"
     )
     annotators: List[str] = Field(description="The usernames of invited collaborators")
-    blueprint_dataset_id: PyObjectId = Field(
+    blueprint_dataset_id: PydanticObjectIdAnnotated = Field(
         description="The UUID of the blueprint dataset for this project"
     )
 
 
 class Project(BaseProject):
-    id: PyObjectId = Field(alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     ontology: ProjectOntology = Field(description="Task ontologies assigned to project")
     annotators: List[Annotator] = Field(
         description="Set of invited annotation collaborators"
@@ -195,18 +195,20 @@ class Project(BaseProject):
     # save_states: List[SaveState] = Field(
     #     description="Dataset item save states of annotators"
     # )
-    dataset_id: PyObjectId = Field(description="The UUID of the projects dataset")
+    dataset_id: PydanticObjectIdAnnotated = Field(
+        description="The UUID of the projects dataset"
+    )
     updated_at: datetime = Field(
         description="Date/Time project was last updated",
     )
     guidelines: Guidelines = Field(description="Annotation guidelines for project")
-    relation_counts: Optional[Dict[str, int]] = Field(description='Relation frequencies applied by the current user.')
+    relation_counts: Optional[Dict[str, int]] = Field(
+        description="Relation frequencies applied by the current user."
+    )
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(
+        use_enum_values=True, populate_by_name=True, arbitrary_types_allowed=True
+    )
 
 
 class ProjectWithMetrics(BaseModel):
@@ -214,7 +216,7 @@ class ProjectWithMetrics(BaseModel):
     Base model for listing projects
     """
 
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
     # active_annotators: int = Field(description="Count of active project annotators")
     active_annotators: List[dict] = Field(
         description="The set of active annotators on this project"
@@ -236,11 +238,9 @@ class ProjectWithMetrics(BaseModel):
     # user_role: str = Field(description="The role of the current user")
     created_by: str = Field(description="The creator of the project")
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(
+        use_enum_values=True, populate_by_name=True, arbitrary_types_allowed=True
+    )
 
 
 class SaveDatasetItems(BaseModel):
@@ -258,8 +258,8 @@ class SummaryActivityItem(BaseModel):
     state: Optional[str] = None
     created_at: datetime
     created_by: str
-    dataset_item_id: PyObjectId
-    project_id: Optional[PyObjectId] = None
+    dataset_item_id: PydanticObjectIdAnnotated
+    project_id: Optional[PydanticObjectIdAnnotated] = None
     text: str
     context: Optional[str] = None
     activity_type: str
@@ -277,7 +277,7 @@ class Summary(BaseModel):
 
 
 class ProjectDataset(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     name: str
     description: Optional[str]
     created_by: str = Field(description="Username of user who created dataset")
@@ -292,7 +292,7 @@ class ProjectDataset(BaseModel):
 
 
 class ProjectDatasetItem(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     original: str
     is_blueprint: bool
     tokens: List[str]
@@ -305,15 +305,15 @@ class ProjectDatasetItem(BaseModel):
 
 
 class ProjectSocial(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     text: str
     context: str
-    dataset_item_id: PyObjectId = Field(
-        default_factory=PyObjectId, alias="dataset_item_id"
-    )
+    dataset_item_id: PydanticObjectIdAnnotated = Field(...)
     created_at: datetime
     updated_at: datetime
     created_by: str
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
 
 class ProjectDownload(BaseModel):
@@ -322,9 +322,3 @@ class ProjectDownload(BaseModel):
     dataset_items: List[ProjectDatasetItem] = []
     markup: List[Union[Entity, Relation]] = []
     social: List[ProjectSocial] = []
-
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True

@@ -1,11 +1,13 @@
-from typing import Optional, List, Union, Dict
-from enum import Enum
-from pydantic import BaseModel, Field
-from bson import ObjectId
+"""Markup models."""
+
 from datetime import datetime
+from enum import Enum
+from typing import Dict, List, Union
 
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, Field
 
-from models.utils import PyObjectId
+from models.base import PydanticObjectIdAnnotated
 
 
 class AnnotationType(Enum):
@@ -26,10 +28,10 @@ class CreateEntity(BaseModel):
 
 
 class RichCreateEntity(CreateEntity):
-    project_id: Union[None, PyObjectId] = Field(
+    project_id: Union[None, PydanticObjectIdAnnotated] = Field(
         description="Identifier of project associated with markup",
     )
-    dataset_item_id: PyObjectId = Field(
+    dataset_item_id: PydanticObjectIdAnnotated = Field(
         description="Identifier of dataset item markup is applied to",
     )  # `text_id`
     ontology_item_id: str = Field(
@@ -54,30 +56,31 @@ class RichCreateEntity(CreateEntity):
         description="Flag indicating whether markup is a blueprint (copiable)",
     )
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, use_enum_values=True)
 
 
 class BaseMarkup(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     ontology_item_id: str = Field(
         description="Identifier of label associated with project ontology"
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: str = Field()
-    dataset_item_id: PyObjectId = Field(
-        default_factory=PyObjectId,
+    dataset_item_id: PydanticObjectIdAnnotated = Field(
+        ...,
         description="Identifier of dataset item markup is applied to",
     )  # `text_id`
-    project_id: PyObjectId = Field(
-        default_factory=PyObjectId,
+    project_id: PydanticObjectIdAnnotated = Field(
+        ...,
         description="Identifier of project markup is associated with",
     )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
+
 
 class Entity(BaseMarkup):
-    start: int = Field()
-    end: int = Field()
+    start: int = Field(..., description="Index of entity span token start", ge=0)
+    end: int = Field(..., description="Index of entity span token end", ge=0)
     surface_form: str = Field()  # `entityText`
     suggested: bool = Field(
         description="Flag indicating whether markup is to be suggested (weak) or not (silver)"
@@ -86,15 +89,11 @@ class Entity(BaseMarkup):
         description="Classification associated with markup"
     )  # instead of `isEntity`
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class EntityMarkup(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId)  # , alias="_id"
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     ontology_item_id: str = Field(
         description="Identifier of entity label associated with project ontology"
     )
@@ -117,15 +116,12 @@ class EntityMarkup(BaseModel):
         default_factory=datetime.utcnow, description="Date/time markup was last updated"
     )
 
-    class Config:
-        # allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
 
 class Relation(BaseMarkup):
-    source_id: PyObjectId = Field(default_factory=PyObjectId)
-    target_id: PyObjectId = Field(default_factory=PyObjectId)
+    source_id: PydanticObjectIdAnnotated = Field(...)
+    target_id: PydanticObjectIdAnnotated = Field(...)
     suggested: bool = Field(
         description="Flag indicating whether markup is to be suggested (weak) or not (silver)"
     )
@@ -133,22 +129,18 @@ class Relation(BaseMarkup):
         description="Classification associated with markup"
     )  # instead of `isEntity`
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
 
 
 class RelationMarkup(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId)  # , alias="_id"
-    source_id: PyObjectId = Field(
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
+    source_id: PydanticObjectIdAnnotated = Field(
         description="Identifier associated with source entity"
     )
-    target_id: PyObjectId = Field(
+    target_id: PydanticObjectIdAnnotated = Field(
         description="Identifier associated with target entity"
     )
-    ontology_item_id: str = Field(
+    ontology_item_id: PydanticObjectIdAnnotated = Field(
         description="Identifier of entity label associated with project ontology"
     )
     suggested: bool
@@ -156,32 +148,28 @@ class RelationMarkup(BaseModel):
     name: str
     state: str = Field(default="active")
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
 
 class CreateRelation(BaseModel):
     ontology_item_id: str
-    source_id: PyObjectId = Field(
-        default_factory=PyObjectId,
+    source_id: PydanticObjectIdAnnotated = Field(
+        ...,
+        description="Identifier of the source entity markup",
     )
-    target_id: PyObjectId = Field(
-        default_factory=PyObjectId,
-        description="Identifier of dataset item markup is applied to",
+    target_id: PydanticObjectIdAnnotated = Field(
+        ...,
+        description="Identifier of the target entity markup",
     )
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class RichCreateRelation(CreateRelation):
-    project_id: Union[None, PyObjectId] = Field(
+    project_id: Union[None, PydanticObjectIdAnnotated] = Field(
         description="Identifier of project associated with markup",
     )
-    dataset_item_id: PyObjectId = Field(
+    dataset_item_id: PydanticObjectIdAnnotated = Field(
         description="Identifier of dataset item markup is applied to",
     )
     ontology_item_id: str = Field(
@@ -201,8 +189,7 @@ class RichCreateRelation(CreateRelation):
         description="Flag indicating whether markup is a blueprint (copiable)",
     )
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, use_enum_values=True)
 
 
 class CreateMarkupApply(BaseModel):
@@ -220,13 +207,9 @@ class CreateMarkupApply(BaseModel):
     suggested: bool = Field(
         description="Flag indicating whether markup is to be suggested (weak) or not (silver)"
     )
-    content: Union[CreateEntity, CreateRelation] = Field()
+    content: Union[CreateEntity, CreateRelation] = Field(...)
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 # class AcceptMarkup(BaseModel):
@@ -259,11 +242,7 @@ class InMarkupApply(BaseModel):
     )
     content: Union[EntityMarkup, RelationMarkup] = Field()
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 # class ItemOrientedEntityMarkup(BaseModel):
@@ -297,11 +276,7 @@ class OutMarkupApply(BaseModel):
     )
     apply_all: bool
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class OutMarkupDelete(BaseModel):
@@ -313,7 +288,4 @@ class OutMarkupDelete(BaseModel):
     )
     apply_all: bool
 
-    class Config:
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(use_enum_values=True)

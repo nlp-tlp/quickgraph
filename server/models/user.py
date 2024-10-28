@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+"""User models."""
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class User(BaseModel):
@@ -7,5 +9,4 @@ class User(BaseModel):
     )
     sub: str = Field(description="The users UUID")
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)

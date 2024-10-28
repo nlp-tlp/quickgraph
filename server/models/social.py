@@ -1,10 +1,12 @@
-from typing import List
-from pydantic import BaseModel, Field
+"""Social models."""
+
 from datetime import datetime
 from enum import Enum
-from bson import ObjectId
 
-from models.utils import PyObjectId
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, Field
+
+from models.base import PydanticObjectIdAnnotated
 
 
 class Context(str, Enum):
@@ -16,9 +18,8 @@ class Context(str, Enum):
 class BaseComment(BaseModel):
     text: str = Field(description="The text content of the comment")
     context: Context = Field(description="The context the comment is created in")
-    dataset_item_id: PyObjectId = Field(
-        description="The UUID of the dataset item associated with the comments",
-        alis="dataset_item_id",
+    dataset_item_id: PydanticObjectIdAnnotated = Field(
+        description="The UUID of the dataset item associated with the comments"
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
@@ -29,30 +30,18 @@ class BaseComment(BaseModel):
         description="The Data/Time the comment was last updated",
     )
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
 
 
 class CreateComment(BaseComment):
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    pass
 
 
 class Comment(BaseComment):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     created_by: str = Field(
         description="The username of the user who created the comment"
     )
     read_only: bool = Field(default=True)
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)

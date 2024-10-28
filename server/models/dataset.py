@@ -1,10 +1,13 @@
-from typing import Optional, List, Union, Dict, Any
-from enum import Enum
-from pydantic import BaseModel, Field, validator
-from bson import ObjectId
-from datetime import datetime
+"""Dataset models."""
 
-from models.utils import PyObjectId
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, Field, validator
+
+from models.base import PydanticObjectIdAnnotated
 from models.social import Comment
 
 # from models.project import Flag
@@ -17,10 +20,12 @@ class BaseItem(BaseModel):
     is_blueprint: bool = Field(
         description="Flag indicating whether the dataset is a blueprint (copyable)",
     )
-    project_id: Union[None, PyObjectId] = Field(
+    project_id: Union[None, PydanticObjectIdAnnotated] = Field(
         default=None,
         description="The UUID of the project associated with this dataset_item (if not a blueprint)",
     )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class Entity(BaseModel):
@@ -75,25 +80,19 @@ class EnrichedItem(BaseItem):
         default=[], description="List of relations associated with this dataset item."
     )
 
-    dataset_id: PyObjectId = Field(default_factory=PyObjectId)
+    dataset_id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
 
 class DatasetItem(EnrichedItem):
     """DatasetItem are dataset items that are assigned to a project"""
 
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
 
 class TokenizerEnum(str, Enum):
@@ -119,8 +118,7 @@ class Preprocessing(BaseModel):
         description="Tokenizer to apply to dataset items",
     )
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class DatasetType(int, Enum):
@@ -147,7 +145,7 @@ class BaseDataset(BaseModel):
     )
     entity_ontology_resource_id: Optional[str] = None
     relation_ontology_resource_id: Optional[str] = None
-    project_id: Optional[PyObjectId] = Field(default=None)
+    project_id: Optional[PydanticObjectIdAnnotated] = Field(default=None)
 
     @validator("entity_ontology_resource_id")
     def validate_entity_ontology_resource_id(cls, v, values):
@@ -168,6 +166,8 @@ class BaseDataset(BaseModel):
                 '"relation_ontology_resource_id" is required for relation annotated datasets (data_type is 2)'
             )
         return v
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, use_enum_values=True)
 
 
 class CreateDataType(str, Enum):
@@ -192,7 +192,7 @@ class CreateDataset(CreateDatasetBody):
 
 
 class Dataset(BaseDataset):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     created_by: str = Field(description="Username of user who created dataset")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -211,16 +211,14 @@ class Dataset(BaseDataset):
         default=None, description="The External ID associated with the item"
     )
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, use_enum_values=True)
 
 
 class LinkedResource(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
     name: str
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class RichProjectDataset(Dataset):
@@ -232,11 +230,7 @@ class RichBlueprintDataset(Dataset):
     linked_entity_resource: Union[None, LinkedResource] = None
     linked_relation_resource: Union[None, LinkedResource] = None
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class SaveStateFilter(int, Enum):
@@ -276,11 +270,7 @@ class DatasetFilters(BaseModel):
     limit: int = Field(default=10, ge=1, le=20)
     dataset_item_ids: Union[None, str] = Field(default=None)
 
-    class Config:
-        # allow_population_by_field_name = True
-        # arbitrary_types_allowed = True
-        # json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class FilteredDataset(BaseModel):
@@ -292,8 +282,4 @@ class FilteredDataset(BaseModel):
     social: Dict[str, Union[list, List[Comment]]] = Field(default={})
     # flags: Dict[str, Union[list, List[Flag]]] = Field(default={})
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        use_enum_values = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
