@@ -1,9 +1,10 @@
 import React from "react";
-import "../Dashboard.css";
 
 /* 
   Component for correcting inconsistencies in annotations
 */
-export const Corrector = () => {
+const Corrector = () => {
   return <div>Hello, annotation corrector!</div>;
 };
+
+export default Corrector;

@@ -1,47 +1,34 @@
-import React from "react";
-import ReactDOM from "react-dom";
 import "./index.css";
-import reportWebVitals from "./reportWebVitals";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-// import store from "./app/store";
-import { Provider } from "react-redux";
-
-import store from "./app/store";
-import { PersistGate } from "redux-persist/integration/react";
-import { persistStore } from "redux-persist";
-
-import { ThemeProvider } from "@mui/material/styles";
-
-import { theme } from "./theme";
-
 import App from "./App";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import reportWebVitals from "./reportWebVitals";
+import { ThemeProvider } from "@mui/material/styles";
+import { theme } from "./theme";
+import { Auth0Provider } from "@auth0/auth0-react";
+import SnackbarProvider from "./shared/context/snackbar-context";
 
-let persistor = persistStore(store);
-ReactDOM.render(
+const container = document.getElementById("root");
+const root = createRoot(container);
+
+root.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <ToastContainer
-          position="top-center"
-          autoClose={500}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
-        <ThemeProvider theme={theme}>
+    <Auth0Provider
+      domain={`https://${process.env.REACT_APP_AUTH0_DOMAIN}`}
+      clientId={process.env.REACT_APP_AUTH0_CLIENT_ID}
+      redirectUri={window.location.origin}
+      audience={`https://${process.env.REACT_APP_AUTH0_AUDIENCE}`}
+      // scope={"read:current_user update:current_user_metadata"}
+      useRefreshTokens={true}
+      cacheLocation={"localstorage"}
+    >
+      <ThemeProvider theme={theme}>
+        <SnackbarProvider>
           <App />
-        </ThemeProvider>
-      </PersistGate>
-    </Provider>
-  </React.StrictMode>,
-  document.getElementById("root")
+        </SnackbarProvider>
+      </ThemeProvider>
+    </Auth0Provider>
+  </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function

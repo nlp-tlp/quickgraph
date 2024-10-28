@@ -1,274 +1,362 @@
-import { useState } from "react";
-import { Col, Row, Form, Spinner } from "react-bootstrap";
-import { IoCheckmarkCircleSharp, IoCloseCircle } from "react-icons/io5";
-import { useDispatch, useSelector } from "react-redux";
+import { useState, useContext } from "react";
 import {
-  selectProject,
-  setActiveModal,
-  patchProjectDetails,
-} from "../../project/projectSlice";
-import "./../Dashboard.css";
+  Grid,
+  TextField,
+  Button,
+  FormGroup,
+  FormControlLabel,
+  Typography,
+  Stack,
+  Box,
+  Chip,
+  Divider,
+  Tooltip,
+  Checkbox,
+  MenuItem,
+} from "@mui/material";
+import { DashboardContext } from "../../../shared/context/dashboard-context";
+import useDashboard from "../../../shared/hooks/api/dashboard";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import moment from "moment";
+import { useTheme } from "@mui/material/styles";
+import { LoadingButton } from "@mui/lab";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { isEquivalent } from "../../../shared/utils/dashboard";
+import LoadingAlert from "../../../shared/components/LoadingAlert";
+import DownloadIcon from "@mui/icons-material/Download";
 
-import { Grid, Card, CardContent, TextField, Button } from "@mui/material";
-import { grey, red, teal } from "@mui/material/colors";
-/* 
-  Component for project settings
-*/
-export const Settings = () => {
-  const dispatch = useDispatch();
-  const project = useSelector(selectProject);
-  const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description);
-  const [changeLoading, setChangeLoading] = useState(false);
+const Settings = () => {
+  const { state } = useContext(DashboardContext);
 
-  const MAPPING = {
-    lowerCase: "Lower cased",
-    removeDuplicates: "Duplicate documents removed",
-    charsRemoved: "Characters removed from corpus",
-  };
+  if (!state) {
+    return <LoadingAlert message="Loading project settings" />;
+  }
+  return (
+    <>
+      <ProjectDetails />
+      <Box sx={{ width: "100%" }} p="2rem 0rem">
+        <Divider />
+      </Box>
+      <ProjectDownload />
+      <Box sx={{ width: "100%" }} p="2rem 0rem">
+        <Divider />
+      </Box>
+      <ProjectDelete />
+    </>
+  );
+};
 
-  const handleUpdate = () => {
-    if (description !== project.description) {
-      dispatch(
-        patchProjectDetails({
-          projectId: project._id,
-          field: "description",
-          value: description,
-        })
-      );
-    }
+const ProjectDetails = () => {
+  const { state, handleUpdate } = useContext(DashboardContext);
+  const [values, setValues] = useState({
+    name: state.name,
+    description: state.description,
+    settings: {
+      annotators_per_item: state.settings.annotators_per_item,
+      disable_propagation: state.settings.disable_propagation,
+      disable_discussion: state.settings.disable_discussion,
+    },
+  });
 
-    if (name !== project.name) {
-      dispatch(
-        patchProjectDetails({
-          projectId: project._id,
-          field: "name",
-          value: name,
-        })
-      );
-    }
+  const hasChanges = !isEquivalent(values, state);
+  const maxActiveAnnotators =
+    state && state.annotators.filter((a) => a.state === "accepted").length;
+
+  return (
+    <>
+      <Grid item xs={12} container alignItems="center" spacing={2}>
+        <Grid item xs={4}>
+          <Stack direction="column">
+            <Typography variant="h6">Name</Typography>
+            <Typography variant="caption">Update the project name</Typography>
+          </Stack>
+        </Grid>
+        <Grid item xs={8} xl={6}>
+          <TextField
+            required
+            id="project-name-textfield"
+            type="text"
+            margin="normal"
+            placeholder={state.name}
+            fullWidth
+            value={values.name}
+            onChange={(e) =>
+              setValues((prevState) => ({ ...prevState, name: e.target.value }))
+            }
+            autoComplete="false"
+            error={values.name === ""}
+          />
+        </Grid>
+      </Grid>
+      <Grid item xs={12} container alignItems="center" spacing={2}>
+        <Grid item xs={4}>
+          <Stack direction="column">
+            <Typography variant="h6">Description</Typography>
+            <Typography variant="caption">
+              Update the project description
+            </Typography>
+          </Stack>
+        </Grid>
+        <Grid item xs={8} xl={6}>
+          <TextField
+            required
+            id="project-description-textfield"
+            type="text"
+            margin="normal"
+            placeholder={state.description}
+            fullWidth
+            value={values.description}
+            onChange={(e) =>
+              setValues((prevState) => ({
+                ...prevState,
+                description: e.target.value,
+              }))
+            }
+            autoComplete="false"
+            error={values.description === ""}
+          />
+        </Grid>
+      </Grid>
+      <Grid item container xs={12} alignItems="center" spacing={2}>
+        <Grid item xs={4}>
+          <Stack direction="column">
+            <Typography variant="h6">Project Controls</Typography>
+            <Typography variant="caption">
+              Set controls used on this project
+            </Typography>
+          </Stack>
+        </Grid>
+        <Grid item xs={6} xl={6}>
+          <Stack
+            direction="column"
+            justifyContent="flex-start"
+            alignItems="flex-start"
+            // spacing={2}
+            rowGap={2}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={values.settings.disable_propagation}
+                  onChange={(e) =>
+                    setValues((prevState) => ({
+                      ...prevState,
+                      settings: {
+                        ...prevState.settings,
+                        disable_propagation: e.target.checked,
+                      },
+                    }))
+                  }
+                  name="disable-propagation-checkbox"
+                />
+              }
+              label="Disable annotation propagation"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={values.settings.disable_discussion}
+                  onChange={(e) =>
+                    setValues((prevState) => ({
+                      ...prevState,
+                      settings: {
+                        ...prevState.settings,
+                        disable_discussion: e.target.checked,
+                      },
+                    }))
+                  }
+                  name="disable-discussions-checkbox"
+                />
+              }
+              label="Disable dataset item discussions"
+            />
+            <TextField
+              key="project-settings-min-annotators-select"
+              select
+              sx={{ width: 260 }}
+              size="small"
+              label="Minimum annotators per dataset item"
+              value={values.settings.annotators_per_item}
+              onChange={(e) =>
+                setValues((prevState) => ({
+                  ...prevState,
+                  settings: {
+                    ...prevState.settings,
+                    annotators_per_item: e.target.value,
+                  },
+                }))
+              }
+            >
+              {Array.from({ length: maxActiveAnnotators }, (_, i) => i + 1).map(
+                (value) => (
+                  <MenuItem key={`min-annotator-item-${value}`} value={value}>
+                    {value}
+                  </MenuItem>
+                )
+              )}
+            </TextField>
+          </Stack>
+        </Grid>
+      </Grid>
+      <Grid
+        item
+        xs={12}
+        container
+        sx={{ width: "100%" }}
+        justifyContent="right"
+      >
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Tooltip
+            title={"Time since project was last updated"}
+            arrow
+            placement="bottom"
+          >
+            <Chip
+              icon={<AccessTimeIcon />}
+              label={`${moment.utc(state.updatedAt).fromNow()}`}
+              size="small"
+            />
+          </Tooltip>
+          <Button
+            variant="contained"
+            onClick={() => handleUpdate({ body: values })}
+            disabled={!hasChanges}
+          >
+            Update
+          </Button>
+        </Stack>
+      </Grid>
+    </>
+  );
+};
+
+const ProjectDownload = () => {
+  const { state, downloadProject } = useContext(DashboardContext);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = () => {
+    setDownloading(true);
+    downloadProject({ projectId: state.projectId });
+    setDownloading(false);
   };
 
   return (
-    <Grid item container spacing={2}>
-      <Grid item xs={6}>
-        <Card variant="outlined">
-          <CardContent>
-            <Grid item container>
-              <Grid item xs={12}>
-                <h5>Project Details</h5>
-                <span style={{ fontSize: "0.75rem", color: grey[700] }}>
-                  Review or update this projects details
-                </span>
-              </Grid>
-              <Grid item xs={12} sx={{ mt: 4 }}>
-                <TextField
-                  required
-                  id="project-name-text-field"
-                  label="Project Name"
-                  placeholder={project.name}
-                  variant="standard"
-                  fullWidth
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="off"
-                  multiline
-                />
-              </Grid>
-            </Grid>
-            <Grid item xs={12} sx={{ mt: 4 }}>
-              <TextField
-                required
-                id="project-description-text-field"
-                label="Project Description"
-                placeholder={project.description}
-                variant="standard"
-                fullWidth
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                autoComplete="off"
-                multiline
-              />
-            </Grid>
-            <Grid
-              item
-              container
-              xs={12}
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ mt: 4 }}
-            >
-              <span style={{ fontSize: "0.75rem", color: grey[700] }}>
-                Last updated: {new Date(project.updatedAt).toDateString()}
-              </span>
-              <Button
-                variant="contained"
-                disableElevation
-                onClick={handleUpdate}
-                disabled={
-                  project.description === description && project.name === name
-                }
-              >
-                Update
-              </Button>
-            </Grid>
-          </CardContent>
-        </Card>
+    <Grid
+      item
+      xs={12}
+      container
+      alignItems="center"
+      justifyContent="space-between"
+      spacing={2}
+    >
+      <Grid item xs={4}>
+        <Stack direction="column">
+          <Typography variant="h6">Download Project</Typography>
+          <Typography variant="caption">
+            Download the entire project including its dataset, resources, and
+            annotations.
+          </Typography>
+        </Stack>
       </Grid>
-
-      <Grid item xs={6}>
-        <Card variant="outlined">
-          <CardContent>
-            <Grid item container>
-              <Grid item xs={12}>
-                <h5>Preprocessing Operations</h5>
-                <span style={{ fontSize: "0.75rem", color: grey[700] }}>
-                  Review the pre-processing operations applied to this projects
-                  corpus
-                </span>
-              </Grid>
-              {project &&
-                Object.keys(project.preprocessing)
-                  .filter((measure) => Object.keys(MAPPING).includes(measure))
-                  .map((measure) => (
-                    <Grid item xs={12} sx={{ mt: 4 }}>
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        {project.preprocessing[measure] ? (
-                          <IoCheckmarkCircleSharp
-                            style={{ color: teal[500] }}
-                          />
-                        ) : (
-                          <IoCloseCircle style={{ color: red[500] }} />
-                        )}
-                        <p
-                          style={{
-                            margin: "0rem 0.25rem",
-                            alignItems: "center",
-                            padding: "0",
-                          }}
-                        >
-                          {MAPPING[measure]}
-                          {measure === "charsRemoved" &&
-                            " (" + project.preprocessing["charset"] + ")"}
-                        </p>
-                      </div>
-                    </Grid>
-                  ))}
-            </Grid>
-          </CardContent>
-        </Card>
-      </Grid>
-
-      {/* <Row style={{ marginTop: "1rem" }}>
-        <Col>
-          <Card>
-            <CardContent style={{ borderBottom: "1px solid rgba(0,0,0,.125)" }}>
-              <Card.Title>Ontologies</Card.Title>
-              <Card.Subtitle
-                style={{ fontSize: "0.8125rem", color: "#607d8b" }}
-              >
-                Review or modify this projects ontologies.
-              </Card.Subtitle>
-            </CardContent>
-            <CardContent>
-              <Row>
-                <Col md={8}>
-                  <span style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontWeight: "bold" }}>
-                      Update entity ontology
-                    </span>
-                    <span style={{ fontSize: "0.8125rem", color: "#607d8b" }}>
-                      Click to add, remove or modify the existing entity
-                      ontology.
-                    </span>
-                  </span>
-                </Col>
-                <Col
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "right",
-                  }}
-                >
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    // onClick={() => modalHandler(project, "delete")}
-                  >
-                    Update entities
-                  </Button>
-                </Col>
-              </Row>
-              {project && project.tasks.relationAnnotation && (
-                <Row style={{ marginTop: "1rem" }}>
-                  <Col md={8}>
-                    <span style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{ fontWeight: "bold" }}>
-                        Update relation ontology
-                      </span>
-                      <span style={{ fontSize: "0.8125rem", color: "#607d8b" }}>
-                        Click to add, remove or modify the existing relation
-                        ontology.
-                      </span>
-                    </span>
-                  </Col>
-                  <Col
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "right",
-                    }}
-                  >
-                    <Button variant="secondary" size="sm">
-                      Update relations
-                    </Button>
-                  </Col>
-                </Row>
-              )}
-            </CardContent>
-          </Card>
-        </Col>
-      </Row> */}
-      <Grid item xs={12}>
-        <Card variant="outlined" style={{ border: `1px solid ${red[500]}` }}>
-          <CardContent>
-            <Grid item container>
-              <Grid item xs={12}>
-                <h5 style={{ color: red[500] }}>Danger Zone</h5>
-              </Grid>
-              <Grid item container xs={12} sx={{ mt: 4 }}>
-                <Grid item xs={6}>
-                  <span style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontWeight: "bold" }}>
-                      Delete this project
-                    </span>
-                    <span style={{ fontSize: "0.8125rem", color: grey[700] }}>
-                      Once you delete this project, there is no going back.{" "}
-                      <strong>Please be certain.</strong>
-                    </span>
-                  </span>
-                </Grid>
-                <Grid
-                  item
-                  container
-                  xs={6}
-                  alignItems="center"
-                  justifyContent="right"
-                >
-                  <Button
-                    disableElevation
-                    variant="contained"
-                    color="error"
-                    onClick={() => dispatch(setActiveModal("delete"))}
-                  >
-                    Delete this project
-                  </Button>
-                </Grid>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+      <Grid
+        item
+        xs={8}
+        xl={8}
+        container
+        sx={{ display: "flex", justifyContent: "right" }}
+      >
+        <LoadingButton
+          variant="contained"
+          loadingPosition="start"
+          loading={downloading}
+          color="primary"
+          onClick={handleDownload}
+          startIcon={<DownloadIcon />}
+        >
+          Download
+        </LoadingButton>
       </Grid>
     </Grid>
   );
 };
+
+const ProjectDelete = () => {
+  const theme = useTheme();
+  const [deleting, setDeleting] = useState(false);
+
+  const { state, handleDeleteProject: deleteProject } =
+    useContext(DashboardContext);
+  const [valueMatched, setValueMatched] = useState(false);
+  const checkValueMatch = (value) => {
+    setValueMatched(value === state.name);
+  };
+
+  const handleDelete = () => {
+    setDeleting(true);
+    deleteProject();
+  };
+
+  return (
+    <Grid
+      item
+      xs={12}
+      container
+      alignItems="center"
+      justifyContent="space-between"
+      spacing={2}
+    >
+      <Grid item xs={4}>
+        <Stack direction="column">
+          <Typography variant="h6" color="error">
+            Delete Project
+          </Typography>
+          <Typography variant="caption">
+            Enter the projects name to delete. Once you delete this project,
+            there is no going back.{" "}
+            <strong style={{ color: theme.palette.error.main }}>
+              Please be certain.
+            </strong>
+          </Typography>
+        </Stack>
+      </Grid>
+      <Grid
+        item
+        xs={8}
+        xl={8}
+        container
+        justifyContent="space-between"
+        alignItems="center"
+        spacing={2}
+      >
+        <Grid item xs={8}>
+          <TextField
+            fullWidth
+            id="delete-project-textfield"
+            type="text"
+            placeholder={state.name}
+            autoComplete="false"
+            onChange={(e) => checkValueMatch(e.target.value)}
+            color="error"
+          />
+        </Grid>
+        <Grid item xs={4}>
+          <Box sx={{ display: "flex", justifyContent: "right" }}>
+            <LoadingButton
+              variant="contained"
+              loadingPosition="start"
+              loading={deleting}
+              color="error"
+              disabled={!valueMatched}
+              onClick={handleDelete}
+              startIcon={<DeleteIcon />}
+            >
+              Delete
+            </LoadingButton>
+          </Box>
+        </Grid>
+      </Grid>
+    </Grid>
+  );
+};
+
+export default Settings;

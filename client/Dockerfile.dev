@@ -1,0 +1,22 @@
+FROM node:18-alpine
+
+WORKDIR /usr/src/app
+
+# Install git for any packages requiring git in yarn
+RUN apk update
+RUN apk add --no-cache openssh-client git
+
+COPY ./package.json ./
+COPY ./yarn.lock ./
+
+RUN yarn install
+
+COPY . .
+
+ENV REACT_APP_API_BASE_URL=http://localhost:8000
+# No /api root used
+
+
+EXPOSE 3000
+
+CMD ["yarn", "start"]

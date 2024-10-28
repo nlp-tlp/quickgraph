@@ -1,0 +1,7 @@
+.rectangle {
+    cursor: pointer;
+}
+
+.rectangle:hover {
+    opacity: 0.5;
+}

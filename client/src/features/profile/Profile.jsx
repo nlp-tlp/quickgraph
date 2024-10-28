@@ -1,275 +1,224 @@
-import { Formik } from "formik";
 import { useEffect, useState } from "react";
+import { grey, teal, orange, purple, blue, green } from "@mui/material/colors";
+import { getFontColor } from "../../shared/utils/text";
 import {
+  Grid,
+  Stack,
+  TextField,
+  Avatar,
+  Typography,
   Button,
-  Card,
-  Col,
-  Container,
-  Form,
-  Row,
-  Spinner,
-} from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
-import * as yup from "yup";
-import { selectColour, selectUsername, updateProfile } from "../auth/userSlice";
-import axios from "../utils/api-interceptor";
-import "./Profile.css";
-import { grey } from "@mui/material/colors";
-import { getFontColour } from "../project/utils";
+  IconButton,
+  Box,
+  Divider,
+  Tooltip,
+} from "@mui/material";
+import moment from "moment";
+import ErrorAlert from "../../shared/components/ErrorAlert";
+import useProfile from "../../shared/hooks/api/profile";
+import MainContainer from "../../shared/components/Layout/MainContainer";
 
-// TODO: Fix test firing when just avatar colour is changed - this blocks update.
-const schema = yup.object().shape({
-  username: yup.string().min(3).required("Username is required"),
-  // .test("Unique username", "Username already in use", async (username) => {
-  //   const response = await axios.post("/api/user/validation/exists", {
-  //     field: "username",
-  //     value: username,
-  //   });
-  //   if (response.status === 200) {
-  //     return response.data.valid;
-  //   }
-  // })
-  email: yup
-    .string()
-    .email("Must be a valid email")
-    .max(255)
-    .required("Email is required"),
-  // .test("Unique email", "Email already in use", async (email) => {
-  //   const response = await axios.post("/api/user/validation/exists", {
-  //     field: "email",
-  //     value: email,
-  //   });
-  //   if (response.status === 200) {
-  //     return response.data.valid;
-  //   }
-  // })
-  public: yup.boolean(),
-});
-
-export const Profile = () => {
-  const dispatch = useDispatch();
-  const [profileData, setProfileData] = useState();
-  const [profileLoaded, setProfileLoaded] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertText, setAlertText] = useState();
+const Profile = () => {
+  const { loading, data, error, getProfile, updateProfile } = useProfile();
+  const [selectedColor, setSelectedColor] = useState(data ? data.color : null);
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!profileLoaded) {
-        const response = await axios.get("/api/user/profile");
-        if (response.status === 200) {
-          setProfileData(response.data);
-          setProfileLoaded(true);
-        }
+    const fetchProfile = async () => {
+      if (loading) {
+        getProfile();
       }
     };
-    fetchProfileData();
-  }, [profileLoaded]);
+    fetchProfile();
+  }, [loading]);
 
-  const handleSave = (values) => {
-    // console.log(values);
+  useEffect(() => {
+    if (!loading && data) {
+      setSelectedColor(data.user_metadata.color);
+    }
+  }, [loading]);
 
-    dispatch(
-      updateProfile({
-        username: values.username,
-        email: values.email,
-        publicBool: values.public,
-        colour: values.colour,
-      })
+  const handleUpdate = () => {
+    updateProfile({ body: { color: selectedColor } });
+  };
+
+  if (error) {
+    return <ErrorAlert details={"Unable to fetch user profile."} />;
+  } else {
+    return (
+      <MainContainer>
+        <Grid item container xs={12}>
+          <Grid item container xs={12} alignItems="center" spacing={2}>
+            <Grid item xs={4}>
+              <Stack direction="column">
+                <Typography variant="h6">Username</Typography>
+                <Typography variant="caption">
+                  Update your publicly visible username
+                </Typography>
+              </Stack>
+            </Grid>
+            <Grid item xs={8} xl={6}>
+              <Tooltip title="Usernames are currently not modifiable" arrow>
+                <TextField
+                  key="profile-username-textfield"
+                  type="text"
+                  margin="normal"
+                  fullWidth
+                  placeholder="Username"
+                  value={data?.username}
+                  autoComplete="false"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  disabled={loading}
+                />
+              </Tooltip>
+            </Grid>
+          </Grid>
+          <Box sx={{ width: "100%" }} p="2rem 0rem">
+            <Divider />
+          </Box>
+          <Grid item container xs={12} alignItems="center" spacing={2}>
+            <Grid item xs={4}>
+              <Stack direction="column">
+                <Typography variant="h6">Email Address</Typography>
+                <Typography variant="caption">
+                  Update the email address associated with this acount
+                </Typography>
+              </Stack>
+            </Grid>
+            <Grid item xs={8} xl={6}>
+              <Tooltip
+                title="Email addresses are currently not modifiable"
+                arrow
+              >
+                <TextField
+                  key="profile-email-textfield"
+                  type="email"
+                  margin="normal"
+                  fullWidth
+                  placeholder="Email"
+                  value={data?.email}
+                  autoComplete="false"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  disabled={loading}
+                />
+              </Tooltip>
+            </Grid>
+          </Grid>
+          <Box sx={{ width: "100%" }} p="2rem 0rem">
+            <Divider />
+          </Box>
+          <Grid item container xs={12} alignItems="center" spacing={2}>
+            <Grid item xs={4}>
+              <Stack direction="column">
+                <Typography variant="h6">Avatar Color</Typography>
+                <Typography variant="caption">
+                  Update the color of your personal avatar
+                </Typography>
+              </Stack>
+            </Grid>
+            <Grid item xs={8}>
+              <ColorPicker
+                loading={loading}
+                username={data?.username}
+                selectedColor={selectedColor}
+                setSelectedColor={setSelectedColor}
+              />
+            </Grid>
+          </Grid>
+          <Box sx={{ width: "100%" }} p="2rem 0rem">
+            <Divider />
+          </Box>
+          <Grid item xs={12}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{
+                width: "100%",
+              }}
+            >
+              <Typography variant="caption">
+                Last Updated: {moment.utc(data?.updated_at).fromNow()}
+              </Typography>
+              <Stack direction="row" spacing={2}>
+                <Button variant="outlined" color="secondary" disabled>
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleUpdate}
+                  disabled={loading}
+                >
+                  Update
+                </Button>
+              </Stack>
+            </Stack>
+          </Grid>
+        </Grid>
+      </MainContainer>
     );
-    setProfileLoaded(false);
+  }
+};
+
+const ColorPicker = ({
+  loading,
+  username = "Avatar",
+  selectedColor,
+  setSelectedColor,
+}) => {
+  const level = 500;
+  const colors = {
+    grey: grey[level],
+    orange: orange[level],
+    green: green[level],
+    blue: blue[level],
+    teal: teal[level],
+    purple: purple[level],
   };
 
   return (
-    <Container
-      fluid
-      style={{
-        maxWidth: "400px",
-        height: "auto",
-      }}
-    >
-      <Row style={{ marginTop: "2rem" }}>
-        <Col>
-          {profileLoaded ? (
-            <Card>
-              <Card.Title>
-                <UserAvatar profileData={profileData} />
-              </Card.Title>
-              <Card.Body
-                style={{
-                  textAlign: "left",
-                }}
-              >
-                <Formik
-                  validationSchema={schema}
-                  onSubmit={(values) => handleSave(values)}
-                  initialValues={{
-                    username: profileData.username,
-                    email: profileData.email,
-                    public: profileData.public,
-                    oldPassword: "",
-                    newPassword: "",
-                    colour: profileData.colour,
-                  }}
-                >
-                  {({
-                    handleSubmit,
-                    handleChange,
-                    handleBlur,
-                    values,
-                    touched,
-                    isValid,
-                    errors,
-                  }) => (
-                    <Form noValidate onSubmit={handleSubmit}>
-                      <Form>
-                        <Form.Group as={Row} controlId="validationFormik01">
-                          <Form.Label column sm={4}>
-                            Username
-                          </Form.Label>
-                          <Col sm={8}>
-                            <Form.Control
-                              type="text"
-                              placeholder="Enter Username"
-                              name="username"
-                              value={values.username}
-                              onChange={handleChange}
-                              autoComplete="off"
-                              isValid={touched.username && !errors.username}
-                              isInvalid={touched.username && errors.username}
-                              disabled
-                            />
-                            <Form.Control.Feedback type="invalid">
-                              {errors.username}
-                            </Form.Control.Feedback>
-                          </Col>
-                        </Form.Group>
-                      </Form>
-                      <Form>
-                        <Form.Group as={Row} controlId="validationFormik02">
-                          <Form.Label column sm={4}>
-                            Email
-                          </Form.Label>
-                          <Col sm={8}>
-                            <Form.Control
-                              type="email"
-                              placeholder="Email Address"
-                              name="email"
-                              value={values.email}
-                              onChange={handleChange}
-                              autoComplete="off"
-                              isValid={touched.email && !errors.email}
-                              isInvalid={touched.email && errors.email}
-                              disabled
-                            />
-                            <Form.Control.Feedback type="invalid">
-                              {errors.email}
-                            </Form.Control.Feedback>
-                          </Col>
-                        </Form.Group>
-                      </Form>
-                      <Form>
-                        <Form.Group as={Row}>
-                          <Form.Label column sm={9}>
-                            Avatar Colour
-                          </Form.Label>
-                          <Col sm={3}>
-                            <Form.Control
-                              type="color"
-                              name="colour"
-                              id="userAvatarColour"
-                              value={values.colour}
-                              onChange={handleChange}
-                            />
-                          </Col>
-                        </Form.Group>
-                      </Form>
-                      <Form>
-                        <Form.Group as={Row}>
-                          <Col>
-                            <Form.Check
-                              required
-                              name="public"
-                              label="Public Profile"
-                              onChange={handleChange}
-                              isInvalid={!!errors.public}
-                              feedback={errors.public}
-                              feedbackType="invalid"
-                              id="validationFormik0"
-                              checked={values.public}
-                            />
-                            <Form.Text className="text-muted">
-                              Settings your profile as private will make
-                              invitations require your email
-                            </Form.Text>
-                          </Col>
-                        </Form.Group>
-                      </Form>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Button
-                          type="submit"
-                          variant="success"
-                          disabled={!isValid}
-                        >
-                          Save Changes
-                        </Button>
-                        <span
-                          style={{
-                            margin: "1rem 0rem 0rem 0rem",
-                            color: grey[500],
-                            fontSize: "0.75rem",
-                          }}
-                        >
-                          Last updated:{" "}
-                          {new Date(profileData.updatedAt).toDateString()}
-                        </span>
-                      </div>
-                    </Form>
-                  )}
-                </Formik>
-              </Card.Body>
-            </Card>
-          ) : (
-            <div
-              style={{
-                textAlign: "center",
+    <Stack direction="row" spacing={2} justifyContent="space-between" p={2}>
+      {Object.keys(colors).map((name, index) => (
+        <IconButton
+          onClick={() => {
+            setSelectedColor(colors[name]);
+          }}
+          key={`color-${name}-${index}`}
+          disabled={loading}
+        >
+          <Tooltip
+            title={`Click to change avatar color to ${name}`}
+            arrow
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  bgcolor: colors[name],
+                  color: getFontColor(colors[name]),
+                  "& .MuiTooltip-arrow": {
+                    color: colors[name],
+                  },
+                },
+              },
+            }}
+          >
+            <Avatar
+              sx={{
+                bgcolor: colors[name],
+                opacity: selectedColor === colors[name] ? 1 : 0.25,
+                color: getFontColor(colors[name]),
               }}
             >
-              <Spinner animation="border" />
-            </div>
-          )}
-        </Col>
-      </Row>
-    </Container>
+              {username[0]}
+            </Avatar>
+          </Tooltip>
+        </IconButton>
+      ))}
+    </Stack>
   );
 };
 
-const UserAvatar = () => {
-  const username = useSelector(selectUsername);
-  const avatarColour = useSelector(selectColour);
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        padding: "1rem 0rem 0rem 0rem",
-      }}
-    >
-      <div
-        id="avatar"
-        style={{
-          backgroundColor: avatarColour,
-          color: getFontColour(avatarColour),
-        }}
-      >
-        {username[0]}
-      </div>
-    </div>
-  );
-};
+export default Profile;

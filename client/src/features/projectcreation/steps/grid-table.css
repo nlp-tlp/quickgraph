@@ -1,0 +1,12 @@
+.row-selected {
+    background-color: #7b1fa2;
+    color: white;
+}
+
+.row-selected:hover {
+    color: #212121
+}
+
+.row-unselected {
+    color: lightgray
+}

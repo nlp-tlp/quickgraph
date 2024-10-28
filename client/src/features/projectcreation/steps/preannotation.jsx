@@ -1,449 +1,445 @@
-import { useState } from "react";
 import {
-  Card,
-  Col,
-  Form,
-  Row,
-  OverlayTrigger,
-  Tooltip,
-  Popover,
-  Spinner,
-} from "react-bootstrap";
-import { IoInformationCircle } from "react-icons/io5";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  selectPreannotationActions,
-  selectActiveStep,
-  selectSteps,
-  setStepData,
-  selectPerformRelationAnnotation,
-} from "../createStepSlice";
-import { setAlertContent, setAlertActive } from "../../alerts/alertSlice";
-import { BiGitCommit } from "react-icons/bi";
-import { IoWarning } from "react-icons/io5";
-import { flattenOntology } from "../../utils/tools";
+  Grid,
+  Typography,
+  Box,
+  List,
+  ListSubheader,
+  ListItemText,
+  ListItemButton,
+  Paper,
+  Chip,
+  FormControl,
+  FormLabel,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  FormHelperText,
+  ListItem,
+  Button,
+  Stack,
+  Alert,
+} from "@mui/material";
+import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import moment from "moment";
 
-import { Grid, Button, Input } from "@mui/material";
-import { grey } from "@mui/material/colors";
-
-export const Preannotation = () => {
-  const dispatch = useDispatch();
-  const actions = useSelector(selectPreannotationActions);
-  const steps = useSelector(selectSteps);
-  const activeStep = useSelector(selectActiveStep);
-  const performRelationAnnotation = useSelector(
-    selectPerformRelationAnnotation
-  );
-  const [oEntityDictSize, setOEntityDictSize] = useState(); // original size of uploaded entity entityDictionary
-  const [oTripleDictSize, setOTripleDictSize] = useState();
-  const [eLoading, setELoading] = useState(false);
-  const [tLoading, setTLoading] = useState(false);
-
-  // Flatten ontologies
-  const flatEntityOntology = flattenOntology(steps.schema.data.entityLabels);
-  const flatRelationOntology = flattenOntology(
-    steps.schema.data.relationLabels
-  );
-  const entityOntologyLabels = flatEntityOntology.map((l) =>
-    l.fullName.toLowerCase()
-  );
-  const relationOntologyLabels = flatRelationOntology.map((label) =>
-    label.fullName.toLowerCase()
-  );
-  const txtEntityExample =
-    "Jim, Person\ndog, Animal/Mammal\nwhale, Animal/Mammal";
-  const txtTypedTripleExample =
-    "repair,Activity,hasParticipant,line,Physicalobject,1\nrepair,MaintenanceActivity,hasParticipant,pipe,PhysicalObject,1";
-
-  // console.log("entityOntologyLabels", entityOntologyLabels);
-  // console.log("relationOntologyLabels", relationOntologyLabels);
-
-  const readFile = (fileMeta, type) => {
-    let reader = new FileReader();
-    reader.readAsText(fileMeta);
-    reader.onload = () => {
-      const fileExt = fileMeta.name.split(".").slice(-1)[0];
-
-      if (fileExt === "txt") {
-        // TODO: Handle errors; if user uploads triple dict to entities it will still load...
-        let dict = reader.result.split("\n").filter((line) => line !== "");
-        // console.log(dict);
-
-        let successMsg;
-        switch (type) {
-          case "entity":
-            setELoading(true);
-            setOEntityDictSize(dict.length);
-            // Filter based on entity ontology
-            // TODO: FIX ISSUE
-            dict = Object.fromEntries(
-              dict
-                .filter((line) =>
-                  entityOntologyLabels.includes(
-                    line.split(",")[1].toLowerCase().trim()
-                  )
-                )
-                .map((line) => [
-                  line.split(",")[0],
-                  line.split(",")[1].toLowerCase().trim(),
-                ])
-            );
-            // console.log("entityDictionary", dict);
-
-            dispatch(
-              setStepData({
-                entityDictionary: dict,
-                entityDictionaryFileName: fileMeta.name,
-              })
-            );
-            setELoading(false);
-
-            successMsg =
-              Object.keys(dict).length > 0
-                ? `Uploaded ${
-                    Object.entries(dict).filter((item) =>
-                      entityOntologyLabels.includes(item[1])
-                    ).length
-                  } pairs from a set of ${
-                    new Set(Object.values(dict)).size
-                  } entity classes`
-                : // - ${
-                  //   Object.keys(steps[activeStep].data.entityDictionary).length -
-                  //   Object.entries(steps[activeStep].data.entityDictionary).filter(
-                  //     (item) => entityOntologyLabels.includes(item[1])
-                  //   ).length
-                  // } invalid entries detected
-                  "No entity pre-annotation resource uploaded";
-
-            if (Object.keys(dict).length === 0) {
-              dispatch(
-                setAlertContent({
-                  title: "No Pre-annotations made 😞",
-                  body: "Please check your files are in .txt format and its entities are consistent with your ontology.",
-                  level: "warning",
-                })
-              );
-            } else {
-              dispatch(
-                setAlertContent({
-                  title: "Succesfully Pre-annotated Entities!",
-                  body: successMsg,
-                  level: "success",
-                })
-              );
-            }
-            dispatch(setAlertActive(true));
-
-            break;
-          case "triple":
-            setTLoading(true);
-            setOTripleDictSize(dict.length);
-
-            // Filter based on relation ontology
-            dict = dict
-              .filter(
-                (line) =>
-                  entityOntologyLabels.includes(
-                    line.split(",")[1].toLowerCase().trim() &&
-                      line.split(",")[4].toLowerCase().trim()
-                  ) &&
-                  relationOntologyLabels.includes(
-                    line.split(",")[2].toLowerCase().trim()
-                  )
-              )
-              .map((line) => ({
-                sourceSpan: line.split(",")[0].toLowerCase().trim(),
-                sourceLabel: line.split(",")[1].toLowerCase().trim(),
-                relationLabel: line.split(",")[2].toLowerCase().trim(),
-                targetSpan: line.split(",")[3].toLowerCase().trim(),
-                targetLabel: line.split(",")[4].toLowerCase().trim(),
-                offset: parseInt(line.split(",")[5].toLowerCase().trim()),
-              }));
-            // console.log("typedTripleDictionary", dict);
-
-            dispatch(
-              setStepData({
-                typedTripleDictionary: dict,
-                typedTripleDictionaryFileName: fileMeta.name,
-              })
-            );
-            setTLoading(false);
-
-            successMsg =
-              dict.length > 0
-                ? `Uploaded ${dict.length} sets of typed triples`
-                : // - ${
-                  //   Object.keys(steps[activeStep].data.entityDictionary).length -
-                  //   Object.entries(steps[activeStep].data.entityDictionary).filter(
-                  //     (item) => entityOntologyLabels.includes(item[1])
-                  //   ).length
-                  // } invalid entries detected
-                  "No typed triple pre-annotation resource uploaded";
-
-            if (dict.length === 0) {
-              dispatch(
-                setAlertContent({
-                  title: "No Pre-annotations made 😞",
-                  body: "Please check your files are in .txt format and its typed triples are consistent with your ontology and the expected format.",
-                  level: "warning",
-                })
-              );
-            } else {
-              dispatch(
-                setAlertContent({
-                  title: "Succesfully Pre-annotated Typed Triples!",
-                  body: successMsg,
-                  level: "success",
-                })
-              );
-            }
-            dispatch(setAlertActive(true));
-
-            break;
-          default:
-            break;
-        }
-      } else {
-        switch (type) {
-          case "entity":
-            setELoading(false);
-            setOEntityDictSize(0);
-            dispatch(
-              setStepData({
-                entityDictionary: [],
-                entityDictionaryFileName: null,
-              })
-            );
-            break;
-          case "triple":
-            setTLoading(false);
-            setOTripleDictSize(0);
-            dispatch(
-              setStepData({
-                typedTripleDictionary: [],
-                typedTripleDictionaryFileName: null,
-              })
-            );
-            break;
-          default:
-            break;
-        }
-        dispatch(
-          setAlertContent({
-            title: "Oops",
-            body: "Incorrect file format. Please upload a corpus in .txt. format",
-            level: "danger",
-          })
-        );
-        dispatch(setAlertActive(true));
-      }
-    };
-    reader.onloadend = () => {
-      reader = new FileReader();
-    };
+export const Preannotation = ({ values, setValues, loading, resources }) => {
+  const updateValue = (key, value) => {
+    setValues((prevState) => ({ ...prevState, [key]: value }));
   };
 
-  return (
-    <Grid item xs={12}>
-      <Grid item xs={12} style={{ fontSize: "0.8125rem" }} sx={{mb: 2}}>
-        Before commencing annotation with QuickGraph, you can upload a
-        dictionary for pre-annotation of entities and triples. The types
-        specified in each dictionary must be consistent with the ontologies
-        specified in this project. The dictionary items must be consistent with
-        relation constraints (if applicable).
-      </Grid>
-      <Grid
-        item
-        container
-        xs={12}
-        justifyContent="center"
-        alignItems="center"
-        sx={{mt: 4, p: 2}}
-      >
-        <Grid item xs={12} style={{ borderBottom: `1px solid ${grey[300]}` }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div>
-              <h5 id="section-subtitle">Entity Preannotation</h5>
-              <span style={{ fontSize: "0.75rem" }}>
-                Upload a set of known entity annotations to pre-annotate your
-                uploaded corpus.
-              </span>
-            </div>
-            <label htmlFor="contained-button-file">
-              <Input
-                accept="txt"
-                id="contained-button-file"
-                type="file"
-                onChange={(e) => {
-                  readFile(e.target.files[0], "entity");
-                }}
-              />
-              <Button variant="contained" component="span">
-                {steps[activeStep].data.entityDictionaryFileName === null
-                  ? "Upload Entites"
-                  : steps[activeStep].data.entityDictionaryFileName}
-              </Button>
-            </label>
-          </div>
+  const handleSelection = (resource) => {
+    if (
+      values.resources[resource.classification][resource.sub_classification]
+        .id === resource._id
+    ) {
+      // Remove resource from selection
+      updateValue("resources", {
+        ...values.resources,
+        [resource.classification]: {
+          ...values.resources[resource.classification],
+          [resource.sub_classification]: {
+            name: null,
+            id: null,
+          },
+        },
+      });
+    } else {
+      updateValue("resources", {
+        ...values.resources,
+        [resource.classification]: {
+          ...values.resources[resource.classification],
+          [resource.sub_classification]: {
+            name: resource.name,
+            id: resource._id,
+          },
+        },
+      });
+    }
+  };
+
+  const columns = [
+    { field: "id", hide: true },
+    {
+      field: "sub_classification",
+      headerName: "Type",
+      flex: 1,
+      maxWidth: 120,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "name",
+      headerName: "Name",
+      flex: 1,
+      maxWidth: 140,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "size",
+      headerName: "Size",
+      flex: 1,
+      maxWidth: 140,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "ontology",
+      headerName: "Ontology",
+      flex: 1,
+      maxWidth: 140,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "created_by",
+      headerName: "Created By",
+      maxWidth: 120,
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "created_at",
+      headerName: "Created",
+      valueGetter: (params) => moment.utc(params.row.created_at).fromNow(),
+      maxWidth: 120,
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "updated_at",
+      headerName: "Last Updated",
+      maxWidth: 120,
+      valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "actions",
+      type: "actions",
+      width: 40,
+      getActions: (params) => [
+        <GridActionsCellItem
+          icon={<CheckCircleIcon />}
+          label="Toggle preannotation resource"
+          title="Assign this preannotation resource to the project"
+          onClick={() => handleSelection(params.row)}
+          color={
+            [
+              values.resources.preannotation.entity.id,
+              values.resources.preannotation.relation.id,
+            ].includes(params.id)
+              ? "primary"
+              : "default"
+          }
+          disabled={
+            params.row.sub_classification === "relation" &&
+            !values.tasks.relation
+          }
+        />,
+      ],
+    },
+  ];
+
+  const rows = resources.filter((i) => i.classification === "preannotation");
+
+  if (values.dataset.is_annotated) {
+    return (
+      <Grid container>
+        <Grid item xs={12} pb="1rem">
+          <Alert variant="outlined" severity="warning">
+            You've selected an <strong>annotated dataset</strong> which will be
+            automatically preannotated upon project creation. This dataset
+            suggests to use{" "}
+            <strong>
+              {values.dataset.is_suggested ? "suggested" : "accepted"}
+            </strong>{" "}
+            annotations.
+          </Alert>
         </Grid>
-        <Grid item xs={12}>
-          <span
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              fontSize: "1rem",
-              padding: "1rem",
-            }}
-          >
-            {steps[activeStep].data.entityDictionaryFileName === null ? (
-              "Upload dictionary to pre-annotate entities"
-            ) : (
-              <>
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    color: "#607d8b",
-                  }}
-                >
-                  <BiGitCommit style={{ marginRight: "0.25rem" }} />{" "}
-                  <span style={{ fontWeight: "bold" }}>Pairs Uploaded</span>
-                  <span style={{ margin: "0rem 0.5rem", fontWeight: "bold" }}>
-                    {
-                      Object.keys(steps[activeStep].data.entityDictionary)
-                        .length
+        <Grid item container xs={12} alignItems="center" spacing={6}>
+          <Grid item xs={4}>
+            <Stack>
+              <Typography variant="h6">Settings - Preannotations</Typography>
+              <Typography variant="caption">
+                Specify whether preannotations should be set as suggested.
+                Suggested annotations require review and acceptance.
+              </Typography>
+            </Stack>
+          </Grid>
+          <Grid item xs={6} xl={6}>
+            <FormGroup>
+              {[
+                {
+                  value: values.settings.suggestedPreannotations,
+                  updateFunction: () =>
+                    updateValue("settings", {
+                      ...values.settings,
+                      suggestedPreannotations:
+                        !values.settings.suggestedPreannotations,
+                    }),
+                  label: "Set preannotations as suggested",
+                },
+              ].map((item) => {
+                const { value, updateFunction, label } = item;
+                const CheckboxForm = (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={value}
+                        onChange={(e) => {
+                          updateFunction(e.target.value);
+                        }}
+                        name="ea-ra-closed"
+                      />
                     }
-                  </span>
-                </span>
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    color: "#e65100",
-                  }}
-                >
-                  <IoWarning style={{ marginRight: "0.25rem" }} /> Errors{" "}
-                  <span style={{ margin: "0rem 0.5rem" }}>
-                    {oEntityDictSize -
-                      Object.keys(steps[activeStep].data.entityDictionary)
-                        .length}
-                  </span>
-                </span>
-              </>
-            )}
-          </span>
+                    label={label}
+                  />
+                );
+                return CheckboxForm;
+              })}
+            </FormGroup>
+          </Grid>
         </Grid>
-        {performRelationAnnotation &&
-          steps.details.data.relationAnnotationType === "closed" && (
-            <Grid
-              item
-              container
-              xs={12}
-              justifyContent="center"
-              alignItems="center"
-              style={{ margin: "1rem 0rem 0rem 0rem" }}
-            >
-              <Grid
-                item
-                xs={12}
-                style={{ borderBottom: `1px solid ${grey[300]}` }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <h5 id="section-subtitle">Typed Triple Preannotation</h5>
-                    <span style={{ fontSize: "0.75rem" }}>
-                      Upload a set of known typed triple annotations to
-                      pre-annotate your uploaded corpus. Format: (source span,
-                      source type, relation type, target span, target type,
-                      offset).
-                    </span>
-                  </div>
-                  <label htmlFor="contained-button-file">
-                    <Input
-                      accept="txt"
-                      id="contained-button-file"
-                      type="file"
-                      onChange={(e) => {
-                        readFile(e.target.files[0], "entity");
-                      }}
-                    />
-                    <Button variant="contained" component="span">
-                      {steps[activeStep].data.typedTripleDictionaryFileName ===
-                      null
-                        ? "Upload Triples"
-                        : steps[activeStep].data.typedTripleDictionaryFileName}
-                    </Button>
-                  </label>
-                </div>
-              </Grid>
-              <Grid item xs={12}>
-                <span
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    fontSize: "1rem",
-                    padding: "1rem",
-                  }}
-                >
-                  {steps[activeStep].data.typedTripleDictionaryFileName ===
-                  null ? (
-                    "Upload dictionary to pre-annotate entities with relations"
-                  ) : (
-                    <>
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          color: "#607d8b",
-                        }}
-                      >
-                        <BiGitCommit style={{ marginRight: "0.25rem" }} />{" "}
-                        <span style={{ fontWeight: "bold" }}>
-                          Sets Uploaded
-                        </span>
-                        <span
-                          style={{
-                            margin: "0rem 0.5rem",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {steps[activeStep].data.typedTripleDictionary.length}
-                        </span>
-                      </span>
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          color: "#e65100",
-                        }}
-                      >
-                        <IoWarning style={{ marginRight: "0.25rem" }} /> Errors{" "}
-                        <span style={{ margin: "0rem 0.5rem" }}>
-                          {oTripleDictSize -
-                            steps[activeStep].data.typedTripleDictionary.length}
-                        </span>
-                      </span>
-                    </>
-                  )}
-                </span>
-              </Grid>
-            </Grid>
-          )}
+      </Grid>
+    );
+  }
+
+  return (
+    <Grid container>
+      <Grid item xs={12} pb="1rem">
+        <Alert variant="outlined" severity="warning">
+          Preannotation of non-annotated datasets is coming soon. We appreciate
+          your understanding and patience for this feature.
+        </Alert>
       </Grid>
     </Grid>
   );
+
+  // return (
+  //   <Grid container justifyContent="center" direction="column" spacing={4}>
+  //     <Grid item>
+  //       <FormControl component="fieldset" variant="standard">
+  //         <FormLabel component="legend">Preannotation Settings</FormLabel>
+  //         <FormGroup>
+  //           <FormControlLabel
+  //             control={
+  //               <Checkbox
+  //                 checked={values.settings.suggestedPreannotations}
+  //                 onChange={(e) => {
+  //                   updateValue("settings", {
+  //                     ...values.settings,
+  //                     suggestedPreannotations:
+  //                       !values.settings.suggestedPreannotations,
+  //                   });
+  //                 }}
+  //                 name="suggested-preannotation-checkbox"
+  //               />
+  //             }
+  //             label="Set preannotations as suggested labels"
+  //           />
+  //         </FormGroup>
+  //         <FormHelperText>
+  //           Set preannotations as suggested labels which require review and
+  //           acceptance
+  //         </FormHelperText>
+  //       </FormControl>
+  //       <Typography>
+  //         TODO: Add option for 'preference longer spans'. This will mean no
+  //         nesting. If false, it will allow nesting of labels, etc.
+  //       </Typography>
+  //       <Typography>
+  //         NOTE: This data grid will be filtered based on the select ontology
+  //         resources. If no ontology selected, it will return "select ontology
+  //         before preannotation can be selected...".
+  //       </Typography>
+  //     </Grid>
+  //     <Grid item container justifyContent="center">
+  //       {loading ? (
+  //         <p>Loading...</p>
+  //       ) : rows.length === 0 ? (
+  //         <Grid item xs={12} sx={{ textAlign: "center" }}>
+  //           <Typography>No preannotation resources found</Typography>
+  //         </Grid>
+  //       ) : (
+  //         <>
+  //           <div style={{ height: 500, width: "100%" }}>
+  //             <DataGrid
+  //               autoHeight
+  //               density={"comfortable"}
+  //               rows={rows}
+  //               columns={columns}
+  //               pageSize={5}
+  //               rowsPerPageOptions={[5]}
+  //               disableColumnSelector
+  //               disableMultipleSelection={true}
+  //               disableSelectionOnClick
+  //               // getRowClassName={(params) => handleRowStyle(params.row)}
+  //             />
+  //           </div>
+  //           {/* <Grid item xs={6} sx={{ textAlign: "center" }}>
+  //             <Typography>Preannotated Entities</Typography>
+  //             <Box
+  //               as={Paper}
+  //               variant="outlined"
+  //               sx={{ maxHeight: 400, overflowY: "auto" }}
+  //               m={2}
+  //             >
+  //               <List sx={{ width: "100%" }}>
+  //                 {Object.keys(resources.preannotation.entity).map(
+  //                   (createdBy, index) => (
+  //                     <ul key={`list-preannotation-entity-${index}`}>
+  //                       <ListSubheader sx={{ textTransform: "capitalize" }}>
+  //                         {createdBy}
+  //                       </ListSubheader>
+  //                       {resources.preannotation.entity[createdBy].map(
+  //                         (resource) => (
+  //                           <ListItem
+  //                             key={`list-item-preannotation-entity-${index}`}
+  //                           >
+  //                             <ListItemButton
+  //                               key={`resource-${resource._id}`}
+  //                               selected={
+  //                                 values.resources.preannotation.entity.id ===
+  //                                 resource._id
+  //                               }
+  //                               onClick={() => handleSelection(resource)}
+  //                             >
+  //                               <ListItemText
+  //                                 primary={resource.name}
+  //                                 secondary={`${
+  //                                   resource.size
+  //                                 } items | Created: ${moment
+  //                                   .utc(resource.created_at)
+  //                                   .fromNow()}`}
+  //                               />
+  //                             </ListItemButton>
+  //                             <Button>View</Button>
+  //                           </ListItem>
+  //                         )
+  //                       )}
+  //                     </ul>
+  //                   )
+  //                 )}
+  //               </List>
+  //             </Box>
+  //             <Chip
+  //               label={`Preannotated Entities: ${
+  //                 values.resources.preannotation.entity.name ?? "None selected"
+  //               }`}
+  //               size="large"
+  //               color={
+  //                 values.resources.preannotation.entity.id
+  //                   ? "primary"
+  //                   : "default"
+  //               }
+  //             />
+  //           </Grid>
+  //           {values.tasks.relation && resources.preannotation.relation && (
+  //             <Grid item xs={6} sx={{ textAlign: "center" }}>
+  //               <Typography>Preannotated Relation</Typography>
+  //               <Box
+  //                 as={Paper}
+  //                 variant="outlined"
+  //                 sx={{ maxHeight: 400, overflowY: "auto" }}
+  //                 m={2}
+  //               >
+  //                 <List>
+  //                   {Object.keys(resources.preannotation.relation).map(
+  //                     (createdBy, index) => (
+  //                       <ul key={`list-preannotation-relation-${index}`}>
+  //                         <ListSubheader sx={{ textTransform: "capitalize" }}>
+  //                           {createdBy}
+  //                         </ListSubheader>
+  //                         {resources.preannotation.relation[createdBy].map(
+  //                           (resource) => (
+  //                             <ListItem
+  //                               key={`list-item-preannotation-relation-${index}`}
+  //                             >
+  //                               <ListItemButton
+  //                                 selected={
+  //                                   values.resources.preannotation.relation
+  //                                     .id === resource._id
+  //                                 }
+  //                                 onClick={() => handleSelection(resource)}
+  //                               >
+  //                                 <ListItemText
+  //                                   primary={resource.name}
+  //                                   secondary={`${
+  //                                     resource.size
+  //                                   } items | Created: ${moment
+  //                                     .utc(resource.created_at)
+  //                                     .fromNow()}`}
+  //                                 />
+  //                               </ListItemButton>
+  //                             </ListItem>
+  //                           )
+  //                         )}
+  //                       </ul>
+  //                     )
+  //                   )}
+  //                 </List>
+  //               </Box>
+  //               <Chip
+  //                 label={`Preannotated Relations: ${
+  //                   values.resources.preannotation.relation.name ??
+  //                   "None selected"
+  //                 }`}
+  //                 size="large"
+  //                 color={
+  //                   values.resources.preannotation.relation.id
+  //                     ? "primary"
+  //                     : "default"
+  //                 }
+  //               />
+  //             </Grid>
+  //           )} */}
+  //         </>
+  //       )}
+  //     </Grid>
+  //   </Grid>
+  // );
+
+  // // return (
+  // //   <Grid item xs={12}>
+  // //     <Grid item xs={12}>
+  // // <Alert severity="info">
+  // //   Click{" "}
+  // //   <a
+  // //     href={docsPreannotation}
+  // //     target="_blank"
+  // //     rel="noreferrer"
+  // //     alt="QuickGraph Documentation - Preannotation"
+  // //   >
+  // //     here
+  // //   </a>{" "}
+  // //   to find out more about QuickGraph's preannotation requirements.
+  // // </Alert>
+  // //     </Grid>
+  // //     <Grid item xs={12} p={2}>
+  // //       <Typography>
+  // //         Work in progress - upload pre-annotated corpora in the meantime.
+  // //       </Typography>
+  // //       <ul>
+  // //         {Object.keys(resources.preannotation).map((subClf) => (
+  // //           <li>
+  // //             {subClf}
+  // //             {Object.keys(resources.preannotation[subClf]).map((username) => (
+  // //               <ul>
+  // //                 {username}
+  // //                 {resources.preannotation[subClf][username].map((r) => (
+  // //                   <li>{r.name}</li>
+  // //                 ))}
+  // //               </ul>
+  // //             ))}
+  // //           </li>
+  // //         ))}
+  // //       </ul>
+  // //     </Grid>
+  // //   </Grid>
+  // // );
 };
