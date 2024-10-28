@@ -2,12 +2,12 @@
 <img src="quickgraph_logo.png" width="100">
 <h2>
 QuickGraph: A Rapid Annotation Tool for Knowledge Graph Extraction from Technical Text</h2>
+</div>
 
 > [!IMPORTANT]
 > QuickGraph v2 is currently being released publicly 🚧
 > We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only. Please check back for updates.
 
-</div>
 QuickGraph is a collaborative annotation tool for rapid multi-task information extraction. Key features of QuickGraph include entity and relation propagation which mimics weak supervision, and the use of text clustering to aid with annotation consistency. <br/><br/>
 
   🖥 [Try out QuickGraph online](https://quickgraph.nlp-tlp.org)<br/>
