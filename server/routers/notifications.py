@@ -1,19 +1,22 @@
 from typing import List, Union
-from fastapi import APIRouter, Depends, HTTPException, status, Body
-from bson import ObjectId
 
-from models.notifications import NotificationStates
-from models.user import User
+from bson import ObjectId
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from dependencies import get_current_active_user, get_db
-from models.notifications import Notification
+
 import services.notifications as notification_services
+from dependencies import get_current_active_user, get_db
+from models.notifications import Notification, NotificationStates
+from models.user import User
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
 # @router.get("", response_model=Union[List, List[Notification]])
-@router.get("/", response_model=Union[List, List[Notification]])
+@router.get(
+    "/",
+    # response_model=Union[List, List[Notification]]
+)
 async def list_notifications(
     current_user: User = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_db),

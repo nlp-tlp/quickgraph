@@ -1,28 +1,22 @@
-from typing import List, Union, Any
+"""Resources router."""
+
+from typing import Any, List, Union
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Body, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from models.resources import (
-    ResourceModel,
-    AggregateResourcesModel,
-    CreateResourceModel,
-    ResourceModelWithReadStatus,
-    UpdateResourceModel,
-)
-from models.user import User
 from dependencies import get_current_active_user, get_db
-from examples import get_examples
-from services.resources import (
-    delete_one_resource,
-    update_one_resource,
-    find_one_resource,
-    create_one_resource,
-    find_many_resources,
-    aggregate_system_and_user_resources,
-)
+from models.resources import (AggregateResourcesModel, CreateResourceModel,
+                              ResourceModel, ResourceModelWithReadStatus,
+                              UpdateResourceModel)
+from models.user import User
+# from examples import get_examples
+from services.resources import (aggregate_system_and_user_resources,
+                                create_one_resource, delete_one_resource,
+                                find_many_resources, find_one_resource,
+                                update_one_resource)
 
 router = APIRouter(
     prefix="/resources",
@@ -65,7 +59,7 @@ async def list_resources(
 @router.get(
     "/{resource_id}",
     response_description="Get existing resource",
-    response_model=ResourceModelWithReadStatus,
+    # response_model=ResourceModelWithReadStatus,
 )
 async def find_resource(
     resource_id: str,
@@ -83,7 +77,7 @@ async def find_resource(
 @router.post(
     "/",
     response_description="Add new resource",
-    response_model=ResourceModel,
+    # response_model=ResourceModel,
 )
 async def create_resource(
     resource: CreateResourceModel,  # = Body(examples=get_examples("create_resource")),

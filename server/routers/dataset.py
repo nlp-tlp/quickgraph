@@ -1,31 +1,20 @@
+from typing import Any, Dict, List, Union
+
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List, Union, Dict, Any
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
-from dependencies import get_current_active_user, get_db
-from models.user import User
-from models.dataset import (
-    Dataset,
-    CreateDataset,
-    DatasetFilters,
-    FilteredDataset,
-    SaveStateFilter,
-    QualityFilter,
-    RelationsFilter,
-    CreateDatasetBody,
-    FlagFilter,
-    BaseItem,
-    EnrichedItem,
-    DatasetItem,
-    RichBlueprintDataset,
-    RichProjectDataset,
-    Preprocessing,
-    CreateDataType,
-)
 import services.dataset as dataset_services
+from dependencies import get_current_active_user, get_db
+from models.dataset import (BaseItem, CreateDataset, CreateDatasetBody,
+                            CreateDataType, Dataset, DatasetFilters,
+                            DatasetItem, EnrichedItem, FilteredDataset,
+                            FlagFilter, Preprocessing, QualityFilter,
+                            RelationsFilter, RichBlueprintDataset,
+                            RichProjectDataset, SaveStateFilter)
+from models.user import User
 
 router = APIRouter(prefix="/dataset", tags=["Dataset"])
 
@@ -33,8 +22,8 @@ router = APIRouter(prefix="/dataset", tags=["Dataset"])
 @router.get(
     "/",
     response_description="List datasets",
-    response_model=Union[List[Dataset], list],
-    response_model_exclude_none=True,
+    # response_model=Union[List[Dataset], list],
+    # response_model_exclude_none=True,
 )
 async def list_datasets(
     include_dataset_size: bool = False,
@@ -63,8 +52,8 @@ async def list_datasets(
 @router.get(
     "/{dataset_id}",
     response_description="Get one dataset",
-    response_model=Union[RichBlueprintDataset, RichProjectDataset],
-    response_model_exclude_none=True,
+    # response_model=Union[RichBlueprintDataset, RichProjectDataset],
+    # response_model_exclude_none=True,
 )
 async def get_dataset(
     dataset_id: str,
@@ -86,7 +75,11 @@ async def get_dataset(
     )
 
 
-@router.post("/", response_description="Create dataset", response_model=Dataset)
+@router.post(
+    "/",
+    response_description="Create dataset",
+    #   response_model=Dataset
+)
 async def create_dataset(
     dataset: CreateDatasetBody,
     current_user: User = Depends(get_current_active_user),

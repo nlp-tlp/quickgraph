@@ -1,19 +1,17 @@
-"""
-dependencies.py
-"""
+"""Dependencies."""
 
-from typing import Optional
-import json
 import http.client
+import json
+from typing import Optional
 
+import motor.motor_asyncio
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
-import motor.motor_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from utils import VerifyToken
 from models.user import User
 from settings import settings
+from utils import VerifyToken
 
 # Scheme for the Authorization header
 token_auth_scheme = HTTPBearer()

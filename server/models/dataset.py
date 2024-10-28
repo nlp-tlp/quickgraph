@@ -5,10 +5,9 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field, validator
-
 from models.base import PydanticObjectIdAnnotated
 from models.social import Comment
+from pydantic import BaseModel, ConfigDict, Field, validator
 
 # from models.project import Flag
 

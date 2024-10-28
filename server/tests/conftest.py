@@ -2,8 +2,8 @@
 Test configuration inc. shared fixtures
 """
 
-import pytest_asyncio
 import motor.motor_asyncio
+import pytest_asyncio
 
 from tests.settings import settings
 from tests.utils import create_entity_project, create_relation_project

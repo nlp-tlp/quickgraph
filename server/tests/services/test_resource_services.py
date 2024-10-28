@@ -3,17 +3,13 @@
 # TODO: Resolve dependency issues...
 
 import pytest
+import quickgraph.services.resources as resource_services
+from quickgraph.models.resources import ResourceModel
 
-from models.resources import ResourceModel
-import services.resources as resource_services
-from tests.settings import settings
-from tests.data import (
-    entity_resource,
-    relation_resource,
-    update_entity_ontology,
-    preannotation_resource,
-)
 from system_resources import resources as default_system_resources
+from tests.data import (entity_resource, preannotation_resource,
+                        relation_resource, update_entity_ontology)
+from tests.settings import settings
 
 USERNAME = settings.TEST_USERNAME
 SYSTEM_USERNAME = settings.SYSTEM_USERNAME

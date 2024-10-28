@@ -1,23 +1,20 @@
-from bson import ObjectId
-from fastapi import APIRouter, Depends, Body, status
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 import pymongo
+from bson import ObjectId
+from fastapi import APIRouter, Body, Depends, status
+from fastapi.responses import JSONResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel, Field
 
-from models.user import User
-from dependencies import get_current_active_user, get_db
-from models.markup import (
-    InMarkupApply,
-    OutMarkupApply,
-    OutMarkupDelete,
-    CreateMarkupApply,
-    EntityMarkup,
-)
-from models.project import CreateFlag, Flag, ProjectOntology, FlagState, OntologyItem
-from services.markup import apply_annotation, delete_annotation, accept_annotation
-from examples import get_examples
 import services.projects as project_services
+from dependencies import get_current_active_user, get_db
+from examples import get_examples
+from models.markup import (CreateMarkupApply, EntityMarkup, InMarkupApply,
+                           OutMarkupApply, OutMarkupDelete)
+from models.project import (CreateFlag, Flag, FlagState, OntologyItem,
+                            ProjectOntology)
+from models.user import User
+from services.markup import (accept_annotation, apply_annotation,
+                             delete_annotation)
 
 router = APIRouter(prefix="/markup", tags=["Markup"])
 

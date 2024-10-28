@@ -1,28 +1,16 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from models.markup import (
-    CreateMarkupApply,
-    CreateEntity,
-    CreateRelation,
-    OutMarkupApply,
-)
-from models.project import (
-    CreateProject,
-    Project,
-)
 import services.dataset as dataset_services
 import services.markup as markup_services
 import services.projects as project_services
 import services.resources as resource_services
+from models.markup import (CreateEntity, CreateMarkupApply, CreateRelation,
+                           OutMarkupApply)
+from models.project import CreateProject, Project
+from tests.data import (base_dataset, base_entity_preannotation_resource,
+                        base_entity_project, base_relation_project,
+                        entity_resource, relation_resource)
 from tests.settings import settings
-from tests.data import (
-    entity_resource,
-    base_entity_project,
-    base_relation_project,
-    base_dataset,
-    relation_resource,
-    base_entity_preannotation_resource,
-)
 
 USERNAME = settings.TEST_USERNAME
 

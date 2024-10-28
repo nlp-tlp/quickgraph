@@ -1,21 +1,12 @@
 """Repository of data for testing"""
 
-from models.resources import (
-    OntologyItem,
-    CreateResourceModel,
-    ResourceClassifications,
-    EntityPreannotation,
-    RelationPreannotation,
-    Constraint,
-)
-from models.project import (
-    TestCreateProject,
-    Tasks,
-    Settings,
-    PreannotationResource,
-    BasicEntity,
-)
-from models.dataset import BaseItem, CreateDataset, Preprocessing, TokenizerEnum
+from models.dataset import (BaseItem, CreateDataset, Preprocessing,
+                            TokenizerEnum)
+from models.project import (BasicEntity, PreannotationResource, Settings,
+                            Tasks, TestCreateProject)
+from models.resources import (Constraint, CreateResourceModel,
+                              EntityPreannotation, OntologyItem,
+                              RelationPreannotation, ResourceClassifications)
 
 # ------ RESOURCES ------
 entity_resource = CreateResourceModel(

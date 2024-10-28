@@ -5,9 +5,8 @@ from enum import Enum
 from typing import Union
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field
-
 from models.base import PydanticObjectIdAnnotated
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class NotificationTextTemplates(Enum):

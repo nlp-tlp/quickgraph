@@ -2,21 +2,15 @@
 Tests for data services
 """
 
-from bson import ObjectId
 import pytest
+from bson import ObjectId
 
-from models.dataset import (
-    Dataset,
-    Preprocessing,
-    DatasetFilters,
-    SaveStateFilter,
-    QualityFilter,
-    RelationsFilter,
-)
 import services.dataset as dataset_services
 import services.projects as project_services
+from models.dataset import (Dataset, DatasetFilters, Preprocessing,
+                            QualityFilter, RelationsFilter, SaveStateFilter)
+from tests.data import base_dataset, base_item, base_preprocessing
 from tests.settings import settings
-from tests.data import base_item, base_dataset, base_preprocessing
 from tests.utils import create_dataset, create_relation_markup
 
 USERNAME = settings.TEST_USERNAME

@@ -4,9 +4,8 @@ from datetime import datetime
 from enum import Enum
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field
-
 from models.base import PydanticObjectIdAnnotated
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Context(str, Enum):

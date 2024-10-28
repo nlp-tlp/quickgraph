@@ -1,9 +1,9 @@
-"""utils.py"""
+"""QuickGraph utilities."""
 
 import jwt
 
-from settings import settings
 from models.user import User
+from settings import settings
 
 
 class VerifyToken:

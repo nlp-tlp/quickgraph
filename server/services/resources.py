@@ -1,24 +1,19 @@
-from bson import ObjectId
 import itertools
-from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List, Union, Dict
+import json
 import random
 import uuid
-import json
+from datetime import datetime
+from typing import Dict, List, Union
 
-from settings import settings
-from models.resources import (
-    CreateResourceModel,
-    ResourceModel,
-    AggregateResourcesModel,
-    BaseResourceModel,
-    CreatePreannotationResource,
-    BaseOntologyItem,
-    CreateResourceModel,
-    UpdateResourceModel,
-)
+from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+from models.resources import (AggregateResourcesModel, BaseOntologyItem,
+                              BaseResourceModel, CreatePreannotationResource,
+                              CreateResourceModel, ResourceModel,
+                              UpdateResourceModel)
 from services.projects import flatten_hierarchical_ontology
+from settings import settings
 
 COLLECTION_NAME = "resources"
 
@@ -335,9 +330,11 @@ async def aggregate_system_and_user_resources(db: AsyncIOMotorDatabase, username
                 "updated_at": str(resource.updated_at),
                 "classification": clf,
                 "sub_classification": sub_clf,
-                "size": len(flat_ontology)
-                if resource.classification == "ontology"
-                else len(resource.content),
+                "size": (
+                    len(flat_ontology)
+                    if resource.classification == "ontology"
+                    else len(resource.content)
+                ),
                 **(
                     {"instances": [i.fullname for i in flat_ontology]}
                     if resource.classification == "ontology"

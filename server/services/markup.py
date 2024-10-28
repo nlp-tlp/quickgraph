@@ -2,37 +2,29 @@
 Markup route services
 """
 
-from datetime import datetime
-from typing import List, Optional, Dict
 import itertools
+import json
 import re
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from datetime import datetime
+from typing import Dict, List, Optional
+
+import pymongo
 from bson import ObjectId
 from fastapi import HTTPException, status
 from loguru import logger
-import pymongo
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import DeleteOne
-import json
 
-from models.markup import (
-    Entity,
-    OutMarkupApply,
-    EntityMarkup,
-    CreateEntity,
-    CreateMarkupApply,
-    RichCreateEntity,
-    Classifications,
-    OutMarkupDelete,
-    RichCreateRelation,
-    Relation,
-    CreateRelation,
-    RelationMarkup,
-)
-from models.dataset import DatasetItem
-from models.project import OntologyItem, ProjectOntology, Project, ProjectOntology
-import services.projects as project_services
-import services.markup as markup_services
 import services.dataset as dataset_services
+import services.markup as markup_services
+import services.projects as project_services
+from models.dataset import DatasetItem
+from models.markup import (Classifications, CreateEntity, CreateMarkupApply,
+                           CreateRelation, Entity, EntityMarkup,
+                           OutMarkupApply, OutMarkupDelete, Relation,
+                           RelationMarkup, RichCreateEntity,
+                           RichCreateRelation)
+from models.project import OntologyItem, Project, ProjectOntology
 
 
 def get_entity_offset(source_entity: dict, target_entity: dict) -> int:

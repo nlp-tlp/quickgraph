@@ -1,11 +1,9 @@
 import random
-from models.resources import (
-    BaseResourceModel,
-    OntologyItem,
-    ResourceClassifications,
-    EntityPreannotation,
-)
-from models.dataset import CreateDataset, BaseItem, Preprocessing, TokenizerEnum
+
+from models.dataset import (BaseItem, CreateDataset, Preprocessing,
+                            TokenizerEnum)
+from models.resources import (BaseResourceModel, EntityPreannotation,
+                              OntologyItem, ResourceClassifications)
 
 # All but two MUI colors sampled from 500 on this palette: https://www.muicss.com/docs/v1/getting-started/colors
 # These are used for determinstic colors, mainly presets where children share the same color.

@@ -3,16 +3,9 @@
 from datetime import datetime
 from typing import List
 
+from models.project import (AnnotatorRoles, AnnotatorStates, Guidelines,
+                            ProjectOntology, Settings, Tasks)
 from pydantic import BaseModel, ConfigDict, Field
-
-from models.project import (
-    AnnotatorRoles,
-    AnnotatorStates,
-    Guidelines,
-    ProjectOntology,
-    Settings,
-    Tasks,
-)
 
 
 class Annotator(BaseModel):

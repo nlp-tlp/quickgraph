@@ -1,25 +1,15 @@
 """
     Services to support Graph route
 """
+from collections import defaultdict
 from itertools import groupby
 from operator import itemgetter
-from typing import Union, List, Dict
-from models.graph import Node, Link, Relationships
-from collections import defaultdict
+from typing import Dict, List, Union
 
+from models.graph import (Graph, GraphData, GraphFilters, Link, LinkNode,
+                          Metrics, Node, NodeColor, NodeFont, Ontologies,
+                          Relationships)
 from models.project import OntologyItem
-from models.graph import (
-    GraphData,
-    Graph,
-    GraphFilters,
-    Node,
-    Link,
-    NodeFont,
-    NodeColor,
-    Metrics,
-    Ontologies,
-    LinkNode,
-)
 
 
 def create_relationships(nodes: dict, links: dict) -> Dict[str, Relationships]:

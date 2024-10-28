@@ -1,12 +1,12 @@
+from bson import ObjectId
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
-from bson import ObjectId
 
-from dependencies import get_db
-from models.project import Settings, Tasks, ProjectOntology, OntologyItem
 import services.projects as project_services
+from dependencies import get_db
+from models.project import OntologyItem, ProjectOntology, Settings, Tasks
 
 router = APIRouter(prefix="/demo", tags=["Demo"])
 
@@ -20,7 +20,11 @@ class DemoProject(BaseModel):
     relations: dict
 
 
-@router.get("/", response_description="Get demo project", response_model=DemoProject)
+@router.get(
+    "/",
+    response_description="Get demo project",
+    # response_model=DemoProject
+)
 async def get_demo_project(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):

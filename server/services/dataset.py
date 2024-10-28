@@ -2,51 +2,36 @@
 Services for data route
 """
 
-import time
-import math
-from bson import ObjectId
-import re
-from typing import List, Union, Dict, Any
-from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
-
 # from nltk.tokenize import word_tokenize
 # import nltk
 import itertools
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from datetime import datetime
-from collections import defaultdict
 import json
 import logging
+import math
+import re
+import time
+from collections import defaultdict
+from datetime import datetime
+from typing import Any, Dict, List, Union
 
-from models.dataset import (
-    BaseItem,
-    CreateDataset,
-    TokenizerEnum,
-    Preprocessing,
-    EnrichedItem,
-    DatasetItem,
-    Dataset,
-    DatasetFilters,
-    SaveStateFilter,
-    QualityFilter,
-    RelationsFilter,
-    FilteredDataset,
-    CreateDatasetBody,
-    FlagFilter,
-    DatasetType,
-    RichBlueprintDataset,
-    RichProjectDataset,
-    JSONBaseItem,
-)
-from models.project import OntologyItem, FlagState
-from models.social import Comment
-from models.markup import RichCreateEntity, RichCreateRelation
-import services.projects as project_services
+from bson import ObjectId
+from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
 import services.markup as markup_services
-from settings import settings
-
+import services.projects as project_services
+from models.dataset import (BaseItem, CreateDataset, CreateDatasetBody,
+                            Dataset, DatasetFilters, DatasetItem, DatasetType,
+                            EnrichedItem, FilteredDataset, FlagFilter,
+                            JSONBaseItem, Preprocessing, QualityFilter,
+                            RelationsFilter, RichBlueprintDataset,
+                            RichProjectDataset, SaveStateFilter, TokenizerEnum)
+from models.markup import RichCreateEntity, RichCreateRelation
+from models.project import FlagState, OntologyItem
+from models.social import Comment
 from services.utils import soft_delete_document
+from settings import settings
 
 # import os
 
@@ -513,23 +498,23 @@ async def find_one_dataset(
 
                 if check_key_in_nested_dict(dataset, "project.ontology.entity"):
                     # flatten
-                    dataset["project"]["ontology"][
-                        "entity"
-                    ] = project_services.flatten_hierarchical_ontology(
-                        ontology=[
-                            OntologyItem.parse_obj(item)
-                            for item in dataset["project"]["ontology"]["entity"]
-                        ]
+                    dataset["project"]["ontology"]["entity"] = (
+                        project_services.flatten_hierarchical_ontology(
+                            ontology=[
+                                OntologyItem.parse_obj(item)
+                                for item in dataset["project"]["ontology"]["entity"]
+                            ]
+                        )
                     )
                 if check_key_in_nested_dict(dataset, "project.ontology.relation"):
                     # flatten
-                    dataset["project"]["ontology"][
-                        "relation"
-                    ] = project_services.flatten_hierarchical_ontology(
-                        ontology=[
-                            OntologyItem.parse_obj(item)
-                            for item in dataset["project"]["ontology"]["relation"]
-                        ]
+                    dataset["project"]["ontology"]["relation"] = (
+                        project_services.flatten_hierarchical_ontology(
+                            ontology=[
+                                OntologyItem.parse_obj(item)
+                                for item in dataset["project"]["ontology"]["relation"]
+                            ]
+                        )
                     )
 
                 if "entity_ontology_resource_id" in dataset:
@@ -1135,9 +1120,11 @@ async def filter_dataset(
             },
             {
                 "$match": {
-                    "relation_count": {"$gt": 0}
-                    if filters.relations == RelationsFilter.has_relations.value
-                    else {"$eq": 0}
+                    "relation_count": (
+                        {"$gt": 0}
+                        if filters.relations == RelationsFilter.has_relations.value
+                        else {"$eq": 0}
+                    )
                 }
             },
         ]

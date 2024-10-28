@@ -3,10 +3,12 @@ Notification services
 """
 
 from typing import List
+
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from models.notifications import CreateNotification, Notification, NotificationContext
+from models.notifications import (CreateNotification, Notification,
+                                  NotificationContext)
 
 
 async def find_many_notifications(db: AsyncIOMotorDatabase, username: str):

@@ -1,39 +1,23 @@
-from typing import Union, List, Dict, Optional
-from collections import defaultdict, Counter
-
-from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status, Body, Query
-from fastapi.responses import JSONResponse
-import pandas as pd
 import logging
+from collections import Counter, defaultdict
+from typing import Dict, List, Optional, Union
 
-from models.graph import (
-    GraphData,
-    Graph,
-    GraphFilters,
-    Node,
-    Link,
-    NodeFont,
-    NodeColor,
-    Metrics,
-    Ontologies,
-    LinkNode,
-)
+import pandas as pd
+from bson import ObjectId
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+import services.graph as graph_services
+import services.projects as project_services
+from dependencies import get_current_active_user, get_db
+from models.dataset import QualityFilter
+from models.graph import (Graph, GraphData, GraphFilters, Link, LinkNode,
+                          Metrics, Node, NodeColor, NodeFont, Ontologies)
 from models.project import OntologyItem
 from models.user import User
-from dependencies import get_current_active_user, get_db
-from services.graph import get_graph_data
-from motor.motor_asyncio import AsyncIOMotorDatabase
-import services.projects as project_services
-from services.graph import (
-    create_relationships,
-    lighten_hex_color,
-    get_font_color,
-    filter_ontology_by_ids,
-)
-import services.graph as graph_services
-
-from models.dataset import QualityFilter
+from services.graph import (create_relationships, filter_ontology_by_ids,
+                            get_font_color, get_graph_data, lighten_hex_color)
 
 router = APIRouter(prefix="/graph", tags=["Graph"])
 
@@ -121,9 +105,9 @@ async def get_graph(
             for item in flat_ontology:
                 ontology_id2details[(ontology_type, item.id)] = {
                     "fullname": item.fullname,
-                    "color": item.color
-                    if item and hasattr(item, "color")
-                    else "#7b1fa2",
+                    "color": (
+                        item.color if item and hasattr(item, "color") else "#7b1fa2"
+                    ),
                     "name": item.name,
                 }
         print("Created ontology_id2details")

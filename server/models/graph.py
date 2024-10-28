@@ -3,9 +3,8 @@
 from enum import Enum
 from typing import Dict, List
 
-from pydantic import BaseModel, Field
-
 from models.resources import OntologyItem
+from pydantic import BaseModel, Field
 
 
 class NodeFont(BaseModel):

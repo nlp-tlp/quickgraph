@@ -1,23 +1,19 @@
-from typing import List, Union, Dict, Any, Tuple
 import datetime
-from collections import defaultdict, Counter
 import itertools
+from collections import Counter, defaultdict
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-from fastapi import APIRouter, Depends, status, HTTPException, Body, Query
-from fastapi.responses import JSONResponse, Response
 from bson import ObjectId
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse, Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from dependencies import get_current_active_user, get_db
-from models.user import User
-from models.dataset import (
-    SaveStateFilter,
-    QualityFilter,
-    RelationsFilter,
-)
-from models.project import ProjectOntology, OntologyItem
 import services.projects as project_services
+from dependencies import get_current_active_user, get_db
+from models.dataset import QualityFilter, RelationsFilter, SaveStateFilter
+from models.project import OntologyItem, ProjectOntology
+from models.user import User
 
 router = APIRouter(prefix="/cleaner", tags=["Cleaner"])
 

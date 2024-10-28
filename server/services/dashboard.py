@@ -2,17 +2,18 @@
     Services for dashboard routes
 """
 
-from collections import Counter, defaultdict
 import datetime
 import itertools
-from typing import List, Dict
+from collections import Counter, defaultdict
+from typing import Dict, List
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
+
 import services.projects as project_services
-from models.project import OntologyItem, ProjectOntology
+from models.dashboard import Annotator, DashboardInformation
 from models.markup import Classifications as MarkupClassifications
-from models.dashboard import DashboardInformation, Annotator
+from models.project import OntologyItem, ProjectOntology
 
 DATE_FORMAT = "%d/%m/%Y"
 

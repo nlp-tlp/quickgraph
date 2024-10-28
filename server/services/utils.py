@@ -1,7 +1,8 @@
-from pymongo import MongoClient
+import re
+
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
-import re
+from pymongo import MongoClient
 
 
 async def soft_delete_document(

@@ -1,26 +1,17 @@
 import bson
+import pytest
 from bson import ObjectId
 from fastapi import HTTPException
-import pytest
 
-from models.project import (
-    Project,
-    Annotator,
-    AnnotatorRoles,
-    AnnotatorStates,
-    CreateProject,
-)
-import services.projects as project_services
 import services.dataset as dataset_services
 import services.markup as markup_services
 import services.notifications as notification_services
+import services.projects as project_services
+from models.project import (Annotator, AnnotatorRoles, AnnotatorStates,
+                            CreateProject, Project)
 from tests.settings import settings
-from tests.utils import (
-    create_entity_project,
-    create_relation_project,
-    create_entity_markup,
-    create_relation_markup,
-)
+from tests.utils import (create_entity_markup, create_entity_project,
+                         create_relation_markup, create_relation_project)
 
 USERNAME = settings.TEST_USERNAME
 SECONDARY_TEST_USERNAME = settings.SECONDARY_TEST_USERNAME

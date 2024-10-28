@@ -2,21 +2,19 @@
 Tests for markup services
 """
 
-import bson
-from bson import ObjectId
-import pytest
-from fastapi import HTTPException
 import itertools
 
-from tests.settings import settings
+import bson
+import pytest
+from bson import ObjectId
+from fastapi import HTTPException
+
 import services.dataset as dataset_services
-import services.projects as project_services
 import services.markup as markup_services
-from tests.utils import (
-    create_entity_markup,
-    create_relation_markup,
-    get_first_output_entity_markup,
-)
+import services.projects as project_services
+from tests.settings import settings
+from tests.utils import (create_entity_markup, create_relation_markup,
+                         get_first_output_entity_markup)
 
 USERNAME = settings.TEST_USERNAME
 

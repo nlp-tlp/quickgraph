@@ -1,19 +1,13 @@
 import bson
 from bson import ObjectId
 
-from models.resources import CreateResourceModel, OntologyItem, ResourceClassifications
-from models.markup import InMarkupApply, EntityMarkup, CreateEntity, CreateMarkupApply
-from models.project import (
-    CreateProject,
-    Preprocessing,
-    PreannotationResource,
-    Settings,
-    Tasks,
-    # TokenizerEnum,
-    DatasetItem,
-    BasicEntity,
-)
-
+from models.markup import (CreateEntity, CreateMarkupApply, EntityMarkup,
+                           InMarkupApply)
+from models.project import (BasicEntity, CreateProject,  # TokenizerEnum,
+                            DatasetItem, PreannotationResource, Preprocessing,
+                            Settings, Tasks)
+from models.resources import (CreateResourceModel, OntologyItem,
+                              ResourceClassifications)
 from settings import settings
 
 

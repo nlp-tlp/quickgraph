@@ -1,38 +1,28 @@
-from bson import ObjectId
-from datetime import datetime
-from fastapi import status, HTTPException
-from motor.motor_asyncio import AsyncIOMotorDatabase
 import itertools
-from typing import List, Union, Tuple, Dict
 from collections import Counter
+from datetime import datetime
+from typing import Dict, List, Tuple, Union
 
+from bson import ObjectId
+from exp.agreement import AgreementCalculator
+from fastapi import HTTPException, status
 # import nltk
 # from nltk.tokenize import word_tokenize
 from fastapi.responses import JSONResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
-from models.notifications import CreateNotification, NotificationContext
-from models.project import (
-    CreateProject,
-    Project,
-    Tasks,
-    Annotator,
-    AnnotatorRoles,
-    AnnotatorStates,
-    SaveState,
-    PreannotationResource,
-    ProjectOntology,
-    BasicEntity,
-    OntologyItem,
-    Preprocessing,
-    ProjectWithMetrics,
-    Guidelines,
-)
-from models.markup import CreateMarkupApply, RichCreateEntity
-from models.dataset import DatasetItem
-import services.notifications as notification_services
-import services.markup as markup_services
+
 import services.dataset as dataset_services
-from exp.agreement import AgreementCalculator
+import services.markup as markup_services
+import services.notifications as notification_services
+from models.dataset import DatasetItem
+from models.markup import CreateMarkupApply, RichCreateEntity
+from models.notifications import CreateNotification, NotificationContext
+from models.project import (Annotator, AnnotatorRoles, AnnotatorStates,
+                            BasicEntity, CreateProject, Guidelines,
+                            OntologyItem, PreannotationResource, Preprocessing,
+                            Project, ProjectOntology, ProjectWithMetrics,
+                            SaveState, Tasks)
 
 # import os
 # from pathlib import Path

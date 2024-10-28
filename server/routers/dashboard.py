@@ -1,22 +1,19 @@
-from typing import List, Optional, Union
 from collections import defaultdict
+from typing import List, Optional, Union
 
-from fastapi import APIRouter, Depends, Query
 from bson import ObjectId
+from exp.agreement import AgreementCalculator
+from fastapi import APIRouter, Depends, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
-from dependencies import get_current_active_user, get_db
-from models.user import User
 import services.dashboard as dashboard_services
-from models.dataset import (
-    SaveStateFilter,
-    QualityFilter,
-)
-from models.project import OntologyItem, FlagState
 import services.projects as project_services
+from dependencies import get_current_active_user, get_db
+from models.dataset import QualityFilter, SaveStateFilter
+from models.project import FlagState, OntologyItem
+from models.user import User
 from services.utils import create_search_regex
-from exp.agreement import AgreementCalculator
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 

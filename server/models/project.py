@@ -5,12 +5,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field
-
+from models.base import PydanticObjectIdAnnotated
 from models.dataset import Preprocessing
 from models.markup import Entity, Relation
 from models.resources import OntologyItem
-from models.base import PydanticObjectIdAnnotated
+from pydantic import BaseModel, ConfigDict, Field
 
 # class ResourceConstraints(BaseModel):
 #     # Resource constraints are private to projects only.

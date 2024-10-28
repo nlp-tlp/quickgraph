@@ -1,8 +1,9 @@
 # middlewares.py
-from fastapi import Request, Response
 from datetime import datetime
-from dependencies import get_db
 
+from fastapi import Request, Response
+
+from dependencies import get_db
 
 # class EventTrackingMiddleware:
 #     async def __call__(self, request: Request, call_next):

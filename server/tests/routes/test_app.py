@@ -1,8 +1,9 @@
 import pytest
+from auth0_token import get_auth0_access_token
 from fastapi import HTTPException
 from httpx import AsyncClient
-from ...main import app  # Import your FastAPI app instance
-from auth0_token import get_auth0_access_token
+
+from ...src.quickgraph.main import app  # Import your FastAPI app instance
 
 access_token = get_auth0_access_token()
 

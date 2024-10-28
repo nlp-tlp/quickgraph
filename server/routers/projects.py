@@ -1,47 +1,38 @@
-from typing import List, Union
-import itertools
 import datetime
-import httpx
+import itertools
 import json
+from typing import List, Union
 
-from pydantic import BaseModel
-from fastapi import APIRouter, Depends, status, HTTPException, Body
+import httpx
 from bson import ObjectId
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-
-from dependencies import (
-    get_current_active_user,
-    get_db,
-    get_user_management_access_token,
-)
-from models.user import User
-from models.project import (
-    CreateProject,
-    Project,
-    Tasks,
-    ProjectWithMetrics,
-    SaveDatasetItems,
-    Annotator,
-    AnnotatorRoles,
-    AnnotatorStates,
-    Summary,
-    ProjectDownload,
-    ProjectDataset,
-    ProjectDatasetItem,
-    ProjectSocial,
-)
-from models.markup import Entity, Relation
-from examples import get_examples
-import services.projects as project_services
-import services.notifications as notification_services
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel
+
+import services.notifications as notification_services
+import services.projects as project_services
+from dependencies import (get_current_active_user, get_db,
+                          get_user_management_access_token)
+from examples import get_examples
+from models.markup import Entity, Relation
+from models.project import (Annotator, AnnotatorRoles, AnnotatorStates,
+                            CreateProject, Project, ProjectDataset,
+                            ProjectDatasetItem, ProjectDownload, ProjectSocial,
+                            ProjectWithMetrics, SaveDatasetItems, Summary,
+                            Tasks)
+from models.user import User
 from settings import settings
 
 router = APIRouter(prefix="/project", tags=["Project"])
 
 
-@router.post("/", response_description="Create project", response_model=Project)
+@router.post(
+    "/",
+    response_description="Create project",
+    #  response_model=Project
+)
 async def create_new_project(
     project: CreateProject,
     # = Body(
@@ -70,7 +61,7 @@ async def create_new_project(
 @router.get(
     "/",
     response_description="List all projects",
-    response_model=List[ProjectWithMetrics],
+    # response_model=List[ProjectWithMetrics],
 )
 async def list_projects(
     current_user: User = Depends(get_current_active_user),
@@ -167,7 +158,9 @@ def flatten_dict(d: dict, parent_key: str = "", sep: str = ".") -> dict:
 
 
 @router.patch(
-    "/{project_id}", response_description="Update project", response_model=Project
+    "/{project_id}",
+    response_description="Update project",
+    # response_model=Project
 )
 async def update_project(
     project_id: str,
@@ -203,7 +196,10 @@ async def update_project(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@router.patch("/{project_id}/guidelines", response_model=Project)
+@router.patch(
+    "/{project_id}/guidelines",
+    #   response_model=Project
+)
 async def update_project_guidelines(
     project_id: str,
     body: dict,
@@ -243,7 +239,10 @@ async def update_project_guidelines(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@router.get("/summary", response_model=Summary, response_model_exclude_none=True)
+@router.get(
+    "/summary",
+    # response_model=Summary, response_model_exclude_none=True
+)
 async def get_summary(
     current_user: User = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -839,7 +838,11 @@ async def get_project_annotators(
     }
 
 
-@router.get("/{project_id}", response_description="Get project", response_model=Project)
+@router.get(
+    "/{project_id}",
+    response_description="Get project",
+    #  response_model=Project
+)
 async def get_project(
     project_id: str,
     current_user: User = Depends(get_current_active_user),
