@@ -3,8 +3,8 @@
 <h2>
 QuickGraph: A Rapid Annotation Tool for Knowledge Graph Extraction from Technical Text</h2>
 
-> [!IMPORTANT]  
-> LexiClean v2 is currently being released publicly 🚧
+> [!IMPORTANT]
+> QuickGraph v2 is currently being released publicly 🚧
 > We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only. Please check back for updates.
 
 </div>
