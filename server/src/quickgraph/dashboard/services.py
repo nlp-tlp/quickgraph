@@ -109,7 +109,7 @@ async def create_progress_plot_data(db, project_id: ObjectId) -> Dict:
             "name": "Project Progress",
             "caption": "Overall Progress Made by Annotators",
             "dataset": data,
-            "no_data_title": f"No dataset items have been saved by project annotators yet",
+            "no_data_title": "No dataset items have been saved by project annotators yet",
         }
 
     except Exception as e:
