@@ -1,9 +1,8 @@
-"""QuickGraph utilities."""
+"""Authentication and authorisation utilities."""
 
 import jwt
 
 from ..settings import settings
-from ..user.schemas import User
 
 
 class VerifyToken:
@@ -41,7 +40,3 @@ class VerifyToken:
             return {"status": "error", "message": str(e)}
 
         return payload
-
-
-def mock_authenticate_user() -> User:
-    return User(username=settings.EXAMPLE_USERNAME, sub="1337")
