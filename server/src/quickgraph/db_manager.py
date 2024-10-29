@@ -29,7 +29,7 @@ app = typer.Typer()
 #     # command = [
 #     #     "mongodump",
 #     #     "--uri",
-#     #     settings.MONGO_URI,
+#     #     settings.mongodb.uri,
 #     #     "--out",
 #     #     backup_path,
 #     #     "--db",
@@ -43,7 +43,7 @@ app = typer.Typer()
 #     # typer.echo(f"Backup of {settings.MONGO_DB_NAME} database complete.")
 
 #     """Backup MongoDB to a compressed archive"""
-#     client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGO_URI)
+#     client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb.uri)
 #     db = client[settings.MONGO_DB_NAME]
 #     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 #     backup_filename = f"mongodb_backup_{timestamp}.tar.gz"
@@ -79,7 +79,7 @@ app = typer.Typer()
 #     command = [
 #         "mongorestore",
 #         "--uri",
-#         settings.MONGO_URI,
+#         settings.mongodb.uri,
 #         "--drop",
 #         "--nsInclude",
 #         f"{settings.MONGO_DB_NAME}.*",
@@ -95,28 +95,28 @@ app = typer.Typer()
 
 async def add_system_resources_to_db():
     """Prepopulates MongoDB with "system" resources"""
-    client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGO_URI)
-    db = client[settings.MONGO_DB_NAME]
+    client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb.uri)
+    db = client[settings.mongodb.database_name]
     await create_system_resources(db=db)
     typer.echo("Added resources to database")
 
 
 async def add_system_datasets_to_db():
     """Prepopulates MongoDB with "system" datasets"""
-    client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGO_URI)
-    db = client[settings.MONGO_DB_NAME]
+    client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb.uri)
+    db = client[settings.mongodb.database_name]
     await create_system_datasets(db=db)
     typer.echo("Added datasets to database")
 
 
 async def drop_all_collections():
     """Drops all collections in the MongoDB database."""
-    client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGO_URI)
-    db = client[settings.MONGO_DB_NAME]
+    client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb.uri)
+    db = client[settings.mongodb.database_name]
     for collection_name in await db.list_collection_names():
         await db[collection_name].drop()
     typer.echo(
-        f"All collections in database {settings.MONGO_DB_NAME} dropped successfully!"
+        f"All collections in database {settings.mongodb.database_name} dropped successfully!"
     )
 
 
