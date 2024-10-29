@@ -1,17 +1,16 @@
-from pydantic_settings import BaseSettings
+"""Settings."""
+
+from functools import lru_cache
+from typing import List
+
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    PORT: int = 8000
-    ENV: str = ""
-    SYSTEM_USERNAME: str = "system"
-
-    MONGO_DB_USERNAME: str = "<ENTER_DB_USERNAME>"
-    MONGO_DB_PASSWORD: str = "<ENTER_DB_PASSWORD>"
-    MONGO_CLUSTER_NAME: str = "<ENTER_CLUSTER_NAME>"
-    MONGO_DB_NAME: str = "<ENTER_DB_NAME>"
-    MONGO_URI: str = "<ENTER_URI>"
-    MONGO_COLLECTION_NAMES: list = [
+class SettingsMongoDB(BaseModel):
+    database_name: str
+    uri: str
+    collection_names: List[str] = [
         "data",
         "datasets",
         "notifications",
@@ -20,20 +19,35 @@ class Settings(BaseSettings):
         "markup",
     ]
 
-    AUTH0_DOMAIN: str = "<ENTER_HERE>"
-    AUTH0_API_AUDIENCE: str = "<ENTER_HERE>"
-    AUTH0_ALGORITHMS: str = "<ENTER_HERE>"
-    AUTH0_ISSUER: str = "<ENTER_HERE>"
-    AUTH0_MGMT_CLIENT_ID: str = "<ENTER_HERE>"
-    AUTH0_MGMT_SECRET: str = "<ENTER_HERE>"
 
-    EXAMPLE_USERNAME: str = "<ENTER_USERNAME>"
-
-    SYSTEM_DEFAULTS_DIR: str = "./system"
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+class SettingsAPI(BaseModel):
+    system_username: str = "system"
+    system_default_dir: str = "./system"
+    dummy_username: str = "janedoe"
 
 
-settings = Settings()
+class SettingsAuth0(BaseModel):
+    domain: str
+    api_audience: str
+    algorithms: str
+    issuer: str
+    mgmt_client_id: str
+    mgmt_secret: str
+
+
+class Settings(BaseSettings):
+    mongodb: SettingsMongoDB
+    api: SettingsAPI = SettingsAPI()
+    auth0: SettingsAuth0
+
+    model_config = SettingsConfigDict(
+        env_file=".env", env_nested_delimiter="__", env_file_encoding="utf-8"
+    )
+
+
+@lru_cache()
+def get_settings():
+    return Settings()
+
+
+settings = get_settings()
