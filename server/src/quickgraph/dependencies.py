@@ -2,49 +2,41 @@
 
 import http.client
 import json
-from typing import Optional
+import logging
+from typing import AsyncGenerator, Optional
 
-import motor.motor_asyncio
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from .settings import settings
+from .database import get_client
+from .settings import Settings, get_settings, settings
 from .user.schemas import User
 from .utils.auth import VerifyToken
+
+logger = logging.getLogger(__name__)
 
 # Scheme for the Authorization header
 token_auth_scheme = HTTPBearer()
 
 
-async def get_db() -> AsyncIOMotorClient:
-    """Returns a database client.
+async def get_db(
+    settings: Settings = Depends(get_settings),
+) -> AsyncGenerator[AsyncIOMotorDatabase, None]:
+    """Yield a MongoDB database instance."""
+    client = get_client()
+    if client is None:
+        logger.info("Failed to connect to MongoDB client.")
+        raise ConnectionError("Failed to retrieve MongoDB client.")
 
-    Raises:
-        HTTPException: If there is an error connecting to the database.
-
-    Yields:
-        AsyncIOMotorClient: A database client.
-    """
-
-    # Create a database client
-    client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGO_URI)
-
-    # Get the database from the client
-    db = client[settings.MONGO_DB_NAME]
-
+    db = client[settings.mongodb.database_name]
+    # logger.info(f"Connected to database: {db.name}")
     try:
-        # Yield the database client to the dependent function
         yield db
-    except:
-        # Log the error and raise an exception
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Service unavailable",
-        )
     finally:
-        # Close the database client
-        client.close()
+        if db is not None:
+            # logger.info(f"Releasing connection to database: {db.name}")
+            pass
 
 
 async def get_current_user(token: str = Depends(token_auth_scheme)) -> User:
@@ -68,7 +60,7 @@ async def get_current_user(token: str = Depends(token_auth_scheme)) -> User:
     )
 
     # Verify the token and get the user data
-    token_data = VerifyToken(token.credentials).verify()
+    token_data = VerifyToken(token).verify()
 
     # Check if the token is valid
     if token_data.get("status"):
@@ -88,13 +80,13 @@ async def get_user_management_access_token() -> Optional[str]:
     """
 
     # Create an HTTPS connection to the Auth0 server
-    conn = http.client.HTTPSConnection(settings.AUTH0_DOMAIN)
+    conn = http.client.HTTPSConnection(settings.auth0.domain)
 
     # Define the data to be sent in the request body as a dictionary
     payload = {
-        "client_id": settings.AUTH0_MGMT_CLIENT_ID,
-        "client_secret": settings.AUTH0_MGMT_SECRET,
-        "audience": f"https://{settings.AUTH0_DOMAIN}/api/v2/",
+        "client_id": settings.auth0.mgmt_client_id,
+        "client_secret": settings.auth0.mgmt_secret,
+        "audience": f"https://{settings.auth0.domain}/api/v2/",
         "grant_type": "client_credentials",
     }
 
