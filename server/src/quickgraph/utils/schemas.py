@@ -40,7 +40,7 @@ class PydanticObjectId:
             try:
                 return ObjectId(value)
             except Exception as e:
-                raise ValueError("Invalid ObjectId format")
+                raise ValueError(f"Invalid ObjectId format: {e}")
         raise ValueError("Invalid ObjectId format")
 
 
