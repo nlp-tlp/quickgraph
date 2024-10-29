@@ -1,3 +1,5 @@
+"""User Agreement utilities."""
+
 import itertools
 from collections import Counter, defaultdict
 from typing import Dict, List, Optional, Tuple
