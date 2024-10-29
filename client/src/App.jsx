@@ -16,25 +16,15 @@ import PrivateRoute from "./shared/components/Auth/PrivateRoute";
 import Layout from "./shared/components/Layout/Layout";
 
 // Context Providers
-import { Auth0Provider } from "@auth0/auth0-react";
+import { AuthProvider } from "./shared/context/AuthContext";
 import SnackbarProvider from "./shared/context/snackbar-context";
 import { ThemeProvider } from "@mui/material/styles";
 
 // Constants
 const MOBILE_BREAKPOINT = "(max-width:1000px)";
 
-// Auth0 configuration
-const AUTH0_CONFIG = {
-  domain: `https://${import.meta.env.VITE_AUTH0_DOMAIN}`,
-  clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
-  redirectUri: window.location.origin,
-  audience: `https://${import.meta.env.VITE_AUTH0_AUDIENCE}`,
-  useRefreshTokens: true,
-  cacheLocation: "localstorage",
-};
-
 function App() {
-  const isTooSmall = useMediaQuery("(max-width:1000px)");
+  const isTooSmall = useMediaQuery(MOBILE_BREAKPOINT);
 
   const renderRouteContent = (route) => {
     // Handle both lazy and non-lazy components
@@ -94,7 +84,7 @@ function App() {
   };
 
   return (
-    <Auth0Provider {...AUTH0_CONFIG}>
+    <AuthProvider>
       <ThemeProvider theme={theme}>
         <SnackbarProvider>
           <BrowserRouter>
@@ -114,7 +104,7 @@ function App() {
           </BrowserRouter>
         </SnackbarProvider>
       </ThemeProvider>
-    </Auth0Provider>
+    </AuthProvider>
   );
 }
 

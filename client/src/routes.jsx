@@ -1,4 +1,4 @@
-// types.js (or .ts if using TypeScript)
+// types.js
 /**
  * @typedef {Object} Route
  * @property {boolean} protected - Whether route requires authentication
@@ -18,6 +18,7 @@ import { ProjectProvider } from "./shared/context/ProjectContext";
 import Landing from "./features/landing/Landing";
 import AuthPages from "./shared/components/Auth/AuthPages";
 import PrimarySidebar from "./features/project/PrimarySidebar";
+import LoginSignupPages from "./shared/components/Auth/LoginSignupPages";
 
 // Group routes by feature area
 const PUBLIC_ROUTES = {
@@ -159,6 +160,14 @@ const DATASET_ROUTES = {
 };
 
 const USER_ROUTES = {
+  login: {
+    protected: false,
+    title: "Log In",
+    path: "/auth",
+    name: "Log In",
+    component: <LoginSignupPages />,
+    layout: false,
+  },
   profile: {
     protected: true,
     title: "Account Settings",
