@@ -1,8 +1,12 @@
+"""Services utilities."""
+
+import logging
 import re
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pymongo import MongoClient
+
+logger = logging.getLogger(__name__)
 
 
 async def soft_delete_document(
@@ -24,7 +28,8 @@ async def soft_delete_document(
             {"$set": {"is_deleted": True}},
         )
         return result.modified_count == 1
-    except:
+    except Exception as e:
+        logger.info(f'Failed to soft delete document with ID "{doc_id}": {e}')
         return False
 
 
@@ -44,7 +49,7 @@ def create_search_regex(search_terms: str) -> re.Pattern:
         re.compile('(?=.*\\bapple\\b)(?=.*\\bbanana\\b)(?=.*\\bcherry\\b)', re.IGNORECASE)
     """
 
-    if search_terms == None:
+    if search_terms is None:
         # Defaults to match anything regular expression
         return re.compile(".*")
 
