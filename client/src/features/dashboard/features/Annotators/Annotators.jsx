@@ -7,12 +7,12 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import ArticleIcon from "@mui/icons-material/Article";
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
 import { UserInvitationField } from "../../../../shared/components/UserInvitationField";
-import { useAuth0 } from "@auth0/auth0-react";
 import DeleteModal from "./DeleteModal";
 import AssignmentModal from "./AssignmentModal";
+import { useAuth } from "../../../../shared/context/AuthContext";
 
 const Annotators = () => {
-  const { user } = useAuth0();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const { state, handleInviteAnnotators, fetchAnnotators } =
     useContext(DashboardContext);

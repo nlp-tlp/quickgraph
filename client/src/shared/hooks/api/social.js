@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../../utils/api";
 
 const useSocial = ({ state, dispatch }) => {
-  const { getAccessTokenSilently } = useAuth0();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -23,81 +21,91 @@ const useSocial = ({ state, dispatch }) => {
     }));
 
   const postComment = async ({ text, context, datasetItemId }) => {
-    getAccessTokenSilently().then((token) => {
+    try {
       setSubmitting(true);
       setError(false);
-      axiosInstance
-        .post(
-          `/social/${datasetItemId}`,
-          { text: text, context: context, dataset_item_id: datasetItemId },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then((res) => {
-          dispatch({
-            type: "SET_VALUE",
-            payload: {
-              social: {
-                ...state.social,
-                [datasetItemId]: [...state.social[datasetItemId], res.data],
-              },
-            },
-          });
-        })
-        .catch(() => setError(true))
-        .finally(() => setSubmitting(false));
-    });
+
+      const response = await axiosInstance.post(`/social/${datasetItemId}`, {
+        text,
+        context,
+        dataset_item_id: datasetItemId,
+      });
+
+      dispatch({
+        type: "SET_VALUE",
+        payload: {
+          social: {
+            ...state.social,
+            [datasetItemId]: [...state.social[datasetItemId], response.data],
+          },
+        },
+      });
+    } catch (err) {
+      setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to post comment",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const deleteComment = async ({ datasetItemId, commentId }) => {
-    getAccessTokenSilently().then((token) => {
+    try {
       setDeleting(true);
       setError(false);
-      axiosInstance
-        .delete(`/social/${commentId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+
+      await axiosInstance.delete(`/social/${commentId}`);
+
+      dispatch({
+        type: "SET_VALUE",
+        payload: {
+          social: {
+            ...state.social,
+            [datasetItemId]: state.social[datasetItemId].filter(
+              (c) => c._id !== commentId
+            ),
           },
-        })
-        .then(() => {
-          dispatch({
-            type: "SET_VALUE",
-            payload: {
-              social: {
-                ...state.social,
-                [datasetItemId]: state.social[datasetItemId].filter(
-                  (c) => c._id !== commentId
-                ),
-              },
-            },
-          });
-        })
-        .catch(() => setError(true))
-        .finally(() => setDeleting(false));
-    });
+        },
+      });
+    } catch (err) {
+      setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to delete comment",
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  // const fetchComments = async ({ datasetItemId, context }) => {
-  //   getAccessTokenSilently().then((token) => {
-  //     setLoading(true);
-  //     setError(false);
-  //     axiosInstance
-  //       .get(`/social/${datasetItemId}`, {
-  //         params: { context: context },
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       })
-  //       .then((res) => {
-  //         setData(res.data);
-  //       })
-  //       .catch(() => setError(true))
-  //       .finally(() => setLoading(false));
-  //   });
-  // };
+  const fetchComments = async ({ datasetItemId, context }) => {
+    try {
+      setLoading(true);
+      setError(false);
+
+      const response = await axiosInstance.get(`/social/${datasetItemId}`, {
+        params: { context },
+      });
+
+      setData(response.data);
+    } catch (err) {
+      setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to fetch comments",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     loading,
@@ -105,7 +113,7 @@ const useSocial = ({ state, dispatch }) => {
     submitting,
     data,
     postComment,
-    // fetchComments,
+    fetchComments,
     deleteComment,
     message,
     handleMessageClose,

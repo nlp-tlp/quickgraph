@@ -1,5 +1,4 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import { SnackbarContext } from "../../context/snackbar-context";
@@ -7,7 +6,6 @@ import { SnackbarContext } from "../../context/snackbar-context";
 const useDataset = () => {
   const [snackbarState, snackbarDispatch] = useContext(SnackbarContext);
   const navigate = useNavigate();
-  const { getAccessTokenSilently } = useAuth0();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dataset, setDataset] = useState([]);
@@ -16,12 +14,7 @@ const useDataset = () => {
   const deleteDataset = async (datasetId) => {
     try {
       setSubmitting(true);
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.delete(`/dataset/${datasetId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.delete(`/dataset/${datasetId}`);
 
       if (res.status === 200) {
         navigate("/datasets-explorer");
@@ -51,17 +44,11 @@ const useDataset = () => {
 
   const fetchDataset = async (datasetId) => {
     try {
-      // console.log("Fetching dataset", datasetId);
-
-      const token = await getAccessTokenSilently();
       const res = await axiosInstance.get(`/dataset/${datasetId}`, {
         params: {
           include_dataset_size: true,
           include_dataset_items: true,
           include_projects: true,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -89,12 +76,7 @@ const useDataset = () => {
   const createDataset = async (body) => {
     try {
       setSubmitting(true);
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.post("/dataset/", body, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.post("/dataset/", body);
 
       if (res.status === 200) {
         navigate(`/dataset-management/${res.data._id}`);
@@ -117,16 +99,10 @@ const useDataset = () => {
 
   const deleteDatasetItems = async (dataset_id, dataset_item_ids) => {
     try {
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.post(
-        "/dataset/delete-items",
-        { dataset_id, dataset_item_ids },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axiosInstance.post("/dataset/delete-items", {
+        dataset_id,
+        dataset_item_ids,
+      });
       if (
         res.status === 200 &&
         res.data.dataset_item_ids.length === dataset_item_ids.length
@@ -194,8 +170,6 @@ const useDataset = () => {
     preprocessing,
   }) => {
     try {
-      const token = await getAccessTokenSilently();
-
       const res = await axiosInstance.post(
         "/dataset/items",
         {
@@ -204,9 +178,6 @@ const useDataset = () => {
         },
         {
           params: { dataset_id, data_type, is_annotated },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         }
       );
 

@@ -5,10 +5,10 @@ import {
   UserList,
 } from "../../../shared/components/UserInvitationField";
 import useCreateProject from "../../../shared/hooks/api/createProject";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuth } from "../../../shared/context/AuthContext";
 
 export const Invite = ({ values, setValues }) => {
-  const { user } = useAuth0();
+  const { user } = useAuth;
   const { submitting, validateUsernames } = useCreateProject();
   const [usernames, setUsernames] = useState();
   const updateValue = (key, value) => {

@@ -1,12 +1,10 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import { SnackbarContext } from "../../context/snackbar-context";
 
 const useNotifications = () => {
   const navigate = useNavigate();
-  const { getAccessTokenSilently } = useAuth0();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(false);
@@ -16,15 +14,10 @@ const useNotifications = () => {
 
   const fetchNotifications = async () => {
     try {
-      const token = await getAccessTokenSilently();
       setLoading(true);
       setError(false);
 
-      const res = await axiosInstance.get("/notifications/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.get("/notifications");
 
       if (res.status === 200) {
         setData(res.data);
@@ -53,19 +46,13 @@ const useNotifications = () => {
 
   const acceptNotification = async ({ notification }) => {
     try {
-      const token = await getAccessTokenSilently();
       setLoading(true);
       setError(false);
 
       const res = await axiosInstance.patch(
         `/notifications/${notification.id}/invite`,
         null,
-        { params: { accepted: true } },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { params: { accepted: true } }
       );
 
       if (res.status === 200) {
@@ -95,19 +82,13 @@ const useNotifications = () => {
 
   const declineNotification = async ({ notificationId }) => {
     try {
-      const token = await getAccessTokenSilently();
       setLoading(true);
       setError(false);
 
       const res = await axiosInstance.patch(
         `/notifications/${notificationId}/invite`,
         null,
-        { params: { accepted: false } },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { params: { accepted: false } }
       );
       if (res.status !== 200) {
         snackbarDispatch({

@@ -1,11 +1,9 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../../utils/api";
 import { SnackbarContext } from "../../context/snackbar-context";
 
 const useProfile = () => {
   const [snackbarState, snackbarDispatch] = useContext(SnackbarContext);
-  const { getAccessTokenSilently } = useAuth0();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [data, setData] = useState();
@@ -13,11 +11,8 @@ const useProfile = () => {
   const getProfile = async () => {
     try {
       setLoading(true);
-      const token = await getAccessTokenSilently();
 
-      const res = await axiosInstance.get("/user/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/users/profile");
 
       if (res.status === 200) {
         setData(res.data);
@@ -47,11 +42,7 @@ const useProfile = () => {
 
   const updateProfile = async ({ body }) => {
     try {
-      const token = await getAccessTokenSilently();
-
-      const res = await axiosInstance.patch("/user/profile", body, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.patch("/users/profile", body);
 
       if (res.status === 200) {
         setData(res.data);

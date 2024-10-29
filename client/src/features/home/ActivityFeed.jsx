@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import moment from "moment";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuth } from "../../shared/context/AuthContext";
 
 const ActivityFeed = ({ data, loading }) => {
   return (
@@ -66,8 +66,8 @@ const ActivityFeed = ({ data, loading }) => {
 };
 
 const ActivityListItem = ({ item, index }) => {
-  const { user } = useAuth0();
-  const username = user["https://example.com/username"];
+  const { user } = useAuth();
+  const username = user?.username ?? "";
 
   const getMessage = (item, username) => {
     const createdBy =

@@ -4,7 +4,7 @@ import { useTheme } from "@mui/material/styles";
 
 const UserListItem = ({ open, user }) => {
   const theme = useTheme();
-  const username = user?.["https://example.com/username"] ?? "";
+  const username = user?.username ?? "";
   return (
     <Stack
       direction="row"
@@ -16,8 +16,7 @@ const UserListItem = ({ open, user }) => {
       <Tooltip title={`Logged in as: ${username}`} placement="right">
         <Avatar
           sx={{
-            bgcolor:
-              user?.["https://example.com/color"] ?? theme.palette.primary.main,
+            bgcolor: user?.color ?? theme.palette.primary.main,
             cursor: "help",
           }}
         >
@@ -41,7 +40,7 @@ const UserListItem = ({ open, user }) => {
                 overflowWrap: "break-word",
               }}
             >
-              {user?.["name"] ?? ""}
+              {user?.name ?? ""}
             </Typography>
           </Stack>
         </>

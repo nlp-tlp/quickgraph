@@ -1,7 +1,7 @@
 import { Alert, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
 import { DocsLinks } from "../constants/general";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuth } from "../context/AuthContext";
 
 const Contexts = {
   "/home": {
@@ -174,7 +174,7 @@ const Contexts = {
 };
 
 const InfoSnackbar = (props) => {
-  const { user } = useAuth0();
+  const { user } = useAuth;
   const { location } = props;
   const context = Contexts[location];
 

@@ -1,5 +1,4 @@
 import { createContext, useReducer, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../utils/api";
 import { SnackbarContext } from "./snackbar-context";
 
@@ -36,7 +35,6 @@ const reducer = (state, action) => {
 };
 
 export const GraphProvider = (props) => {
-  const { getAccessTokenSilently } = useAuth0();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [snackbarState, snackbarDispatch] = useContext(SnackbarContext);
 
@@ -84,7 +82,6 @@ export const GraphProvider = (props) => {
     try {
       stateActions[stateToToggle](true);
 
-      const token = await getAccessTokenSilently();
       const res = await axiosInstance.get(`/graph/${projectId}`, {
         params: {
           ...filters,
@@ -93,7 +90,6 @@ export const GraphProvider = (props) => {
           exclude_ontology_item_ids:
             filters.exclude_ontology_item_ids.join(","), // Need to stringify before sending to backend
         },
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 200) {

@@ -15,7 +15,6 @@ import {
 export const handleApply = async ({
   state,
   dispatch,
-  token,
   snackbarDispatch,
   body,
   params,
@@ -131,7 +130,6 @@ export const handleApply = async ({
 
     const res = await axiosInstance.post("/markup/", body, {
       params: params,
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (res.status === 200) {
@@ -184,7 +182,6 @@ export const handleApply = async ({
 export const deleteMarkupOptimistically = async ({
   state,
   dispatch,
-  token,
   snackbarDispatch,
   markupId,
   datasetItemId,
@@ -209,7 +206,6 @@ export const deleteMarkupOptimistically = async ({
 
     const res = await axiosInstance.delete(`/markup/${markupId}`, {
       params: params,
-      headers: { Authorization: `Bearer ${token}` },
     });
     // // Check if the response status is not 200, and throw an error if needed
     if (res.status !== 200) {
@@ -252,7 +248,6 @@ export const deleteMarkupOptimistically = async ({
 export const handleDelete = async ({
   state,
   dispatch,
-  token,
   snackbarDispatch,
   markupId,
   params,
@@ -263,7 +258,6 @@ export const handleDelete = async ({
 
     const res = await axiosInstance.delete(`/markup/${markupId}`, {
       params: params,
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (res.status === 200) {

@@ -1,8 +1,8 @@
 import { createContext, useReducer, useEffect, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../utils/api";
 import { SnackbarContext } from "./snackbar-context";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 
 const initialState = {
   loading: true,
@@ -57,7 +57,7 @@ const reducer = (state, action) => {
 };
 
 export const DashboardProvider = (props) => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessToken } = useAuth();
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [snackbarState, snackbarDispatch] = useContext(SnackbarContext);
@@ -70,7 +70,7 @@ export const DashboardProvider = (props) => {
 
   const fetchDashboardInfo = async (projectId) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.get(`/dashboard/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -94,7 +94,7 @@ export const DashboardProvider = (props) => {
 
   const handleUpdateGuidelines = async ({ content }) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.patch(
         `/project/${state.projectId}/guidelines`,
@@ -137,7 +137,7 @@ export const DashboardProvider = (props) => {
 
   const handleUpdate = async ({ body }) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.patch(
         `/project/${state.projectId}`,
@@ -176,7 +176,7 @@ export const DashboardProvider = (props) => {
 
   const handleDeleteProject = async () => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.delete(`/project/${state.projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -212,7 +212,7 @@ export const DashboardProvider = (props) => {
     userIsLeaving = false,
   }) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.delete("/project/user/", {
         params: {
@@ -260,7 +260,7 @@ export const DashboardProvider = (props) => {
     docDistributionMethod = "all",
   }) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.post(
         `/project/user/invite/${state.projectId}`,
@@ -316,7 +316,7 @@ export const DashboardProvider = (props) => {
 
   const fetchAnnotators = async ({ projectId }) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.get(`/project/${projectId}/annotators`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -344,7 +344,7 @@ export const DashboardProvider = (props) => {
   const fetchAnnotatorEfforts = async ({ projectId, params }) => {
     // Used to show the progress annotators have made on the project before downloading.
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
       const res = await axiosInstance.get(`/dashboard/effort/${projectId}`, {
         params: params,
         headers: { Authorization: `Bearer ${token}` },
@@ -372,7 +372,7 @@ export const DashboardProvider = (props) => {
     username,
   }) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.patch(
         `/project/${projectId}/annotators/assignment`,
@@ -422,7 +422,7 @@ export const DashboardProvider = (props) => {
 
   const downloadProject = async ({ projectId }) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
 
       const res = await axiosInstance.get(`/project/download/${projectId}`, {
         headers: {

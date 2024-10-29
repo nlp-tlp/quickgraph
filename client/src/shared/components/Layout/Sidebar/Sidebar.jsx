@@ -17,19 +17,18 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AppsIcon from "@mui/icons-material/Apps";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MenuIcon from "@mui/icons-material/Menu";
 
 import { PrimaryNavItems, RedirectMenuItems } from "./data";
 import ListItemWithChildren from "./ListItemWithChildren";
 import UserListItem from "./UserListItem";
+import { useAuth } from "../../../context/AuthContext";
 
 const Sidebar = ({ open, setOpen }) => {
   const theme = useTheme();
-  const { user, logout } = useAuth0();
+  const { user, logout } = useAuth();
   const location = useLocation();
-  const username = user?.["https://example.com/username"] ?? "";
 
   return (
     <Stack

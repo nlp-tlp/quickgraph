@@ -1,90 +1,120 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { DashboardContext } from "../../context/dashboard-context";
 import axiosInstance from "../../utils/api";
 
 const useDashboard = () => {
-  const { getAccessTokenSilently } = useAuth0();
   const { state, dispatch } = useContext(DashboardContext);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(false);
   const [data, setData] = useState();
+  const [message, setMessage] = useState({
+    open: false,
+    severity: null,
+    title: null,
+    message: null,
+  });
+
+  const handleMessageClose = () =>
+    setMessage((prevState) => ({
+      ...prevState,
+      open: false,
+    }));
 
   const fetchDashboardOverview = async ({ projectId }) => {
     try {
       setError(false);
       setLoading(true);
 
-      const token = await getAccessTokenSilently();
-
-      const res = await axiosInstance.get(`/dashboard/overview/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 200) {
-        setData(res.data);
-      } else {
-      }
-    } catch (error) {
+      const response = await axiosInstance.get(
+        `/dashboard/overview/${projectId}`
+      );
+      setData(response.data);
+    } catch (err) {
       setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to fetch dashboard overview",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const fetchGraph = async ({ projectId, filters }) => {
-    getAccessTokenSilently().then((token) => {
-      axiosInstance
-        .get(
-          `/graph/${projectId}`,
-          {
-            filters: filters,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-        .then((response) => {
-          dispatch({
-            type: "SET_GRAPH_DATA",
-            payload: {
-              graphData: response.data.data,
-              graphOntology: response.data.ontology,
-              graphMetrics: response.data.metrics,
-            },
-          });
-        });
-    });
+    try {
+      setLoading(true);
+      setError(false);
+
+      const response = await axiosInstance.get(`/graph/${projectId}`, {
+        params: { filters },
+      });
+
+      dispatch({
+        type: "SET_GRAPH_DATA",
+        payload: {
+          graphData: response.data.data,
+          graphOntology: response.data.ontology,
+          graphMetrics: response.data.metrics,
+        },
+      });
+    } catch (err) {
+      setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to fetch graph data",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateOntology = async (ontology, isEntity) => {
-    getAccessTokenSilently().then((token) => {
-      axiosInstance
-        .patch(
-          `/api/project/ontology/${state.projectId}`,
-          { ontology, isEntity },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
-        .then((res) =>
-          dispatch({ type: "SET_VALUE", payload: { ontology: res.data } })
-        )
-        .catch((error) => console.log(`Error updating ontology: ${error}`));
-    });
+    try {
+      setSubmitting(true);
+      setError(false);
+
+      const response = await axiosInstance.patch(
+        `/api/project/ontology/${state.projectId}`,
+        { ontology, isEntity }
+      );
+
+      dispatch({
+        type: "SET_VALUE",
+        payload: { ontology: response.data },
+      });
+    } catch (err) {
+      setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to update ontology",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const filterAdjudication = async ({
-    page,
-    sortDirection,
+    page = 1,
+    sortDirection = "",
     searchTerm = "",
     flags = "",
     minAgreement = 0,
     datasetItemId = "",
-  }) => {
-    getAccessTokenSilently().then((token) => {
+  } = {}) => {
+    try {
       setLoading(true);
-      axiosInstance
-        .get(`/dashboard/adjudication/${state.projectId}`, {
+      setError(false);
+
+      const response = await axiosInstance.get(
+        `/dashboard/adjudication/${state.projectId}`,
+        {
           params: {
             skip: page - 1,
             limit: 1,
@@ -94,18 +124,41 @@ const useDashboard = () => {
             min_agreement: minAgreement,
             dataset_item_id: datasetItemId,
           },
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => {
-          setData(res.data);
-        })
-        .catch(() => setError(true))
-        .finally(() => setLoading(false));
-    });
+        }
+      );
+
+      setData(response.data);
+    } catch (err) {
+      setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to filter adjudication data",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const downloadAnnotations = async () => {
-    console.log("downloading annotations...");
+    try {
+      setSubmitting(true);
+      setError(false);
+
+      // TODO: Implement annotation download logic
+      console.log("downloading annotations...");
+    } catch (err) {
+      setError(true);
+      setMessage({
+        open: true,
+        severity: "error",
+        title: "Error",
+        message: "Failed to download annotations",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return {
@@ -113,10 +166,13 @@ const useDashboard = () => {
     error,
     data,
     submitting,
+    message,
+    handleMessageClose,
     fetchDashboardOverview,
     updateOntology,
     fetchGraph,
     filterAdjudication,
+    downloadAnnotations,
   };
 };
 

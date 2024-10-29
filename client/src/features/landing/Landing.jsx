@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   Grid,
   Box,
@@ -23,18 +24,18 @@ import FilterNoneIcon from "@mui/icons-material/FilterNone";
 import BoltIcon from "@mui/icons-material/Bolt";
 import GroupIcon from "@mui/icons-material/Group";
 import CelebrationIcon from "@mui/icons-material/Celebration";
-import { useAuth0 } from "@auth0/auth0-react";
 import { Link, NavLink } from "react-router-dom";
 import InputIcon from "@mui/icons-material/Input";
 import LoginIcon from "@mui/icons-material/Login";
 import { DocsLinks } from "../../shared/constants/general";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
-import React, { useState } from "react";
 import AppsIcon from "@mui/icons-material/Apps";
 import HomeIcon from "@mui/icons-material/Home";
 import ArticleIcon from "@mui/icons-material/Article";
 import PaymentsIcon from "@mui/icons-material/Payments";
+import { useAuth } from "../../shared/context/AuthContext";
+import { useAuthRedirect } from "../../shared/hooks/useAuthRedirect";
 
 const FeatureData = [
   {
@@ -73,7 +74,8 @@ export const ResponsiveTypography = (props) => {
 
 export const Header = () => {
   const theme = useTheme();
-  const { logout, isAuthenticated, loginWithRedirect } = useAuth0();
+  const { logout, isAuthenticated } = useAuth();
+  const { logoutWithRedirect } = useAuthRedirect();
 
   const [open, setOpen] = useState(false);
 
@@ -214,7 +216,9 @@ export const Header = () => {
                 variant="contained"
                 disableElevation
                 title={isAuthenticated ? "Click to logout" : "Click to log in"}
-                onClick={isAuthenticated ? logout : () => loginWithRedirect()}
+                onClick={isAuthenticated ? logout : undefined}
+                component={isAuthenticated ? "button" : Link}
+                to={isAuthenticated ? undefined : "/auth?option=login"}
                 endIcon={isAuthenticated ? <LogoutIcon /> : <LoginIcon />}
               >
                 {isAuthenticated ? "Logout" : "Log In"}
@@ -340,7 +344,23 @@ export const Footer = ({ isMobile }) => {
             </Stack>
           </Grid>
           <Grid item>
-            <Typography>&copy; 2023 QuickGraph</Typography>
+            <Typography variant="body1" sx={{ mt: 1 }}>
+              Launched into the digital cosmos by{" "}
+              <span role="img" aria-label="rocket">
+                🚀
+              </span>{" "}
+              <MuiLink
+                data-testid="footer-github-link"
+                href="https://github.com/4theKnowledge"
+                color="primary"
+                underline="hover"
+                target="_blank"
+                rel="noreferrer"
+                sx={{ color: "inherit" }}
+              >
+                Tyler Bikaun (4theKnowledge)
+              </MuiLink>
+            </Typography>
           </Grid>
         </Grid>
       </Container>
@@ -370,21 +390,14 @@ const Landing = () => {
 };
 
 const LoginButton = () => {
-  const { loginWithRedirect, isAuthenticated } = useAuth0();
-
-  const handleSignUp = () => {
-    loginWithRedirect({
-      screen_hint: "signup",
-    });
-  };
+  const { isAuthenticated } = useAuth();
 
   return (
     <Button
       variant="contained"
       disableElevation
-      onClick={isAuthenticated ? undefined : handleSignUp}
-      component={isAuthenticated ? Link : undefined}
-      to={isAuthenticated ? "/home" : undefined}
+      component={Link}
+      to={isAuthenticated ? "/home" : "/auth?option=signup"}
       endIcon={isAuthenticated ? <LoginIcon /> : <InputIcon />}
       title={
         isAuthenticated

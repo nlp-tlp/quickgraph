@@ -24,30 +24,26 @@ import { DashboardContext } from "../../shared/context/dashboard-context";
 import { useTheme } from "@mui/material/styles";
 import HomeIcon from "@mui/icons-material/Home";
 import AppsIcon from "@mui/icons-material/Apps";
-import { useAuth0 } from "@auth0/auth0-react";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { getComponents } from "./data";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
-import { style as modalStyle } from "../../shared/styles/modal";
-import useDashboard from "../../shared/hooks/api/dashboard";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useAuth } from "../../shared/context/AuthContext";
 
 const PrimarySidebar = ({ open, setOpen }) => {
   const { state, dispatch } = useContext(DashboardContext);
   const { projectId, view } = useParams();
-  const { logout, user } = useAuth0();
+  const { logout, user } = useAuth();
   const theme = useTheme();
 
   const [openModal, setOpenModal] = useState(false);
   const handleModalClose = () => setOpenModal(false);
   const handleModalOpen = () => setOpenModal(true);
 
-  const username = user ? user["https://example.com/username"] : "";
-  const email = user ? user["name"] : "";
-  const color = user
-    ? user["https://example.com/color"]
-    : theme.palette.primary.main;
+  const username = user?.username ?? "";
+  const email = user?.email ?? "";
+  const color = user?.color ?? theme.palette.primary.main;
 
   const components = getComponents({ state, dispatch });
 
@@ -302,7 +298,7 @@ const DeleteModal = ({ open, handleClose }) => {
   const { state, handleRemoveAnnotator } = useContext(DashboardContext);
   const [name, setName] = useState("");
   const navigate = useNavigate();
-  const { user } = useAuth0();
+  const { user } = useAuth();
 
   const handleRemove = () => {
     handleRemoveAnnotator({

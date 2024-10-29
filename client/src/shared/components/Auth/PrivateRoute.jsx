@@ -1,8 +1,8 @@
 import { Navigate } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuth } from "../../context/AuthContext";
 
 const PrivateRoute = ({ children }) => {
-  const { isLoading, isAuthenticated } = useAuth0();
+  const { isLoading, isAuthenticated } = useAuth();
 
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/unauthorized" />;

@@ -1,12 +1,10 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { DashboardContext } from "../../context/dashboard-context";
 import axiosInstance from "../../utils/api";
 import qs from "qs";
 import { SnackbarContext } from "../../context/snackbar-context";
 
 const useGraph = () => {
-  const { getAccessTokenSilently } = useAuth0();
   const [state, dispatch] = useContext(DashboardContext);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -17,15 +15,11 @@ const useGraph = () => {
   const fetchGraph = async (params) => {
     try {
       console.log("params", params);
-      const token = await getAccessTokenSilently();
 
       const res = await axiosInstance.get(`/graph/${state.projectId}`, {
         params: params,
         paramsSerializer: (params) => {
           return qs.stringify(params, { arrayFormat: "comma" });
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       });
 

@@ -1,5 +1,4 @@
 import * as React from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/api";
 import { SnackbarContext } from "../snackbar-context";
@@ -15,22 +14,9 @@ import {
 export const ProjectContext = React.createContext();
 
 export const ProjectProvider = (props) => {
-  const { getAccessTokenSilently } = useAuth0();
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const [snackbarState, snackbarDispatch] = React.useContext(SnackbarContext);
   const navigate = useNavigate();
-  const [token, setToken] = React.useState(null);
-
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const token = await getAccessTokenSilently();
-        setToken(token);
-      } catch (error) {
-        console.log("Error fetching access token:", error);
-      }
-    })();
-  }, [getAccessTokenSilently]);
 
   React.useEffect(() => {
     if (state.projectId) {
@@ -41,11 +27,7 @@ export const ProjectProvider = (props) => {
 
   const fetchProject = async (projectId) => {
     try {
-      const token = await getAccessTokenSilently();
-
-      const res = await axiosInstance.get(`/project/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get(`/project/${projectId}`);
 
       if (res.status === 200) {
         dispatch({ type: "SET_PROJECT", payload: res.data });
@@ -74,10 +56,7 @@ export const ProjectProvider = (props) => {
 
   const fetchProgress = async (projectId) => {
     try {
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.get(`/project/progress/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get(`/project/progress/${projectId}`);
 
       if (res.status === 200) {
         dispatch({
@@ -105,11 +84,9 @@ export const ProjectProvider = (props) => {
         type: "SET_VALUE",
         payload: { submitting: true, textsLoading: true },
       });
-      const token = await getAccessTokenSilently();
 
       const res = await axiosInstance.get(`/dataset/filter/`, {
         params: queryParams,
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 200) {
@@ -303,12 +280,10 @@ export const ProjectProvider = (props) => {
 
   const handleAccept = async ({ markupId, params, finallyFunction }) => {
     try {
-      const token = await getAccessTokenSilently();
       dispatch({ type: "SET_VALUE", payload: { submitting: true } });
 
       const res = await axiosInstance.patch(`/markup/${markupId}`, null, {
         params: params,
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 200) {
@@ -407,17 +382,10 @@ export const ProjectProvider = (props) => {
         },
       });
 
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.patch(
-        "/project/save/",
-        {
-          project_id: state.projectId,
-          dataset_item_ids: dataset_item_ids,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await axiosInstance.patch("/project/save/", {
+        project_id: state.projectId,
+        dataset_item_ids: dataset_item_ids,
+      });
 
       if (res.status === 200) {
         // dispatch({
@@ -462,18 +430,11 @@ export const ProjectProvider = (props) => {
     finallyFunction,
   }) => {
     try {
-      const token = await getAccessTokenSilently();
       dispatch({ type: "SET_VALUE", payload: { submitting: true } });
 
-      const res = await axiosInstance.patch(
-        `/markup/edit/${markupId}`,
-        {
-          ontology_item_id: ontologyItemId,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await axiosInstance.patch(`/markup/edit/${markupId}`, {
+        ontology_item_id: ontologyItemId,
+      });
 
       if (res.status === 200) {
         // Find entities assigned to textId and update the span that has been succesfully updated.
@@ -536,12 +497,8 @@ export const ProjectProvider = (props) => {
 
   const fetchSuggestedEntities = async ({ projectId, surfaceForm }) => {
     try {
-      const token = await getAccessTokenSilently();
       const res = await axiosInstance.get(
-        `/projects/suggested-entities/${projectId}/${surfaceForm}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        `/projects/suggested-entities/${projectId}/${surfaceForm}`
       );
 
       if (res.status === 200) {
@@ -556,13 +513,12 @@ export const ProjectProvider = (props) => {
     state,
     dispatch,
     handleApply: ({ body, params }) =>
-      handleApply({ state, dispatch, token, snackbarDispatch, body, params }),
+      handleApply({ state, dispatch, snackbarDispatch, body, params }),
     handleAccept,
     handleDelete: ({ markupId, params, finallyFunction }) =>
       handleDelete({
         state,
         dispatch,
-        token,
         snackbarDispatch,
         markupId,
         params,
@@ -582,7 +538,6 @@ export const ProjectProvider = (props) => {
       deleteMarkupOptimistically({
         state,
         dispatch,
-        token,
         snackbarDispatch,
         markupId,
         datasetItemId,

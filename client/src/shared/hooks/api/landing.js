@@ -13,7 +13,7 @@ const useLanding = ({ state, dispatch }) => {
     // Fetches demo project for landing page - no auth required.
     console.log("Fetching demo data");
     axiosInstance
-      .get("/demo/")
+      .get("/demo")
       .then((res) => {
         console.log(res.data);
         dispatch({

@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { Link } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 import { grey } from "@mui/material/colors";
 import Demo from "./Demo";
 
@@ -82,7 +81,7 @@ function Content({ minBreakpoint }) {
 }
 
 const LoginButton = () => {
-  const { loginWithRedirect, isAuthenticated } = useAuth0();
+  const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
     return (
@@ -97,7 +96,7 @@ const LoginButton = () => {
     );
   } else {
     return (
-      <Button variant="contained" onClick={() => loginWithRedirect()}>
+      <Button variant="contained" to="auth?option=signup" component={Link}>
         Create a free account to get started
       </Button>
     );

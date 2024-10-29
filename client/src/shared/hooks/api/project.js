@@ -1,12 +1,10 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../../utils/api";
 import { texts as demoTexts } from "../../demo/data";
 import { v4 as uuidv4 } from "uuid";
 import { SnackbarContext } from "../../context/snackbar-context";
 
 const useProject = ({ state, dispatch }) => {
-  const { getAccessTokenSilently } = useAuth0();
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -148,17 +146,10 @@ const useProject = ({ state, dispatch }) => {
     finallyFunction,
   }) => {
     try {
-      const token = await getAccessTokenSilently();
       setIsLoading(true);
-      const res = await axiosInstance.patch(
-        `/markup/edit/${markupId}`,
-        {
-          ontology_item_id: ontologyItemId,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await axiosInstance.patch(`/markup/edit/${markupId}`, {
+        ontology_item_id: ontologyItemId,
+      });
 
       if (res.status === 200) {
         // Find entities assigned to textId and update the span that has been succesfully updated.
@@ -207,14 +198,12 @@ const useProject = ({ state, dispatch }) => {
 
   const applyFlag = async ({ datasetItemId, flagState }) => {
     try {
-      const token = await getAccessTokenSilently();
       // setIsLoading(true);
       const res = await axiosInstance.post(
         `/markup/flag/${datasetItemId}`,
         null,
         {
           params: { state: flagState },
-          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -268,12 +257,10 @@ const useProject = ({ state, dispatch }) => {
 
   const deleteFlag = async ({ datasetItemId, flagState }) => {
     try {
-      const token = await getAccessTokenSilently();
       const res = await axiosInstance.delete(`/markup/flag/${datasetItemId}`, {
         params: {
           state: flagState,
         },
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 200) {
@@ -327,10 +314,7 @@ const useProject = ({ state, dispatch }) => {
   const fetchInsights = async (projectId) => {
     try {
       setLoading(true);
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.get(`/markup/insights/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get(`/markup/insights/${projectId}`);
 
       if (res.status === 200) {
         setData(res.data);

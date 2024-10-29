@@ -1,5 +1,4 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import { SnackbarContext } from "../../context/snackbar-context";
@@ -7,7 +6,6 @@ import { SnackbarContext } from "../../context/snackbar-context";
 const useResource = () => {
   const [snackbarState, snackbarDispatch] = useContext(SnackbarContext);
   const navigate = useNavigate();
-  const { getAccessTokenSilently } = useAuth0();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -16,12 +14,7 @@ const useResource = () => {
   const deleteResource = async (resourceId) => {
     try {
       setSubmitting(true);
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.delete(`/resources/${resourceId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.delete(`/resources/${resourceId}`);
 
       if (res.status === 200) {
         navigate("/resources-explorer");
@@ -52,12 +45,7 @@ const useResource = () => {
   const fetchResource = async (resourceId) => {
     try {
       setLoading(true);
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.get(`/resources/${resourceId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.get(`/resources/${resourceId}`);
 
       if (res.status === 200) {
         setResource(res.data);
@@ -81,13 +69,7 @@ const useResource = () => {
   const createResource = async (body) => {
     try {
       setSubmitting(true);
-
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.post("/resources/", body, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.post("/resources", body);
 
       if (res.status === 200) {
         navigate(`/resource-management/${res.data._id}`);
@@ -118,12 +100,7 @@ const useResource = () => {
   const updateResource = async (resource) => {
     try {
       setSubmitting(true);
-      const token = await getAccessTokenSilently();
-      const res = await axiosInstance.patch("/resources/", resource, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.patch("/resources", resource);
 
       if (res.status === 200) {
         setSubmitting(false);

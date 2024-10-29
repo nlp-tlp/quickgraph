@@ -18,7 +18,6 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { Link, useParams } from "react-router-dom";
 import SaveIcon from "@mui/icons-material/Save";
-import { useAuth0 } from "@auth0/auth0-react";
 import { ProjectContext } from "../../../shared/context/ProjectContext";
 import AppsIcon from "@mui/icons-material/Apps";
 import HomeIcon from "@mui/icons-material/Home";
@@ -28,11 +27,12 @@ import InteractiveAnnotationContainer from "./InteractiveAnnotationContainer";
 import ShortcutIcon from "@mui/icons-material/Shortcut";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useAuth } from "../../../shared/context/AuthContext";
 
 const PrimarySidebar = ({ open, setOpen }) => {
   const theme = useTheme();
   const { state, dispatch, handleSave } = useContext(ProjectContext);
-  const { logout, user } = useAuth0();
+  const { logout, user } = useAuth();
   const { projectId } = useParams();
 
   const unsavedItemsCount =
@@ -42,11 +42,9 @@ const PrimarySidebar = ({ open, setOpen }) => {
 
   const savePending = unsavedItemsCount !== 0;
 
-  const username = user ? user["https://example.com/username"] : "";
-  const email = user ? user["name"] : "";
-  const color = user
-    ? user["https://example.com/color"]
-    : theme.palette.primary.main;
+  const username = user?.username ?? "";
+  const email = user?.email ?? "";
+  const color = user?.color ?? theme.palette.primary.main;
 
   return (
     <Stack

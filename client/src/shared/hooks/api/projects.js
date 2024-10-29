@@ -1,10 +1,8 @@
 import { useEffect, useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import axiosInstance from "../../utils/api";
 import { SnackbarContext } from "../../context/snackbar-context";
 
 const useProjects = () => {
-  const { getAccessTokenSilently } = useAuth0();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [data, setData] = useState([]);
@@ -13,13 +11,8 @@ const useProjects = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const token = await getAccessTokenSilently();
 
-      const res = await axiosInstance.get("/project/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.get("/project");
 
       if (res.status === 200) {
         setData(res.data);
@@ -50,13 +43,7 @@ const useProjects = () => {
   const getSummary = async () => {
     try {
       setLoading(true);
-      const token = await getAccessTokenSilently();
-
-      const res = await axiosInstance.get("/project/summary", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axiosInstance.get("/project/summary");
 
       if (res.status === 200) {
         setData(res.data);

@@ -11,7 +11,6 @@ import { styled } from "@mui/system";
 import { useTheme } from "@emotion/react";
 import { Header, Footer, ResponsiveTypography } from "./Landing";
 import { DocsLinks } from "../../shared/constants/general";
-import { useAuth0 } from "@auth0/auth0-react";
 import InputIcon from "@mui/icons-material/Input";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
@@ -22,7 +21,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 }));
 
 const MainContent = () => {
-  const { loginWithRedirect } = useAuth0();
   return (
     <Container
       style={{
@@ -72,7 +70,8 @@ const MainContent = () => {
                   variant="contained"
                   color="primary"
                   disableElevation
-                  onClick={() => loginWithRedirect({ screen_hint: "signup" })}
+                  to="auth?option=signup"
+                  component={Link}
                   endIcon={<InputIcon />}
                   title="Click to get started with QuickGraph"
                 >

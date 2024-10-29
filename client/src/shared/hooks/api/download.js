@@ -1,5 +1,4 @@
 import { useState, useContext } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { DashboardContext } from "../../context/dashboard-context";
 import axiosInstance from "../../utils/api";
 import { SnackbarContext } from "../../context/snackbar-context";
@@ -7,21 +6,16 @@ import { SnackbarContext } from "../../context/snackbar-context";
 const useDownload = () => {
   const { state } = useContext(DashboardContext);
   const [snackbarState, snackbarDispatch] = useContext(SnackbarContext);
-  const { getAccessTokenSilently } = useAuth0();
   const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadAnnotations = async ({ projectId, filters, annotators }) => {
     try {
-      const token = await getAccessTokenSilently();
       setIsDownloading(true);
 
       const res = await axiosInstance.get(`/dashboard/download/${projectId}`, {
         params: {
           ...filters,
           usernames: annotators.join(","), // Need to stringify before sending to backend
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       });
 
