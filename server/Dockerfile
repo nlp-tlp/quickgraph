@@ -2,14 +2,15 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Upgrade pip
-RUN pip install --upgrade pip
 
 # Copy requirements first
 COPY requirements.txt .
 # Remove any -e entries from requirements before installing
 RUN grep -v '^-e' requirements.txt > requirements.cleaned.txt
 RUN pip install --no-cache-dir -r requirements.cleaned.txt
+
+# Upgrade pip
+RUN pip install --upgrade pip
 
 # Copy the rest of the code
 COPY . .
