@@ -23,15 +23,50 @@ import { ThemeProvider } from "@mui/material/styles";
 // Constants
 const MOBILE_BREAKPOINT = "(max-width:1000px)";
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Error loading component:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div>Something went wrong loading this component.</div>;
+    }
+
+    return this.props.children;
+  }
+}
+
 function App() {
   const isTooSmall = useMediaQuery(MOBILE_BREAKPOINT);
 
   const renderRouteContent = (route) => {
-    // Handle both lazy and non-lazy components
-    const RouteComponent =
-      typeof route.component === "function"
-        ? route.component
-        : React.lazy(() => Promise.resolve({ default: () => route.component }));
+    // Handle different types of components
+    const RouteComponent = (() => {
+      // If it's already a React element (JSX)
+      if (React.isValidElement(route.component)) {
+        return () => route.component;
+      }
+      // If it's a lazy component
+      if (route.component.$$typeof === Symbol.for("react.lazy")) {
+        return route.component;
+      }
+      // If it's a regular component
+      if (typeof route.component === "function") {
+        return route.component;
+      }
+      // For any other case, wrap in a function
+      return () => route.component;
+    })();
 
     const WrappedComponent = route.contextprovider
       ? ({ children }) => (
@@ -40,20 +75,22 @@ function App() {
       : ({ children }) => <>{children}</>;
 
     return (
-      <Suspense fallback={<CircularProgress />}>
-        <Helmet>
-          <title>{route.title} | QuickGraph</title>
-        </Helmet>
-        <WrappedComponent>
-          {route.layout ? (
-            <Layout context={{ name: route.name }} sidebar={route.sidebar}>
+      <ErrorBoundary>
+        <Suspense fallback={<CircularProgress />}>
+          <Helmet>
+            <title>{route.title} | QuickGraph</title>
+          </Helmet>
+          <WrappedComponent>
+            {route.layout ? (
+              <Layout context={{ name: route.name }} sidebar={route.sidebar}>
+                <RouteComponent />
+              </Layout>
+            ) : (
               <RouteComponent />
-            </Layout>
-          ) : (
-            <RouteComponent />
-          )}
-        </WrappedComponent>
-      </Suspense>
+            )}
+          </WrappedComponent>
+        </Suspense>
+      </ErrorBoundary>
     );
   };
 
