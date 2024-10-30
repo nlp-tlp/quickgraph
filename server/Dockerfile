@@ -11,9 +11,6 @@ COPY requirements.txt .
 RUN grep -v '^-e' requirements.txt > requirements.cleaned.txt
 RUN pip install --no-cache-dir -r requirements.cleaned.txt
 
-# Copy env files
-COPY .env.docker .env.docker
-
 # Copy the rest of the code
 COPY . .
 RUN pip install -e .
