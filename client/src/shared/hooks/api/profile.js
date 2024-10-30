@@ -42,7 +42,7 @@ const useProfile = () => {
 
   const updateProfile = async ({ body }) => {
     try {
-      const res = await axiosInstance.patch("/users/profile", body);
+      const res = await axiosInstance.put("/users", body);
 
       if (res.status === 200) {
         setData(res.data);

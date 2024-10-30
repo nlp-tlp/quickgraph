@@ -19,7 +19,7 @@ const useCreateProject = () => {
       setSubmitting(true);
       setError(false);
 
-      const res = await axiosInstance.post("/project/", body);
+      const res = await axiosInstance.post("/project", body);
 
       if (res.status === 200) {
         // console.log("res.data", res.data);

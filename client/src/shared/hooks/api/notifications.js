@@ -50,7 +50,7 @@ const useNotifications = () => {
       setError(false);
 
       const res = await axiosInstance.patch(
-        `/notifications/${notification.id}/invite`,
+        `/notifications/${notification._id}/invite`,
         null,
         { params: { accepted: true } }
       );

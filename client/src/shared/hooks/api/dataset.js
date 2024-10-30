@@ -52,8 +52,6 @@ const useDataset = () => {
         },
       });
 
-      // console.log("res", res);
-
       if (res.status === 200) {
         setDataset(res.data);
       } else {
@@ -76,7 +74,7 @@ const useDataset = () => {
   const createDataset = async (body) => {
     try {
       setSubmitting(true);
-      const res = await axiosInstance.post("/dataset/", body);
+      const res = await axiosInstance.post("/dataset", body);
 
       if (res.status === 200) {
         navigate(`/dataset-management/${res.data._id}`);
