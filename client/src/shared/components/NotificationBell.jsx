@@ -153,7 +153,7 @@ const NotificationBell = () => {
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={`${noti.context}: ${noti.detail.name}`}
+                  primary={`${noti.context}: ${noti.detail?.name ?? ""}`}
                   secondary={
                     <>
                       <Typography
