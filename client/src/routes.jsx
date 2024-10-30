@@ -162,9 +162,9 @@ const DATASET_ROUTES = {
 const USER_ROUTES = {
   login: {
     protected: false,
-    title: "Log In",
+    title: "Authentication",
     path: "/auth",
-    name: "Log In",
+    name: "Authentication",
     component: <LoginSignupPages />,
     layout: false,
   },
