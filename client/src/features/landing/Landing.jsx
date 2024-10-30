@@ -27,7 +27,7 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import { Link, NavLink } from "react-router-dom";
 import InputIcon from "@mui/icons-material/Input";
 import LoginIcon from "@mui/icons-material/Login";
-import { DocsLinks } from "../../shared/constants/general";
+import { DocsLinks, showPricing } from "../../shared/constants/general";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
 import AppsIcon from "@mui/icons-material/Apps";
@@ -94,6 +94,8 @@ export const Header = () => {
     fontWeight: "bold",
   };
 
+  console.log(showPricing);
+
   return (
     <AppBar
       position="static"
@@ -132,18 +134,20 @@ export const Header = () => {
                   onKeyDown={handleDrawerClose}
                 >
                   <List>
-                    <ListItem key={"pricing"}>
-                      <ListItemButton
-                        component={NavLink}
-                        to={"/pricing"}
-                        activeStyle={activeStyle}
-                      >
-                        <ListItemIcon>
-                          <PaymentsIcon />
-                        </ListItemIcon>
-                        <ListItemText primary={"Pricing"} />
-                      </ListItemButton>
-                    </ListItem>
+                    {showPricing && (
+                      <ListItem key={"pricing"}>
+                        <ListItemButton
+                          component={NavLink}
+                          to={"/pricing"}
+                          activeStyle={activeStyle}
+                        >
+                          <ListItemIcon>
+                            <PaymentsIcon />
+                          </ListItemIcon>
+                          <ListItemText primary={"Pricing"} />
+                        </ListItemButton>
+                      </ListItem>
+                    )}
                     <ListItem key={"documentation"}>
                       <ListItemButton
                         component={NavLink}
@@ -196,14 +200,16 @@ export const Header = () => {
               >
                 Home
               </Button>
-              <Button
-                as={NavLink}
-                sx={{ textDecoration: "none", color: "inherit" }}
-                to="/pricing"
-                activeClassName="active-link"
-              >
-                Pricing
-              </Button>
+              {showPricing && (
+                <Button
+                  as={NavLink}
+                  sx={{ textDecoration: "none", color: "inherit" }}
+                  to="/pricing"
+                  activeClassName="active-link"
+                >
+                  Pricing
+                </Button>
+              )}
               <Button
                 component="a"
                 href={DocsLinks.home}

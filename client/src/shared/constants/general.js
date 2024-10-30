@@ -3,6 +3,8 @@ export const DocsBaseURL =
 
 const createDocsURL = (path) => `${DocsBaseURL}${path}`;
 
+export const showPricing = import.meta.env.VITE_SHOW_PRICING === "true";
+
 export const DocsLinks = {
   home: createDocsURL("/"),
   profile: createDocsURL("/interface/account-settings"),
