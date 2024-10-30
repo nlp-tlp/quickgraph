@@ -1,5 +1,5 @@
-const Ajv = require("ajv");
-const ajvErrors = require("ajv-errors");
+import Ajv from "ajv";
+import ajvErrors from "ajv-errors";
 
 const dynamicPreannotationEntitySchema = (entityClasses) => {
   return {
