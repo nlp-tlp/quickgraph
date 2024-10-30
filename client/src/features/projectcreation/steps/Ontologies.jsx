@@ -69,19 +69,19 @@ export const Ontologies = ({
       maxWidth: 140,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) =>
-        params.row.created_by !== "system" ? (
-          <Link
-            to={`/resource-management/${params.row.id}`}
-            key={`resource-${params.row.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {params.row.name}
-          </Link>
-        ) : (
-          params.row.name
-        ),
+      // renderCell: (params) =>
+      //   params.row.created_by !== "system" ? (
+      //     <Link
+      //       to={`/resource-management/${params.row.id}`}
+      //       key={`resource-${params.row.id}`}
+      //       target="_blank"
+      //       rel="noopener noreferrer"
+      //     >
+      //       {params.row.name}
+      //     </Link>
+      //   ) : (
+      //     params.row.name
+      //   ),
     },
     {
       field: "size",
@@ -116,36 +116,36 @@ export const Ontologies = ({
       flex: 1,
       minWidth: 200,
       headerAlign: "center",
-      renderCell: (params) => (
-        <Tooltip
-          title={
-            <div style={{ maxHeight: 160, overflowY: "auto" }}>
-              {params.row.instances.join(", ")}
-            </div>
-          }
-          arrow
-          interactive={true}
-        >
-          <div
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              cursor: "help",
-            }}
-          >
-            {params.row.instances.length > 10
-              ? params.row.instances.slice(0, 10).join(",")
-              : params.row.instances.join(", ")}
-          </div>
-        </Tooltip>
-      ),
+      // renderCell: (params) => (
+      //   <Tooltip
+      //     title={
+      //       <div style={{ maxHeight: 160, overflowY: "auto" }}>
+      //         {params.row.instances.join(", ")}
+      //       </div>
+      //     }
+      //     arrow
+      //     interactive={true}
+      //   >
+      //     <div
+      //       style={{
+      //         whiteSpace: "nowrap",
+      //         overflow: "hidden",
+      //         textOverflow: "ellipsis",
+      //         cursor: "help",
+      //       }}
+      //     >
+      //       {params.row.instances.length > 10
+      //         ? params.row.instances.slice(0, 10).join(",")
+      //         : params.row.instances.join(", ")}
+      //     </div>
+      //   </Tooltip>
+      // ),
     },
     {
       field: "updated_at",
       headerName: "Last Updated",
       maxWidth: 120,
-      valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
+      // valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
       flex: 1,
       align: "center",
       headerAlign: "center",

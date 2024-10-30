@@ -8,7 +8,13 @@ import LoadingAlert from "../../../shared/components/LoadingAlert";
 import ErrorAlert from "../../../shared/components/ErrorAlert";
 import ContextStack from "./ContextStack";
 
-export const Dataset = ({ values, setValues, loading, error, datasets }) => {
+export const Dataset = ({
+  values,
+  setValues,
+  loading,
+  error,
+  datasets = [],
+}) => {
   const theme = useTheme();
   const updateValue = (key, value) => {
     setValues((prevState) => ({ ...prevState, [key]: value }));
@@ -38,22 +44,22 @@ export const Dataset = ({ values, setValues, loading, error, datasets }) => {
       flex: 1,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) =>
-        params.row.created_by !== "system" ? (
-          <Link
-            to={`/dataset-management/${params.row.id}`}
-            key={`dataset-${params.row.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: [values.dataset.id].includes(params.id) && "white",
-            }}
-          >
-            {params.row.name}
-          </Link>
-        ) : (
-          params.row.name
-        ),
+      // renderCell: (params) =>
+      //   params.row.created_by !== "system" ? (
+      //     <Link
+      //       to={`/dataset-management/${params.row.id}`}
+      //       key={`dataset-${params.row.id}`}
+      //       target="_blank"
+      //       rel="noopener noreferrer"
+      //       style={{
+      //         color: [values.dataset.id].includes(params.id) && "white",
+      //       }}
+      //     >
+      //       {params.row.name}
+      //     </Link>
+      //   ) : (
+      //     params.row.name
+      //   ),
     },
     {
       field: "description",
@@ -62,20 +68,20 @@ export const Dataset = ({ values, setValues, loading, error, datasets }) => {
       maxWidth: 360,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => (
-        <Tooltip title={params.row.description} arrow>
-          <div
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              cursor: "help",
-            }}
-          >
-            {params.row.description}
-          </div>
-        </Tooltip>
-      ),
+      // renderCell: (params) => (
+      //   <Tooltip title={params.row.description} arrow>
+      //     <div
+      //       style={{
+      //         whiteSpace: "nowrap",
+      //         overflow: "hidden",
+      //         textOverflow: "ellipsis",
+      //         cursor: "help",
+      //       }}
+      //     >
+      //       {params.row.description}
+      //     </div>
+      //   </Tooltip>
+      // ),
     },
     {
       field: "size",
@@ -90,23 +96,23 @@ export const Dataset = ({ values, setValues, loading, error, datasets }) => {
       maxWidth: 100,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => (
-        <Tooltip
-          title="Selecting this dataset will automatically load its associated annotations"
-          arrow
-        >
-          <div
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              cursor: "help",
-            }}
-          >
-            {params.row.is_annotated ? "True" : "False"}
-          </div>
-        </Tooltip>
-      ),
+      // renderCell: (params) => (
+      //   <Tooltip
+      //     title="Selecting this dataset will automatically load its associated annotations"
+      //     arrow
+      //   >
+      //     <div
+      //       style={{
+      //         whiteSpace: "nowrap",
+      //         overflow: "hidden",
+      //         textOverflow: "ellipsis",
+      //         cursor: "help",
+      //       }}
+      //     >
+      //       {params.row.is_annotated ? "True" : "False"}
+      //     </div>
+      //   </Tooltip>
+      // ),
     },
     {
       field: "created_by",
@@ -134,14 +140,14 @@ export const Dataset = ({ values, setValues, loading, error, datasets }) => {
       align: "center",
       headerAlign: "center",
       maxWidth: 100,
-      valueGetter: (params) => `${params.row.projects.length}`,
+      // valueGetter: (params) => `${params.row.projects.length}`,
     },
     {
       field: "updated_at",
       headerName: "Last Updated",
       flex: 1,
       maxWidth: 160,
-      valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
+      // valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
       align: "center",
       headerAlign: "center",
     },

@@ -1,7 +1,3 @@
-/**
- * TODO: Allow users to "clean" their datasets - this will redirect them to the LexiClean annotation interface?
- */
-
 import { useState, useEffect } from "react";
 import {
   Grid,
@@ -142,20 +138,20 @@ const Dataset = () => {
       headerName: "Text",
       headerAlign: "center",
       align: "center",
-      renderCell: (params) => (
-        <Tooltip title={params.row.text}>
-          <div
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              cursor: "help",
-            }}
-          >
-            {params.row.text}
-          </div>
-        </Tooltip>
-      ),
+      // renderCell: (params) => (
+      //   <Tooltip title={params.row.text}>
+      //     <div
+      //       style={{
+      //         whiteSpace: "nowrap",
+      //         overflow: "hidden",
+      //         textOverflow: "ellipsis",
+      //         cursor: "help",
+      //       }}
+      //     >
+      //       {params.row.text}
+      //     </div>
+      //   </Tooltip>
+      // ),
     },
     {
       field: "tokens",
@@ -164,67 +160,67 @@ const Dataset = () => {
       headerAlign: "center",
       align: "center",
       maxWidth: 100,
-      valueGetter: (params) => `${params.row.tokens.length}`,
+      // valueGetter: (params) => `${params.row.tokens.length}`,
     },
-    {
-      field: "external_id",
-      headerName: "External ID",
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      maxWidth: 120,
-      valueGetter: (params) => params.row.external_id ?? "Not assigned",
-    },
-    {
-      field: "extra_fields",
-      headerName: "Extra Fields",
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      maxWidth: 180,
-      renderCell: (params) => (
-        <Tooltip
-          title={
-            params.row.extra_fields
-              ? JSON.stringify(params.row.extra_fields)
-              : "Not assigned"
-          }
-        >
-          <div
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              cursor: "help",
-            }}
-          >
-            {params.row.extra_fields
-              ? `Fields: ${
-                  Object.keys(params.row.extra_fields).length
-                } (hover to reveal)`
-              : "Not assigned"}
-          </div>
-        </Tooltip>
-      ),
-    },
-    {
-      field: "is_annotated",
-      headerName: "Annotations",
-      headerAlign: "center",
-      align: "center",
-      flex: 1,
-      valueGetter: (params) =>
-        `E: ${params.row.entities.length} | R: ${params.row.relations.length}`,
-      maxWidth: 160,
-      minWidth: 100,
-      hide: !dataset.is_annotated,
-    },
+    // {
+    //   field: "external_id",
+    //   headerName: "External ID",
+    //   flex: 1,
+    //   headerAlign: "center",
+    //   align: "center",
+    //   maxWidth: 120,
+    //   // valueGetter: (params) => params.row.external_id ?? "Not assigned",
+    // },
+    // {
+    //   field: "extra_fields",
+    //   headerName: "Extra Fields",
+    //   flex: 1,
+    //   headerAlign: "center",
+    //   align: "center",
+    //   maxWidth: 180,
+    //   // renderCell: (params) => (
+    //   //   <Tooltip
+    //   //     title={
+    //   //       params.row.extra_fields
+    //   //         ? JSON.stringify(params.row.extra_fields)
+    //   //         : "Not assigned"
+    //   //     }
+    //   //   >
+    //   //     <div
+    //   //       style={{
+    //   //         whiteSpace: "nowrap",
+    //   //         overflow: "hidden",
+    //   //         textOverflow: "ellipsis",
+    //   //         cursor: "help",
+    //   //       }}
+    //   //     >
+    //   //       {params.row.extra_fields
+    //   //         ? `Fields: ${
+    //   //             Object.keys(params.row.extra_fields).length
+    //   //           } (hover to reveal)`
+    //   //         : "Not assigned"}
+    //   //     </div>
+    //   //   </Tooltip>
+    //   // ),
+    // },
+    // {
+    //   field: "is_annotated",
+    //   headerName: "Annotations",
+    //   headerAlign: "center",
+    //   align: "center",
+    //   flex: 1,
+    //   // valueGetter: (params) =>
+    //   //   `E: ${params.row.entities.length} | R: ${params.row.relations.length}`,
+    //   maxWidth: 160,
+    //   minWidth: 100,
+    //   hide: !dataset.is_annotated,
+    // },
     {
       field: "created_at",
       headerName: "Created",
       headerAlign: "center",
       align: "center",
-      valueGetter: (params) => shortestFromNow(params.row.updated_at),
+      // valueGetter: (params) => shortestFromNow(params.row.updated_at),
       minWidth: 120,
     },
   ];
@@ -241,7 +237,6 @@ const Dataset = () => {
         submitting={submitting}
       />
       <MainContainer>
-        {/* location={"/datasets"} */}
         <Grid
           container
           mt={2}
