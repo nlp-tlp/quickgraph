@@ -20,7 +20,7 @@ class BaseItem(BaseModel):
     is_blueprint: bool = Field(
         description="Flag indicating whether the dataset is a blueprint (copyable)",
     )
-    project_id: Union[None, PydanticObjectIdAnnotated] = Field(
+    project_id: Optional[PydanticObjectIdAnnotated] = Field(
         default=None,
         description="The UUID of the project associated with this dataset_item (if not a blueprint)",
     )
@@ -29,10 +29,10 @@ class BaseItem(BaseModel):
 
 
 class Entity(BaseModel):
+    id: Optional[str] = Field(description="The id of the entity")
     start: int
     end: int
     label: str
-    id: Union[None, str] = Field(description="The id of the entity")
 
 
 class Relation(BaseModel):
@@ -46,12 +46,12 @@ class JSONBaseItem(BaseModel):
     tokens: List[str] = Field(
         description='The tokens of this item. This may not necessarily be aligned with the "original" field.'
     )
-    entities: Union[None, List[Entity]]
-    relations: Union[None, List[Relation]]
-    external_id: Union[str, None] = Field(
+    entities: Optional[List[Entity]]
+    relations: Optional[List[Relation]]
+    external_id: Optional[str] = Field(
         default=None, description="The External ID associated with the item"
     )
-    extra_fields: Union[Dict[str, Any], None] = Field(
+    extra_fields: Optional[Dict[str, Any]] = Field(
         default=None,
         description="An object of extra fields supplied with the dataset item.",
     )
@@ -66,10 +66,10 @@ class EnrichedItem(BaseItem):
     text: str = Field(
         description="Concatenation of tokenized content after preprocessing operations"
     )
-    external_id: Union[str, None] = Field(
+    external_id: Optional[str] = Field(
         default=None, description="The External ID associated with the item"
     )
-    extra_fields: Union[Dict[str, Any], None] = Field(
+    extra_fields: Optional[Dict[str, Any]] = Field(
         default=None,
         description="An object of extra fields supplied with the dataset item.",
     )
@@ -101,19 +101,19 @@ class TokenizerEnum(str, Enum):
 
 
 class Preprocessing(BaseModel):
-    lowercase: Union[None, bool] = Field(
+    lowercase: Optional[bool] = Field(
         default=None, description="Option to remove casing from dataset items"
     )
-    remove_duplicates: Union[None, bool] = Field(
+    remove_duplicates: Optional[bool] = Field(
         default=None, description="Option to remove duplicate items from dataset"
     )
-    remove_chars: Union[None, bool] = Field(
+    remove_chars: Optional[bool] = Field(
         default=None, description="Option to remove charset from dataset items"
     )
-    remove_charset: Union[None, str] = Field(
+    remove_charset: Optional[str] = Field(
         default=None, description="Set of characters to remove from dataset items"
     )
-    tokenizer: Union[None, TokenizerEnum] = Field(
+    tokenizer: Optional[TokenizerEnum] = Field(
         default=None,
         description="Tokenizer to apply to dataset items",
     )
@@ -134,10 +134,11 @@ class BaseDataset(BaseModel):
         description="Flag indicating whether the dataset is a blueprint (copyable)"
     )
     is_annotated: bool = Field(
-        description="Flag indiciating whether the dataset is annotated"
+        deafult=False, description="Flag indiciating whether the dataset is annotated"
     )
     is_suggested: Optional[bool] = Field(
-        description="Flag indicating whether markup associated with this dataset are by default suggested (weak)"
+        default=None,
+        description="Flag indicating whether markup associated with this dataset are by default suggested (weak)",
     )
     dataset_type: DatasetType = Field(
         default=DatasetType.no_annotation,
@@ -182,8 +183,7 @@ class CreateDatasetBody(BaseDataset):
         description="Preprocessing operations to apply to dataset"
     )
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class CreateDataset(CreateDatasetBody):
@@ -191,8 +191,15 @@ class CreateDataset(CreateDatasetBody):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class DatasetProject(BaseModel):
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
+    name: str
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
 class Dataset(BaseDataset):
-    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
     created_by: str = Field(description="Username of user who created dataset")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -200,25 +207,29 @@ class Dataset(BaseDataset):
         description="Preprocessing operations to apply to dataset"
     )
     size: Union[None, int] = Field(default=None, description="Size of items in dataset")
-    projects: Optional[List[dict]] = Field(description="Set of projects using dataset")
-    project: Optional[dict] = Field(
-        description='Details of linked project if "project dataset"'
+    projects: List[DatasetProject] = Field(
+        default=[], description="Set of projects using dataset"
     )
-    items: Union[None, List[DatasetItem]] = Field(
+    project: Optional[DatasetProject] = Field(
+        default=None, description='Details of linked project if "project dataset"'
+    )
+    items: Optional[List[DatasetItem]] = Field(
         default=None, description="Items dataset contains"
     )
-    external_id: Union[str, None] = Field(
+    external_id: Optional[str] = Field(
         default=None, description="The External ID associated with the item"
     )
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, use_enum_values=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, use_enum_values=True, populate_by_name=True
+    )
 
 
 class LinkedResource(BaseModel):
-    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
     name: str
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
 
 class RichProjectDataset(Dataset):
@@ -227,8 +238,8 @@ class RichProjectDataset(Dataset):
 
 
 class RichBlueprintDataset(Dataset):
-    linked_entity_resource: Union[None, LinkedResource] = None
-    linked_relation_resource: Union[None, LinkedResource] = None
+    linked_entity_resource: Optional[LinkedResource] = None
+    linked_relation_resource: Optional[LinkedResource] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -283,3 +294,8 @@ class FilteredDataset(BaseModel):
     # flags: Dict[str, Union[list, List[Flag]]] = Field(default={})
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
+
+
+class DeleteDatasetItemsBody(BaseModel):
+    dataset_id: str
+    dataset_item_ids: List[str]

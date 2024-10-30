@@ -10,9 +10,9 @@ from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..dataset.schemas import QualityFilter
-from ..dependencies import get_current_active_user, get_db
+from ..dependencies import get_db, get_user
 from ..projects.schemas import OntologyItem
-from ..user.schemas import User
+from ..users.schemas import UserDocumentModel
 from ..utils.misc import flatten_hierarchical_ontology
 from .schemas import (
     Graph,
@@ -61,7 +61,7 @@ async def get_graph(
         gt=0, default=5000, description="The number of nodes to return."
     ),
     # filters: GraphFilters,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Creates a project graph dataset.

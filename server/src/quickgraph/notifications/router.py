@@ -1,31 +1,30 @@
 """Notifications router."""
 
-from typing import List, Union
+import logging
+from typing import List
 
 from bson import ObjectId
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from ..dependencies import get_current_active_user, get_db
+from ..dependencies import get_db, get_user
 from ..notifications.schemas import Notification, NotificationStates
-from ..user.schemas import User
+from ..users.schemas import UserDocumentModel
 from .services import find_many_notifications
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
+logger = logging.getLogger(__name__)
 
-# @router.get("", response_model=Union[List, List[Notification]])
-@router.get(
-    "/",
-    # response_model=Union[List, List[Notification]]
-)
+
+@router.get("", response_model=List[Notification])
 async def list_notifications(
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    print(f"Fetching notifications for {current_user.username}")
 
-    notifications = await find_many_notifications(db=db, username=current_user.username)
+    logger.info(f"Fetching notifications for {user.username}")
+    notifications = await find_many_notifications(db=db, username=user.username)
 
     # print("notifications", notifications)
 
@@ -61,7 +60,7 @@ async def list_notifications(
 
 @router.post("/")
 async def create_notification(
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     pass
@@ -71,7 +70,7 @@ async def create_notification(
 async def invite_notification(
     notification_id: str,
     accepted: bool,
-    # current_user: User = Depends(get_current_active_user),
+    # user: User = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     # TODO: update based on conditional invite information; but for now all are project invitations
@@ -129,4 +128,4 @@ async def invite_notification(
         except Exception as e:
             print(f"Error occurred: {e}")
 
-    return {"message": f"Notification updated successfully."}
+    return {"message": "Notification updated successfully."}

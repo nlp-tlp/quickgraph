@@ -2,24 +2,25 @@
 
 import logging
 from contextlib import asynccontextmanager
+from typing import Dict
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ASCENDING
 
 from .dashboard.router import router as dashboard_router
 from .database import close_mongo_connection, connect_to_mongo
 from .dataset.router import router as dataset_router
+from .dependencies import get_db
 from .graph.router import router as graph_router
 from .markup.router import router as markup_router
 from .notifications.router import router as notifications_router
 from .projects.router import router as projects_router
 from .resources.router import router as resources_router
-from .settings import get_settings, settings
+from .settings import get_settings, settings, Settings
 from .social.router import router as social_router
-from .user.router import router as user_router
-
-# from .demo.router import router as demo_router
+from .users.router import router as users_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,14 +28,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# from middlewares import EventTrackingMiddleware
-
-# Set up logging
-# logger.add("./events.log", rotation="1 week")
-
-description = """
-    QuickGraph API powers the QuickGraph application.
-"""
+description = """QuickGraph API powers the QuickGraph application."""
 
 tags_metadata = [
     {
@@ -79,14 +73,14 @@ app.add_middleware(
 )
 
 
-async def create_indexes(db):
-    """Creates an index if it doesn't exist otherwise will have no effect."""
+async def create_indexes(db: AsyncIOMotorDatabase) -> None:
+    """Creates database indexes if they does not already exist otherwise will have no effect."""
     await db["markup"].create_index(
         [("dataset_item_id", ASCENDING)]
     )  # Used to speed up $lookup operations.
 
 
-app.include_router(user_router)
+app.include_router(users_router)
 app.include_router(social_router)
 app.include_router(resources_router)
 app.include_router(notifications_router)
@@ -98,11 +92,32 @@ app.include_router(projects_router)
 
 
 @app.get("/status")
-async def status():
+async def status_endpoint() -> Dict[str, str]:
     """Checks server status"""
     return {"status": "I am healthy!"}
 
 
 @app.get("/settings")
-def read_settings():
+def read_settings_endpoint() -> Settings:
+    """Reads the server settings."""
     return settings
+
+
+@app.get("/health")
+async def health_check_endpoint(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> Dict[str, str]:
+    """Checks the health of the server."""
+    try:
+        # Check database connection
+        await db.command("ping")
+        return {
+            "status": "healthy",
+            "database": "connected",
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service unhealthy",
+        )

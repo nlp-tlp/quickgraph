@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
 
-from ..dependencies import get_current_active_user, get_db
+from ..dependencies import get_db, get_user
 from ..examples import get_examples
 from ..projects.schemas import (
     CreateFlag,
@@ -16,7 +16,7 @@ from ..projects.schemas import (
     OntologyItem,
     ProjectOntology,
 )
-from ..user.schemas import User
+from ..users.schemas import UserDocumentModel
 from ..utils.misc import flatten_hierarchical_ontology
 from .schemas import (
     CreateMarkupApply,
@@ -41,7 +41,7 @@ async def create_markup(
     #     examples=get_examples(example_type="create_markup")
     # ),
     apply_all: bool = False,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     try:
@@ -49,7 +49,7 @@ async def create_markup(
             db=db,
             markup=markup,
             apply_all=apply_all,
-            username=current_user.username,
+            username=user.username,
         )
     except Exception as e:
         print(e)
@@ -63,14 +63,14 @@ async def create_markup(
 async def update_markup(
     markup_id: str,
     apply_all: bool = False,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     try:
         return await accept_annotation(
             db=db,
             markup_id=ObjectId(markup_id),
-            username=current_user.username,
+            username=user.username,
             apply_all=apply_all,
         )
     except Exception as e:
@@ -85,13 +85,13 @@ async def update_markup(
 async def delete_markup(
     markup_id: str,
     apply_all: bool = False,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     return await delete_annotation(
         db=db,
         markup_id=ObjectId(markup_id),
-        username=current_user.username,
+        username=user.username,
         apply_all=apply_all,
     )
 
@@ -106,7 +106,7 @@ class MarkupEditBody(BaseModel):
 async def edit_existing_markup(
     markup_id: str,
     body: MarkupEditBody,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Modifies the label of an existing entity markup"""
@@ -132,7 +132,7 @@ async def edit_existing_markup(
             "start": markup["start"],
             "end": markup["end"],
             "ontology_item_id": body.ontology_item_id,
-            "created_by": current_user.username,
+            "created_by": user.username,
         }
     )
     print("existing_markup", existing_markup)
@@ -212,7 +212,7 @@ async def edit_existing_markup(
 async def create_one_flag(
     dataset_item_id: str,
     state: FlagState,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Creates a single flag against a project dataset item"""
@@ -229,7 +229,7 @@ async def create_one_flag(
                 content={"detail": "Dataset item not found"},
             )
 
-        new_flag = Flag(state=state, created_by=current_user.username)
+        new_flag = Flag(state=state, created_by=user.username)
 
         # Update the document with the new flag item
         result = await db["data"].update_one(
@@ -263,7 +263,7 @@ async def create_one_flag(
 async def delete_one_flag(
     dataset_item_id: str,
     state: FlagState,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Delete a single flag from a dataset item"""
@@ -276,13 +276,13 @@ async def delete_one_flag(
             {
                 "_id": dataset_item_id,
                 "flags.state": state,
-                "flags.created_by": current_user.username,
+                "flags.created_by": user.username,
             },
             {
                 "$pull": {
                     "flags": {
                         "state": state,
-                        "created_by": current_user.username,
+                        "created_by": user.username,
                     }
                 }
             },
@@ -304,7 +304,7 @@ async def delete_one_flag(
 @router.get("/insights/{project_id}")
 async def get_annotation_insights(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Currently fetches counts of entity markup surface forms - will be extended in the future.
@@ -316,7 +316,7 @@ async def get_annotation_insights(
         {
             "$match": {
                 "project_id": ObjectId(project_id),
-                "created_by": current_user.username,
+                "created_by": user.username,
                 "classification": "entity",
             }
         },

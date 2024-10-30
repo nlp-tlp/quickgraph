@@ -1,12 +1,7 @@
 import random
 
-from server.src.quickgraph.dataset.schemas import (
-    BaseItem,
-    CreateDataset,
-    Preprocessing,
-    TokenizerEnum,
-)
-from server.src.quickgraph.resources.schemas import (
+from .dataset.schemas import BaseItem, CreateDataset, Preprocessing, TokenizerEnum
+from .resources.schemas import (
     BaseResourceModel,
     EntityPreannotation,
     OntologyItem,

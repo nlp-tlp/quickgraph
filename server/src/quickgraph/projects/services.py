@@ -1,9 +1,10 @@
 """Project services."""
 
 import itertools
+import logging
 from collections import Counter
 from datetime import datetime
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from bson import ObjectId
 from fastapi import HTTPException, status
@@ -35,10 +36,13 @@ from .schemas import (
     Preprocessing,
     Project,
     ProjectOntology,
+    ProjectProgress,
     ProjectWithMetrics,
     SaveState,
     Tasks,
 )
+
+logger = logging.getLogger(__name__)
 
 # import os
 # from pathlib import Path
@@ -50,11 +54,11 @@ from .schemas import (
 # try:
 #     # Try to load the 'punkt' module
 #     punkt_path = str(Path(os.environ["NLTK_DATA"]) / "punkt")
-#     print("punkt_path", punkt_path)
+#     logger.info("punkt_path", punkt_path)
 #     nltk.data.find(punkt_path)
 # except LookupError:
 #     # If the module is not found, download it using the download_shell() function
-#     print("Downloading 'punkt' module...")
+#     logger.info("Downloading 'punkt' module...")
 #     ntlk_downloader.download("punkt", download_dir=os.environ["NLTK_DATA"])
 
 
@@ -113,17 +117,17 @@ def convert_ontology_to_pydantic(ontology: dict) -> List[OntologyItem]:
 
     # TODO: remove this in place of [OntologyItem.parse_onj(item) for item in ontology]
     """
-    print("Running `convert_ontology_dict_to_pydantic()`")
+    logger.info("Running `convert_ontology_dict_to_pydantic()`")
     try:
         for i, item in enumerate(ontology):
             ontology[i] = OntologyItem(**item)
             if item["children"]:
                 ontology[i].children = convert_ontology_to_pydantic(item["children"])
 
-        # print(f"Pydantic object: {ontology}")
+        # logger.info(f"Pydantic object: {ontology}")
         return ontology
     except Exception as e:
-        print(f"error: {e}")
+        logger.info(f"error: {e}")
 
 
 async def copy_dataset_blueprint(
@@ -141,7 +145,7 @@ async def copy_dataset_blueprint(
     dataset = await db["datasets"].find_one(
         {"_id": blueprint_dataset_id, "is_blueprint": True}
     )
-    print("blueprint dataset", dataset)
+    logger.info("blueprint dataset", dataset)
 
     if not dataset:
         raise Exception("Blueprint dataset not found")
@@ -151,7 +155,7 @@ async def copy_dataset_blueprint(
         .find({"dataset_id": dataset["_id"], "is_blueprint": True})
         .to_list(None)
     )
-    print("blueprint dataset_items", dataset_items)
+    logger.info("blueprint dataset_items", dataset_items)
 
     if not dataset_items:
         raise Exception("Blueprint dataset items not found")
@@ -162,7 +166,7 @@ async def copy_dataset_blueprint(
     dataset.pop("_id", None)
 
     project_dataset = await db["datasets"].insert_one(dataset)
-    print("Copied dataset")
+    logger.info("Copied dataset")
 
     dataset_item_copies = []
     dataset_item_id_map_bp2project = {}
@@ -181,7 +185,7 @@ async def copy_dataset_blueprint(
         # dataset_item_copies.append(di)    # TODO: refactor back into bulk "insert_many"; using single to capture ids; this needs to be preserved.
 
     # await db["data"].insert_many(dataset_item_copies)
-    print("Copied dataset items")
+    logger.info("Copied dataset items")
 
     # Update project with new dataset_id
     await db["projects"].update_one(
@@ -292,10 +296,10 @@ def annotate_single_label(
 
             for mention_text in mention_phrases:
                 if mention_text in dataset_item.text:
-                    # print("mention text identified")
+                    # logger.info("mention text identified")
                     mention_tokenized = tokenizer(mention_text)
 
-                    # print("mention_tokenized", mention_tokenized)
+                    # logger.info("mention_tokenized", mention_tokenized)
 
                     for t_idx in range(len(di_tokens)):
                         if (
@@ -324,7 +328,7 @@ def annotate_single_label(
 
         dataset_item_id_with_mentions[dataset_item.id] = _mentions
 
-    print(f"Entities identified: {mention_count}")
+    logger.info(f"Entities identified: {mention_count}")
 
     return dataset_item_id_with_mentions
 
@@ -345,20 +349,20 @@ async def preannotate_entity_project(
         preference_span_length : flag indicating whether to preference span length for entity markup. If `False`, markup will be applied as nested/overlapping regardless of span length.
         preprocessing : project
     """
-    print("entity_preannotation_resource", entity_preannotation_resource)
-    print("annotators", annotators)
-    print("entity_ontology", entity_ontology)
+    logger.info("entity_preannotation_resource", entity_preannotation_resource)
+    logger.info("annotators", annotators)
+    logger.info("entity_ontology", entity_ontology)
 
     # Filter preannotation items for those that do not match the specified entity ontology
     entity_ontology_fullnames = set(e.fullname for e in entity_ontology)
-    print("entity_ontology_fullnames", entity_ontology_fullnames)
+    logger.info("entity_ontology_fullnames", entity_ontology_fullnames)
 
     valid_entities = [
         e
         for e in entity_preannotation_resource
         if e["classification"] in entity_ontology_fullnames
     ]
-    print(f"valid_entities: {len(valid_entities)}")
+    logger.info(f"valid_entities: {len(valid_entities)}")
 
     valid_entity_classifications = set([ve["classification"] for ve in valid_entities])
 
@@ -368,7 +372,7 @@ async def preannotate_entity_project(
         if i.fullname in valid_entity_classifications
     }
 
-    print(
+    logger.info(
         "valid_entity_fullnames_to_ontology_item_ids",
         valid_entity_fullnames_to_ontology_item_ids,
     )
@@ -390,13 +394,13 @@ async def preannotate_entity_project(
             )
         }
 
-        print(f"gazetteer: {gazetteer}")
+        logger.info(f"gazetteer: {gazetteer}")
 
         # Apply annotations using resource for scope of annotators
         # Note: Annotations are applied with preference to longer spans.
         for annotator in annotators:
             dataset_item_ids = annotator.scope
-            print(f"{annotator.username} - dataset_item_ids", dataset_item_ids)
+            logger.info(f"{annotator.username} - dataset_item_ids", dataset_item_ids)
 
             dataset_items = (
                 await db["data"].find({"_id": {"$in": dataset_item_ids}}).to_list(None)
@@ -408,7 +412,7 @@ async def preannotate_entity_project(
                 dataset_items=[DatasetItem(**di) for di in dataset_items],
                 preprocessing=dataset.preprocessing,
             )
-            print("dataset_item_entity_mentions", dataset_item_entity_mentions)
+            logger.info("dataset_item_entity_mentions", dataset_item_entity_mentions)
 
             # Create entity markups
             entity_templates = list(
@@ -459,7 +463,7 @@ async def assign_bp_markup(
 
     """
     # Copy datasets blueprint annotations across all project annotators
-    print("BLUEPRINT DATASET HAS ANNOTATIONS")
+    logger.info("BLUEPRINT DATASET HAS ANNOTATIONS")
 
     # Get dataset item ids associated with bp dataset
     bp_dataset_items = (
@@ -467,7 +471,7 @@ async def assign_bp_markup(
     )
     bp_dataset_items_ids = [i["_id"] for i in bp_dataset_items]
 
-    print("bp_dataset_items_ids", bp_dataset_items_ids)
+    logger.info("bp_dataset_items_ids", bp_dataset_items_ids)
 
     # Retrieve associated markup
     bp_markup = (
@@ -482,7 +486,9 @@ async def assign_bp_markup(
     )
 
     # Output the number of blueprint markup found that are associated with the dataset
-    print(f"{len(bp_markup)} blueprint markup associated with the dataset were found.")
+    logger.info(
+        f"{len(bp_markup)} blueprint markup associated with the dataset were found."
+    )
 
     # For each markup, make a copy and assign it to the PM, inviting annotators to apply their annotations
     # TODO: need to update source_id and target_id of all "relation" markup if the project requests it. Otherwise, the original BP markup ids are applied which mean they have erroneous connections.
@@ -517,7 +523,7 @@ async def assign_bp_markup(
         old_markup_id = markup["_id"]
         new_markup_id = await _copy_bp_markup(classification="entity", markup=markup)
         bp_entity_markup_id_map[old_markup_id] = new_markup_id
-    print("bp_entity_markup_id_map", bp_entity_markup_id_map)
+    logger.info("bp_entity_markup_id_map", bp_entity_markup_id_map)
 
     # Process relation markup if project requests it
     if is_relation_task:
@@ -525,14 +531,14 @@ async def assign_bp_markup(
             await _copy_bp_markup(classification="relation", markup=markup)
 
     # Output the completion of the addition of annotated data markup copies
-    print("Annotated data markup copies have been added.")
+    logger.info("Annotated data markup copies have been added.")
 
 
 async def create_project(
     db: AsyncIOMotorDatabase, project: CreateProject, username: str
 ) -> Project:
     """Creates a project. Optional preannotation will preannotate markup set as suggested."""
-    print(f'PROJECT SERVICES: "create_project"')
+    logger.info("Creating new project.")
 
     project = project.dict()
 
@@ -547,7 +553,7 @@ async def create_project(
         for r in resources
         if r["classification"] == "ontology"
     }
-    print(f"ontology_resources {ontology_resources}")
+    logger.info(f"ontology_resources {ontology_resources}")
 
     # Transform preannotation resources into sub_classification:preannotation format
     preannotation_resources = {
@@ -555,7 +561,7 @@ async def create_project(
         for r in resources
         if r["classification"] == "preannotation"
     }
-    print(f"preannotation_resources {preannotation_resources}")
+    logger.info(f"preannotation_resources {preannotation_resources}")
 
     # Create base project
     new_project = await db["projects"].insert_one(
@@ -572,7 +578,7 @@ async def create_project(
     )
 
     try:
-        print("CREATED BASE PROJECT")
+        logger.info("CREATED BASE PROJECT")
 
         # Create new project; use resource ids to find and assign ontologies to the project under the `ontology` key.
         created_project = await db["projects"].find_one(
@@ -590,8 +596,8 @@ async def create_project(
             username=username,
         )
 
-        print("CREATED PROJECT DATASET")
-        print("dataset_item_id_map_bp2project", dataset_item_id_map_bp2project)
+        logger.info("CREATED PROJECT DATASET")
+        logger.info("dataset_item_id_map_bp2project", dataset_item_id_map_bp2project)
 
         # Create annotators and send invitations to the project
         annotators = await add_project_annotators(
@@ -601,7 +607,7 @@ async def create_project(
             annotators=project["annotators"],
             project_manager=username,
         )
-        print("ADDED PROJECT ANNOTATORS")
+        logger.info("ADDED PROJECT ANNOTATORS")
 
         bp_dataset_id = ObjectId(project["blueprint_dataset_id"])
         bp_dataset = await db["datasets"].find_one({"_id": bp_dataset_id})
@@ -648,7 +654,7 @@ async def create_project(
         created_project = await db["projects"].find_one({"_id": created_project["_id"]})
         return Project(**created_project)
     except Exception as e:
-        print(f"Error occurred creating project ({e}): Destroying...")
+        logger.info(f"Error occurred creating project ({e}): Destroying...")
         await delete_one_project(
             db=db, project_id=new_project.inserted_id, username=username
         )
@@ -674,7 +680,7 @@ async def find_one_project(
             ],
         },
     )
-    print(f"find_one_project ::")
+    logger.info("find_one_project")
 
     # Get relation counts (TODO: make this more elegant)
     relation_counts = (
@@ -689,7 +695,7 @@ async def find_one_project(
         .to_list(None)
     )
     relation_counts = Counter([r["ontology_item_id"] for r in relation_counts])
-    # print(f"relation_counts :: {dict(relation_counts)}")
+    # logger.info(f"relation_counts :: {dict(relation_counts)}")
 
     if project:
         return Project(**project, relation_counts=dict(relation_counts))
@@ -781,7 +787,7 @@ async def find_many_projects(db: AsyncIOMotorDatabase, username: str):
 
         return [ProjectWithMetrics.parse_obj(p) for p in projects]
     except Exception as e:
-        print(f"Error: {e}")
+        logger.info(f"Error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to fetch projects",
@@ -818,48 +824,53 @@ async def delete_one_project(
 
 async def get_project_progress(
     db: AsyncIOMotorDatabase, project_id: ObjectId, username: str
-):
-    pipeline = [
-        {"$match": {"project_id": project_id}},
-        {
-            "$group": {
-                "_id": None,
-                "dataset_size": {"$sum": 1},
-                "dataset_items_saved": {
-                    "$sum": {
-                        "$size": {
-                            "$filter": {
-                                "input": {"$ifNull": ["$save_states", []]},
-                                "cond": {"$eq": ["$$this.created_by", username]},
+) -> Optional[ProjectProgress]:
+    """Calculates project progress based on dataset items saved by user"""
+    try:
+        pipeline: List[Dict[str, Any]] = [
+            {"$match": {"project_id": project_id}},
+            {
+                "$group": {
+                    "_id": None,
+                    "dataset_size": {"$sum": 1},
+                    "dataset_items_saved": {
+                        "$sum": {
+                            "$size": {
+                                "$filter": {
+                                    "input": {"$ifNull": ["$save_states", []]},
+                                    "cond": {"$eq": ["$$this.created_by", username]},
+                                }
                             }
                         }
-                    }
-                },
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "dataset_size": 1,
-                "dataset_items_saved": 1,
-                "value": {
-                    "$multiply": [
-                        {
-                            "$divide": [
-                                "$dataset_items_saved",
-                                {"$ifNull": ["$dataset_size", 1]},
-                            ]
-                        },
-                        100,
-                    ]
-                },
-            }
-        },
-    ]
+                    },
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "dataset_size": 1,
+                    "dataset_items_saved": 1,
+                    "value": {
+                        "$multiply": [
+                            {
+                                "$divide": [
+                                    "$dataset_items_saved",
+                                    {"$ifNull": ["$dataset_size", 1]},
+                                ]
+                            },
+                            100,
+                        ]
+                    },
+                }
+            },
+        ]
 
-    project_progress = await db["data"].aggregate(pipeline).to_list(1)
+        project_progress = await db["data"].aggregate(pipeline).to_list(1)
 
-    return project_progress[0]
+        return ProjectProgress(**project_progress[0])
+    except Exception as e:
+        logger.info(f"Error: {e}")
+        return None
 
 
 async def save_many_dataset_items(
@@ -1058,14 +1069,14 @@ async def save_many_dataset_items(
             )
 
             entity_overall_agreement_score = agreement_calculator.overall_agreement()
-            # print("entity_overall_agreement_score", entity_overall_agreement_score)
+            # logger.info("entity_overall_agreement_score", entity_overall_agreement_score)
 
             relation_overall_agreement_score = agreement_calculator.overall_agreement(
                 "relation"
             )
 
             overall_agreement_score = agreement_calculator.overall_average_agreement()
-            # print('overall_agreement_score', overall_agreement_score)
+            # logger.info('overall_agreement_score', overall_agreement_score)
 
             # Update IAA of dataset item
             await db["data"].update_one(
@@ -1086,7 +1097,7 @@ async def save_many_dataset_items(
             )
 
         except Exception as e:
-            print(f"Error occurred calculating IAA: {e}")
+            logger.info(f"Error occurred calculating IAA: {e}")
 
         return {"count": result.modified_count}
 

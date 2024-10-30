@@ -203,7 +203,7 @@ class Project(BaseProject):
     )
     guidelines: Guidelines = Field(description="Annotation guidelines for project")
     relation_counts: Optional[Dict[str, int]] = Field(
-        description="Relation frequencies applied by the current user."
+        default=None, description="Relation frequencies applied by the current user."
     )
 
     model_config = ConfigDict(
@@ -322,3 +322,9 @@ class ProjectDownload(BaseModel):
     dataset_items: List[ProjectDatasetItem] = []
     markup: List[Union[Entity, Relation]] = []
     social: List[ProjectSocial] = []
+
+
+class ProjectProgress(BaseModel):
+    dataset_size: int
+    dataset_items_saved: int
+    value: float

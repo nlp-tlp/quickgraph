@@ -1,15 +1,15 @@
 """Dataset router."""
 
+import logging
 from typing import Any, Dict, List, Union
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, Field
 
-from ..dependencies import get_current_active_user, get_db
-from ..user.schemas import User
+from ..dependencies import get_db, get_user
+from ..users.schemas import UserDocumentModel
 from .schemas import (
     BaseItem,
     CreateDataset,
@@ -18,6 +18,7 @@ from .schemas import (
     Dataset,
     DatasetFilters,
     DatasetItem,
+    DeleteDatasetItemsBody,
     EnrichedItem,
     FilteredDataset,
     FlagFilter,
@@ -39,81 +40,77 @@ from .services import (
     list_datasets,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/dataset", tags=["Dataset"])
 
 
 @router.get(
-    "/",
+    "",
     response_description="List datasets",
-    # response_model=Union[List[Dataset], list],
-    # response_model_exclude_none=True,
+    response_model=List[Dataset],
 )
-async def list_datasets(
+async def list_datasets_endpoint(
     include_dataset_size: bool = False,
     include_system: bool = False,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    try:
-        datasets = await list_datasets(
-            db=db,
-            username=current_user.username,
-            include_dataset_size=include_dataset_size,
-            include_system=include_system,
-        )
-    except Exception as e:
-        print(e)
+    datasets = await list_datasets(
+        db=db,
+        username=user.username,
+        include_dataset_size=include_dataset_size,
+        include_system=include_system,
+    )
+    logger.info(f"Datasets: {datasets}")
 
     # TODO: investigate why `id` isnt being serialised out, `_id` is.
-
     if len(datasets) == 0:
         return []
-
     return datasets
 
 
 @router.get(
     "/{dataset_id}",
-    response_description="Get one dataset",
-    # response_model=Union[RichBlueprintDataset, RichProjectDataset],
-    # response_model_exclude_none=True,
+    response_description="Get a dataset",
+    response_model=Union[RichBlueprintDataset, RichProjectDataset],
 )
-async def get_dataset(
+async def get_dataset_endpoint(
     dataset_id: str,
     include_dataset_size: bool = False,
     include_projects: bool = False,
     include_dataset_items: bool = False,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Finds a single dataset provided its ID. Returns 404 if dataset is deleted or not found."""
-
-    return await find_one_dataset(
+    """Find a single dataset."""
+    logger.info(f"Finding dataset with id: {dataset_id}")
+    dataset = await find_one_dataset(
         db=db,
         dataset_id=ObjectId(dataset_id),
-        username=current_user.username,
+        username=user.username,
         include_dataset_size=include_dataset_size,
         include_projects=include_projects,
         include_dataset_items=include_dataset_items,
     )
+    if dataset is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found",
+        )
+    return dataset
 
 
-@router.post(
-    "/",
-    response_description="Create dataset",
-    #   response_model=Dataset
-)
-async def create_dataset(
+@router.post("", response_description="Create dataset", response_model=Dataset)
+async def create_dataset_endpoint(
     dataset: CreateDatasetBody,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     try:
-        return await create_dataset(
-            db=db, dataset=dataset, username=current_user.username
-        )
+        return await create_dataset(db=db, dataset=dataset, username=user.username)
     except Exception as e:
-        print(e)
+        logger.error(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to create dataset",
@@ -125,15 +122,10 @@ async def create_dataset(
 #     pass
 
 
-class DeleteDatasetItemsBody(BaseModel):
-    dataset_id: str
-    dataset_item_ids: List[str]
-
-
 @router.post("/delete-items")
 async def delete_many_dataset_items(
     body: DeleteDatasetItemsBody,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Deletes many item ids associated with a dataset.
@@ -154,7 +146,7 @@ async def delete_many_dataset_items(
 
         # assert current user is the creator of the dataset
         dataset = await db["datasets"].find_one(
-            {"_id": dataset_id, "created_by": current_user.username}
+            {"_id": dataset_id, "created_by": user.username}
         )
 
         if dataset:
@@ -194,12 +186,12 @@ async def delete_many_dataset_items(
 @router.delete("/{dataset_id}", response_description="Delete one dataset")
 async def delete_dataset(
     dataset_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Deletes one dataset by setting its `is_deleted` attribute"""
     result = await delete_one_dataset(
-        db=db, dataset_id=ObjectId(dataset_id), username=current_user.username
+        db=db, dataset_id=ObjectId(dataset_id), username=user.username
     )
 
     if result:
@@ -212,8 +204,8 @@ async def delete_dataset(
         )
 
 
-@router.get("/filter/")  # , response_model=FilteredDataset)
-async def filter_dataset(
+@router.get("/filter/", response_model=FilteredDataset)
+async def filter_dataset_endpoint(
     project_id: str,
     search_term: Union[None, str] = Query(default=None),
     saved: int = Query(default=SaveStateFilter.everything),
@@ -224,10 +216,15 @@ async def filter_dataset(
     limit: int = Query(default=10, ge=1, le=20),
     dataset_item_ids: Union[None, str] = Query(default=None),
     # filters: DatasetFilters,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """TODO: Add query parameter model depency."""
+    """Filter dataset items.
+
+    TODO
+    ----
+    - Add query parameter model dependency.
+    """
 
     # try:
     filters = DatasetFilters(
@@ -246,7 +243,7 @@ async def filter_dataset(
         return await filter_dataset(
             db=db,
             filters=filters,
-            username=current_user.username,
+            username=user.username,
         )
     except Exception as e:
         print(e)
@@ -264,7 +261,7 @@ async def filter_dataset(
 
 # @router.post("/item")
 # async def add_one_dataset_item(
-#     current_user: User = Depends(get_current_active_user),
+#     user: User = Depends(get_user),
 #     db: AsyncIOMotorDatabase = Depends(get_db),
 # ):
 #     """Adds a single dataset item to an existing dataset"""
@@ -289,7 +286,7 @@ async def add_many_dataset_items(
     data_type: CreateDataType,
     is_annotated: bool,
     preprocessing: Preprocessing,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """
@@ -363,7 +360,7 @@ async def add_many_dataset_items(
                     dataset_items,
                     dataset,
                     dataset_id=dataset["_id"],
-                    username=current_user.username,
+                    username=user.username,
                     project_id=dataset.get("project_id"),
                 )
 

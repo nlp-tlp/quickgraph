@@ -8,8 +8,8 @@ from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
 
-from ..dependencies import get_current_active_user, get_db
-from ..user.schemas import User
+from ..dependencies import get_db, get_user
+from ..users.schemas import UserDocumentModel
 from .schemas import BaseComment, Comment, Context, CreateComment
 
 router = APIRouter(prefix="/social", tags=["Social"])
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/social", tags=["Social"])
 @router.post("/{dataset_item_id}")
 async def create_one_comment(
     body: CreateComment,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Create a single comment"""
@@ -27,7 +27,7 @@ async def create_one_comment(
 
     try:
         comment = await db["social"].insert_one(
-            {**body.dict(), "created_by": current_user.username}
+            {**body.dict(), "created_by": user.username}
         )
 
         new_comment = await db["social"].find_one({"_id": comment.inserted_id})
@@ -39,7 +39,7 @@ async def create_one_comment(
 
 # @router.patch("/{comment_id}")
 # async def update_one_comment(
-#     current_user: User = Depends(get_current_active_user),
+#     user: UserDocumentModel = Depends(get_user),
 #     db: AsyncIOMotorDatabase = Depends(get_db),
 # ):
 #     pass
@@ -48,7 +48,7 @@ async def create_one_comment(
 @router.delete("/{comment_id}")
 async def delete_one_comment(
     comment_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Deletes a single comment"""
@@ -56,9 +56,7 @@ async def delete_one_comment(
     comment_id = ObjectId(comment_id)
 
     # Delete comment
-    await db["social"].delete_one(
-        {"_id": comment_id, "created_by": current_user.username}
-    )
+    await db["social"].delete_one({"_id": comment_id, "created_by": user.username})
 
     # Make sure it is deleted
     comment = await db["social"].find_one({"_id": comment_id})
@@ -81,7 +79,7 @@ async def delete_one_comment(
 async def list_dataset_item_comments(
     dataset_item_id: str,
     context: Context,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Gets all comments made against a single dataset item for a given context"""
@@ -100,7 +98,7 @@ async def list_dataset_item_comments(
     # try:
     #     datasets = await dataset_services.list_datasets(
     #         db=db,
-    #         username=current_user.username,
+    #         username=user.username,
     #         include_dataset_size=include_dataset_size,
     #         include_system=include_system,
     #     )

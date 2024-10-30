@@ -45,19 +45,15 @@ async def create_notification(
 async def create_many_project_invitations(
     db: AsyncIOMotorDatabase, project_id: ObjectId, recipients: List[str], username: str
 ):
-    """Sends many project invitations to users"""
-
+    """Sends project invitations to users."""
     notification_docs = [
         CreateNotification(
             recipient=recipient,
             created_by=username,
             context=NotificationContext.invitation,
             content_id=project_id,
-        ).dict()
+        ).model_dump()
         for recipient in recipients
     ]
-
     await db["notifications"].insert_many(notification_docs)
-
-    # Find inserted notifications
     return await find_many_project_notifications(db=db, project_id=project_id)

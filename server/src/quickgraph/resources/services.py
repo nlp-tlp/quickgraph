@@ -1,9 +1,12 @@
+"""Resources services."""
+
 import itertools
 import json
+import logging
 import random
 import uuid
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -16,9 +19,12 @@ from .schemas import (
     BaseResourceModel,
     CreatePreannotationResource,
     CreateResourceModel,
+    OntologyItem,
     ResourceModel,
     UpdateResourceModel,
 )
+
+logger = logging.getLogger(__name__)
 
 COLLECTION_NAME = "resources"
 
@@ -237,9 +243,8 @@ async def delete_one_resource(
 
 async def update_one_resource(
     db: AsyncIOMotorDatabase, resource: UpdateResourceModel, username: str
-):
-    """
-    Updates one resource.
+) -> Optional[List[OntologyItem]]:
+    """Update one resource.
 
     This function updates the contents of a given resource via its "id". The resource
     can only be updated if the current user is the resources creator. Each update will
@@ -250,23 +255,19 @@ async def update_one_resource(
     resource : UpdateResourceModel
         Pydantic "resource" model with only "id" and "content" keys.
 
-    Returns
-    -------
-
     Notes
     -----
-    "Fullnames" are added and/or updated to the ontology here - not on the front end
-
+    - "Fullnames" are added and/or updated to the ontology here - not on the front end
     """
+    logger.info(f'Updating resource "{resource.id}"')
 
     # Convert Pydantic object to dict
-    resource = resource.dict()
-    # print("resource\n", resource)
+    resource = resource.model_dump()
+    logger.info(f"resource\n{resource}")
 
     # Ensure that new resources ontology has correct metadata
     updated_resource = initialize_ontology(data=resource["content"])
-
-    # print("updated_resource\n", updated_resource)
+    logger.info(f"updated_resource\n{updated_resource}")
 
     if resource["id"]:
         # Update blueprint resource
@@ -279,16 +280,18 @@ async def update_one_resource(
                 }
             },
         )
-
-        return await db[COLLECTION_NAME].find_one({"_id": resource["id"]})
+        # db_updated_resource = await db[COLLECTION_NAME].find_one(
+        #     {"_id": ObjectId(resource["id"])}
+        # )
+        return [OntologyItem(**item) for item in updated_resource]
     elif resource["project_id"]:
         # Update project resource
         await db["projects"].update_one(
             {"_id": ObjectId(resource["project_id"]), "created_by": username},
             {"$set": {f"ontology.{resource['sub_classification']}": updated_resource}},
         )
-
-        return updated_resource
+        return [OntologyItem(**item) for item in updated_resource]
+    return
 
 
 async def aggregate_system_and_user_resources(db: AsyncIOMotorDatabase, username: str):
@@ -300,7 +303,7 @@ async def aggregate_system_and_user_resources(db: AsyncIOMotorDatabase, username
     try:
         resources = (
             await db[COLLECTION_NAME]
-            .find({"created_by": {"$in": [username, settings.SYSTEM_USERNAME]}})
+            .find({"created_by": {"$in": [username, settings.api.system_username]}})
             .to_list(None)
         )
 
@@ -380,12 +383,12 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
                     "name": ontology.name,
                     "classification": ontology.classification,
                     "sub_classification": ontology.sub_classification,
-                    "created_by": settings.SYSTEM_USERNAME,
+                    "created_by": settings.api.system_username,
                 }
             )
             if not existing_resource:
                 created_resource = await create_one_resource(
-                    db=db, resource=ontology, username=settings.SYSTEM_USERNAME
+                    db=db, resource=ontology, username=settings.api.system_username
                 )
 
                 print("created_resource", created_resource["_id"])
@@ -409,7 +412,7 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #                 "name": ontology_name,
     #                 "classification": "ontology",
     #                 "sub_classification": resource.sub_classification,
-    #                 "created_by": settings.SYSTEM_USERNAME,
+    #                 "created_by": settings.api.system_username,
     #             }
     #         )
     #         print("ontology_resource", ontology_resource)
@@ -423,7 +426,7 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #                 "name": resource.name,
     #                 "classification": resource.classification,
     #                 "sub_classification": resource.sub_classification,
-    #                 "created_by": settings.SYSTEM_USERNAME,
+    #                 "created_by": settings.api.system_username,
     #                 "ontology_id": ontology_resource["_id"],
     #             }
     #         )
@@ -445,7 +448,7 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #             await create_one_resource(
     #                 db=db,
     #                 resource=resource,
-    #                 username=settings.SYSTEM_USERNAME,
+    #                 username=settings.api.system_username,
     #             )
     #     except Exception as e:
     #         print(f"Failed to handle preannotation resource:\n{e}")

@@ -8,9 +8,9 @@ from fastapi import APIRouter, Depends, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..dataset.schemas import QualityFilter, SaveStateFilter
-from ..dependencies import get_current_active_user, get_db
+from ..dependencies import get_db, get_user
 from ..projects.schemas import FlagState, OntologyItem
-from ..user.schemas import User
+from ..users.schemas import UserDocumentModel
 from ..utils.agreement import AgreementCalculator
 from ..utils.misc import flatten_hierarchical_ontology
 from ..utils.services import create_search_regex
@@ -28,19 +28,19 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 @router.get("/{project_id}")
 async def get_dashboard_info(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Fetches a high-level project information"""
     return await get_dashboard_information(
-        db=db, project_id=ObjectId(project_id), username=current_user.username
+        db=db, project_id=ObjectId(project_id), username=user.username
     )
 
 
 @router.get("/overview/{project_id}")
 async def get_overview(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """
@@ -717,7 +717,7 @@ async def get_effort(
     saved: int = Query(default=SaveStateFilter.everything),
     quality: int = Query(default=QualityFilter.everything),
     min_agreement: int = Query(default=0, ge=0, le=100),
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Fetches a summary of annotation effort on a given project. Effort is used summarise the progress made by each annotator.
@@ -745,7 +745,7 @@ async def get_download(
     flags: list = Query(default=None),
     usernames: str = Query(default=None),
     # min_agreement: int = Query(default=0, ge=0, le=100),
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Fetches annotations for download

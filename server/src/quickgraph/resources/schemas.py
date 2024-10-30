@@ -40,23 +40,31 @@ class Constraint(BaseModel):
 
 
 class OntologyItem(BaseModel):
-    id: Union[str, None] = None
+    id: Optional[str] = Field(default=None, description="The UUID of the ontology item")
     name: str
-    fullname: str = Field(
+    fullname: Optional[str] = Field(
         default="",
         description="The fullname of the ontology item, including ancestors separated by forward slashes.",
     )
     description: str = Field(
         default="", description="The description of the ontology item."
     )
-    example_terms: List[str] = Field(
+    example_terms: Optional[List[str]] = Field(
         default=[], description="List of example terms classified by the ontology item."
     )
-    color: str = "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
-    active: bool
+    color: Optional[str] = (
+        "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
+    )
+    active: bool = Field(
+        default=True, description="Flag indicating if the ontology item is active"
+    )
     # https://docs.pydantic.dev/usage/postponed_annotations/#self-referencing-models
-    children: List["OntologyItem"] = []
-    path: List[int]
+    children: List["OntologyItem"] = Field(
+        default=[], description="The children of the ontology item"
+    )
+    path: Optional[List[int]] = Field(
+        default=None, description="The path of the ontology item"
+    )
 
 
 class BaseOntologyItem(BaseModel):
@@ -175,8 +183,10 @@ class ResourceModel(BaseResourceModel):
 
 
 class UpdateResourceModel(BaseModel):
-    id: Optional[str] = Field(description="The UUID of the resource")
-    project_id: Optional[str] = Field(description="The UUID of the resources project")
+    id: Optional[str] = Field(default=None, description="The UUID of the resource")
+    project_id: Optional[str] = Field(
+        default=None, description="The UUID of the resources project"
+    )
     classification: ResourceClassifications = Field(
         description="The classification of the resource"
     )

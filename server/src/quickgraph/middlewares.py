@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi import Request, Response
 
-from server.src.quickgraph.dependencies import get_db
+from .dependencies import get_db
 
 # class EventTrackingMiddleware:
 #     async def __call__(self, request: Request, call_next):

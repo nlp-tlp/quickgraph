@@ -3,6 +3,7 @@
 import datetime
 import itertools
 import json
+import logging
 from typing import List, Union
 
 import httpx
@@ -13,16 +14,12 @@ from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
-from ..dependencies import (
-    get_current_active_user,
-    get_db,
-    get_user_management_access_token,
-)
+from ..dependencies import get_db, get_user
 from ..examples import get_examples
 from ..markup.schemas import Entity, Relation
 from ..notifications.services import create_many_project_invitations
 from ..settings import settings
-from ..user.schemas import User
+from ..users.schemas import UserDocumentModel
 from .schemas import (
     Annotator,
     AnnotatorRoles,
@@ -32,6 +29,7 @@ from .schemas import (
     ProjectDataset,
     ProjectDatasetItem,
     ProjectDownload,
+    ProjectProgress,
     ProjectSocial,
     ProjectWithMetrics,
     SaveDatasetItems,
@@ -49,58 +47,50 @@ from .services import (
     save_many_dataset_items,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/project", tags=["Project"])
 
 
-@router.post(
-    "/",
-    response_description="Create project",
-    #  response_model=Project
-)
+@router.post("", response_description="Create project", response_model=Project)
 async def create_new_project(
     project: CreateProject,
-    # = Body(
-    #     examples=get_examples("create_project"),
-    # ),
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Creates new project including optional preprocessing and preannotation.
 
-    TODO: Adapt for datasets that are preannotated and/or have external ids.
+    TODO
+    ----
+    - Adapt for datasets that are preannotated and/or have external ids.
     """
+    project = await create_project(db=db, username=user.username, project=project)
 
-    try:
-        return await create_project(
-            db=db, username=current_user.username, project=project
-        )
-    except Exception as e:
-        print(e)
+    if project is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to create project",
         )
+    return project
 
 
 @router.get(
-    "/",
+    "",
     response_description="List all projects",
-    # response_model=List[ProjectWithMetrics],
+    response_model=List[ProjectWithMetrics],
 )
 async def list_projects(
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Lists projects for user if they are PM or are an active (accepted) annotator"""
-
-    try:
-        return await find_many_projects(db=db, username=current_user.username)
-    except Exception as e:
-        print(e)
+    projects = await find_many_projects(db=db, username=user.username)
+    if projects is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to retrieve projects",
         )
+    return projects
 
 
 # @router.patch(
@@ -110,7 +100,7 @@ async def list_projects(
 #     project_id: str,
 #     field: str,
 #     value: str,
-#     current_user: User = Depends(get_current_active_user),
+#     user: User = Depends(get_user),
 #     db: AsyncIOMotorDatabase = Depends(get_db),
 # ):
 #     """Updates project after verifying the user is the project manager.
@@ -119,7 +109,7 @@ async def list_projects(
 #     """
 
 #     response = await db["projects"].update_one(
-#         {"_id": ObjectId(project_id), "created_by": current_user.username},
+#         {"_id": ObjectId(project_id), "created_by": user.username},
 #         {"$set": {field: value}},
 #     )
 
@@ -187,7 +177,7 @@ def flatten_dict(d: dict, parent_key: str = "", sep: str = ".") -> dict:
 async def update_project(
     project_id: str,
     body: ProjectUpdateBody,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Updates project after verifying the user is the project manager."""
@@ -202,7 +192,7 @@ async def update_project(
         print("body", body)
 
         response = await db["projects"].update_one(
-            {"_id": ObjectId(project_id), "created_by": current_user.username},
+            {"_id": ObjectId(project_id), "created_by": user.username},
             {"$set": {**body, "updated_at": datetime.datetime.utcnow()}},
             upsert=True,
         )
@@ -225,14 +215,14 @@ async def update_project(
 async def update_project_guidelines(
     project_id: str,
     body: dict,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Updates project guidelines verifying the user is the project manager."""
     print("UPDATE_PROJECT")
     try:
         response = await db["projects"].update_one(
-            {"_id": ObjectId(project_id), "created_by": current_user.username},
+            {"_id": ObjectId(project_id), "created_by": user.username},
             {
                 "$set": {
                     "guidelines": {
@@ -266,14 +256,14 @@ async def update_project_guidelines(
     # response_model=Summary, response_model_exclude_none=True
 )
 async def get_summary(
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Creates a summary of all projects for the "home" page of QuickGraph for a given user"""
 
     # Must be before "/{project_id}" otherwise will not match.
 
-    username = current_user.username
+    username = user.username
 
     pipeline = [
         {
@@ -574,7 +564,7 @@ async def get_summary(
 async def update_annotator_assignments(
     project_id: str,
     body: dict,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """
@@ -587,7 +577,7 @@ async def update_annotator_assignments(
         The UUID of the project
     body : dict
         {"dataset_item_ids": [str], "username": str}
-    current_user : User
+    user : User
         The current user making the request
     db : AsyncIOMotorDatabase
         Asyncronous database instance
@@ -654,7 +644,7 @@ async def update_annotator_assignments(
         result = await db["projects"].update_one(
             {
                 "_id": project_id,
-                "created_by": current_user.username,
+                "created_by": user.username,
                 "annotators.username": body["username"],
             },
             {"$set": {"annotators.$[annotator].scope": annotator_scope_updated}},
@@ -782,7 +772,7 @@ async def update_annotator_assignments(
 @router.get("/{project_id}/annotators")
 async def get_project_annotators(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     pipeline = [
@@ -867,13 +857,13 @@ async def get_project_annotators(
 )
 async def get_project(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Gets a project after verifying the user is the project manager or an enabled, active, project annotator."""
 
     return await find_one_project(
-        db, project_id=ObjectId(project_id), username=current_user.username
+        db, project_id=ObjectId(project_id), username=user.username
     )
 
     # if project:
@@ -887,15 +877,15 @@ async def get_project(
 @router.delete(
     "/{project_id}", response_description="Delete a single project including markups"
 )
-async def delete_project(
+async def delete_project_endpoint(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Cascade deletes project after verifying the user is the project manager. The cascade delete includes associated dataset items and markup. Project deletion will result in all users losing access to the project."""
     try:
         return await delete_one_project(
-            db=db, project_id=ObjectId(project_id), username=current_user.username
+            db=db, project_id=ObjectId(project_id), username=user.username
         )
     except:
         raise HTTPException(
@@ -904,21 +894,28 @@ async def delete_project(
         )
 
 
-@router.get("/progress/{project_id}")
-async def get_project_progress(
+@router.get("/progress/{project_id}", response_model=ProjectProgress)
+async def get_project_progress_endpoint(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    return await get_project_progress(
-        db=db, project_id=ObjectId(project_id), username=current_user.username
+    """Get project progress for a given project for the current user."""
+    progress = await get_project_progress(
+        db=db, project_id=ObjectId(project_id), username=user.username
     )
+    if progress is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to compute project progress",
+        )
+    return progress
 
 
 @router.patch("/save/")
 async def save_project_dataset_items(
     body: SaveDatasetItems,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Save one or many dataset items associated with a project"""
@@ -927,7 +924,7 @@ async def save_project_dataset_items(
             db=db,
             project_id=ObjectId(body.project_id),
             dataset_item_ids=[ObjectId(di) for di in body.dataset_item_ids],
-            username=current_user.username,
+            username=user.username,
         )
     except Exception as e:
         print("error saving dataset items", e)
@@ -944,71 +941,31 @@ class UserInviteBody(BaseModel):
     distribution_method: str = "all"
 
 
-async def validate_user_exists(username: str, mgmt_access_token: str):
-    """Validates whether a given username is able to be invited to a given project."""
-
-    url = f"https://{settings.AUTH0_DOMAIN}/api/v2/users"
-
-    params = {
-        "page": 0,
-        "include_fields": True,
-        "fields": "username",
-        "q": f'username: "{username}"',
-    }
-    headers = {
-        "Authorization": f"Bearer {mgmt_access_token}",
-        "Content-Type": "application/json",
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, params=params, headers=headers)
-
-    user_exists = len(response.json()) == 1
-
-    return user_exists
-
-
-@router.post("/user/validation")
-async def validate_users(
-    usernames: List[str],
-    mgmt_access_token=Depends(get_user_management_access_token),
-):
-    """Validate a set of users - this is used for inviting users at project creation time."""
-
-    # Check annotators exist and filter those that are invalid (don't exist or already on project/invited)
-    return [
-        username
-        for username in usernames
-        if await validate_user_exists(
-            username=username, mgmt_access_token=mgmt_access_token
-        )
-    ]
-
-
 @router.post("/user/invite/{project_id}")
 async def invite_users(
     project_id: str,
     body: UserInviteBody,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-    mgmt_access_token=Depends(get_user_management_access_token),
+    user: UserDocumentModel = Depends(get_user),
 ):
     """Invite one or more users to a project after checking existence.
 
-    TODO: add document distribution functionality.
+    TODO
+    ----
+    - add document distribution functionality.
     """
-
-    print("body", body)
+    logger.info(f"body: {body}")
     project_id = ObjectId(project_id)
     project = await db["projects"].find_one({"_id": project_id})
 
-    if project == None:
-        raise JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
         )
 
     # Verify user is the PM of the project
-    if project["created_by"] != current_user.username:
+    if project["created_by"] != user.username:
         raise JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authorized to invite users to this project",
@@ -1018,9 +975,7 @@ async def invite_users(
     valid_annotators = [
         username
         for username in body.usernames
-        if await validate_user_exists(
-            username=username, mgmt_access_token=mgmt_access_token
-        )
+        if await db.users.find_one({"username": username})
         and username not in [a["username"] for a in project["annotators"]]
     ]
     print("valid_annotators", valid_annotators)
@@ -1036,10 +991,9 @@ async def invite_users(
         db=db,
         project_id=project_id,
         recipients=valid_annotators,
-        username=current_user.username,
+        username=user.username,
     )
-
-    # print("notifications", notifications)
+    logger.info(f"Created {len(notifications)} notifications")
 
     # Fetch dataset item ids to associate to users
     # dataset_item_ids = (
@@ -1103,7 +1057,7 @@ async def delete_user(
     project_id: str,
     username: str,
     remove_annotations: bool = True,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Deletes a user from a project unless its the project manager."""
@@ -1167,7 +1121,7 @@ async def delete_user(
 @router.get("/download/{project_id}")
 async def download_project(
     project_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """
@@ -1180,7 +1134,7 @@ async def download_project(
 
     # Project
     project = await db["projects"].find_one(
-        {"_id": project_id, "created_by": current_user.username}
+        {"_id": project_id, "created_by": user.username}
     )
 
     if project is None:
@@ -1227,7 +1181,7 @@ async def download_project(
 async def find_many_suggested_entities(
     project_id: str,
     surface_form: str,
-    current_user: User = Depends(get_current_active_user),
+    user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """ """
@@ -1236,5 +1190,5 @@ async def find_many_suggested_entities(
         db=db,
         project_id=ObjectId(project_id),
         surface_form=surface_form,
-        username=current_user.username,
+        username=user.username,
     )

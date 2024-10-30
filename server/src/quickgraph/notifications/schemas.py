@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Union
+from typing import Dict, Optional
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
@@ -39,11 +39,11 @@ class CreateNotification(BaseModel):
     seen: bool = Field(
         default=False, description="Whether the user has seen this notification"
     )
-    content_id: Union[None, PydanticObjectIdAnnotated] = Field(
+    content_id: PydanticObjectIdAnnotated = Field(
         default_factory=ObjectId,
         description="The UUID associated with notification content",
     )
-    status: Union[None, NotificationStates] = Field(
+    status: Optional[NotificationStates] = Field(
         default=None,
         description="The state associated with the notification (if applicable)",
     )
@@ -56,5 +56,6 @@ class Notification(CreateNotification):
         alias="_id",
         description="The UUID of the notification",
     )
+    detail: Dict[str, str] = Field(description="The details of the notification")
 
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)

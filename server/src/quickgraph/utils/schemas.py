@@ -1,6 +1,7 @@
 """Base models."""
 
-from typing import Annotated
+from typing import Any, Optional, Union
+from typing_extensions import Annotated
 
 from bson import ObjectId
 from pydantic import GetJsonSchemaHandler
@@ -11,8 +12,8 @@ class PydanticObjectId:
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
-        _source_type: type[ObjectId] | None = None,
-        _handler: GetJsonSchemaHandler | None = None,
+        _source_type: Optional[type[ObjectId]] = None,  # type: ignore
+        _handler: Optional[GetJsonSchemaHandler] = None,
     ) -> CoreSchema:
         """Defines how to validate and serialize ObjectId."""
         return core_schema.json_or_python_schema(
@@ -33,7 +34,7 @@ class PydanticObjectId:
         )
 
     @classmethod
-    def validate(cls, value) -> ObjectId:
+    def validate(cls, value: Union[ObjectId, str, Any]) -> ObjectId:
         if isinstance(value, ObjectId):
             return value
         if isinstance(value, str):
