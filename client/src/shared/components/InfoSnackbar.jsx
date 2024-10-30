@@ -191,7 +191,7 @@ const InfoSnackbar = (props) => {
         " "
       )}! `;
     } else {
-      personalizeText = `${context.personalizeText}!`;
+      personalizeText = `${context.personalizeText}! `;
     }
   }
 
