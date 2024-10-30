@@ -36,11 +36,11 @@ services:
     networks:
       - app-network
 
-  # docs:
-  #   build:
-  #     context: ./docs
-  #   ports:
-  #     - "4000:4000"
+  docs:
+    build:
+      context: ./docs
+    ports:
+      - "4000:4000"
 
 volumes:
   mongodb_data:
