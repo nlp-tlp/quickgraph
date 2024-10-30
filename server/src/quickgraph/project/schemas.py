@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Union
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..dataset.schemas import Preprocessing
+from ..dataset.schemas import DatasetType, Preprocessing
 from ..markup.schemas import Entity, Relation
 from ..resources.schemas import OntologyItem
 from ..utils.schemas import PydanticObjectIdAnnotated
@@ -16,6 +16,11 @@ from ..utils.schemas import PydanticObjectIdAnnotated
 #     # Resource constraints are private to projects only.
 #     domain: Optional[List[Union[PyObjectId, str]]]
 #     range: Optional[List[Union[PyObjectId, str]]]
+
+
+class BaseSaveState(BaseModel):
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class SaveState(BaseModel):
@@ -31,6 +36,10 @@ class SaveState(BaseModel):
     )
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class SaveResponse(BaseModel):
+    count: int
 
 
 class Settings(BaseModel):
@@ -143,6 +152,10 @@ class GuidelineExample(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class UpdateGuidlines(BaseModel):
+    content: str
+
+
 class Guidelines(BaseModel):
     content: str = Field(default="")
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -243,7 +256,7 @@ class ProjectWithMetrics(BaseModel):
     )
 
 
-class SaveDatasetItems(BaseModel):
+class SaveDatasetItemsBody(BaseModel):
     project_id: str
     dataset_item_ids: List[str]
 
@@ -277,7 +290,7 @@ class Summary(BaseModel):
 
 
 class ProjectDataset(BaseModel):
-    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
     name: str
     description: Optional[str]
     created_by: str = Field(description="Username of user who created dataset")
@@ -286,26 +299,33 @@ class ProjectDataset(BaseModel):
     preprocessing: Preprocessing = Field(
         description="Preprocessing operations to apply to dataset"
     )
-    dataset_type: Optional[str]
+    dataset_type: DatasetType = Field(
+        default=DatasetType.no_annotation,
+        description="The type of dataset that is to be created",
+    )
     is_annotated: bool
     is_suggested: bool
 
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True
+    )
+
 
 class ProjectDatasetItem(BaseModel):
-    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
     original: str
     is_blueprint: bool
     tokens: List[str]
     text: str
-    external_id: Optional[str]
-    extra_fields: Optional[dict]
+    external_id: Optional[str] = Field(default=None)
+    extra_fields: Optional[dict] = Field(default=None)
     created_at: datetime
     updated_at: datetime
-    flags: Optional[List]
+    flags: Optional[List] = Field(default=[])
 
 
 class ProjectSocial(BaseModel):
-    id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
     text: str
     context: str
     dataset_item_id: PydanticObjectIdAnnotated = Field(...)
@@ -328,3 +348,34 @@ class ProjectProgress(BaseModel):
     dataset_size: int
     dataset_items_saved: int
     value: float
+
+
+class Settings(BaseModel):
+    disable_propagation: bool
+    disable_discussion: bool
+    annotators_per_item: int
+
+
+class ProjectUpdateBody(BaseModel):
+    name: str
+    description: str
+    settings: Settings
+
+
+class InvitedUser(BaseModel):
+    username: str
+    state: AnnotatorStates
+    role: AnnotatorRoles
+    scope_size: int
+
+    model_config = ConfigDict(use_enum_values=True)
+
+
+class UserInviteBody(BaseModel):
+    usernames: List[str]
+    distribution_method: str = "all"
+
+
+class UserInviteResponse(BaseModel):
+    valid: List[InvitedUser]
+    invalid: List[str]

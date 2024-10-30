@@ -4,20 +4,16 @@ import itertools
 import logging
 from collections import Counter
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from bson import ObjectId
 from fastapi import HTTPException, status
-
-# import nltk
-# from nltk.tokenize import word_tokenize
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, Field
 
 from ..dataset.schemas import DatasetItem
 from ..dataset.services import find_one_dataset
-from ..markup.schemas import CreateMarkupApply, RichCreateEntity
+from ..markup.schemas import Entity, Relation, RichCreateEntity
 from ..notifications.schemas import CreateNotification, NotificationContext
 from ..notifications.services import (
     create_many_project_invitations,
@@ -28,38 +24,27 @@ from .schemas import (
     Annotator,
     AnnotatorRoles,
     AnnotatorStates,
+    BaseSaveState,
     BasicEntity,
     CreateProject,
     Guidelines,
     OntologyItem,
-    PreannotationResource,
     Preprocessing,
     Project,
-    ProjectOntology,
+    ProjectDataset,
+    ProjectDatasetItem,
+    ProjectDownload,
     ProjectProgress,
+    ProjectSocial,
     ProjectWithMetrics,
-    SaveState,
+    SaveResponse,
+    Summary,
     Tasks,
+    UserInviteBody,
+    UserInviteResponse,
 )
 
 logger = logging.getLogger(__name__)
-
-# import os
-# from pathlib import Path
-# from nltk import downloader as ntlk_downloader
-
-# Set NLTK_DATA environment variable to the current directory
-# os.environ["NLTK_DATA"] = str(Path(os.getcwd()) / "nltk_data")
-
-# try:
-#     # Try to load the 'punkt' module
-#     punkt_path = str(Path(os.environ["NLTK_DATA"]) / "punkt")
-#     logger.info("punkt_path", punkt_path)
-#     nltk.data.find(punkt_path)
-# except LookupError:
-#     # If the module is not found, download it using the download_shell() function
-#     logger.info("Downloading 'punkt' module...")
-#     ntlk_downloader.download("punkt", download_dir=os.environ["NLTK_DATA"])
 
 
 def assign_usernames_to_ids(
@@ -662,7 +647,8 @@ async def create_project(
 
 async def find_one_project(
     db: AsyncIOMotorDatabase, project_id: ObjectId, username: str
-) -> Project:
+) -> Optional[Project]:
+    """Finds a single project and computes project progress information"""
     project = await db["projects"].find_one(
         {
             "_id": project_id,
@@ -699,14 +685,7 @@ async def find_one_project(
 
     if project:
         return Project(**project, relation_counts=dict(relation_counts))
-
-    # TODO: Exceptions can include - not authorized (if project exists but user is not invited or PM)
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={
-            "detail": "Project not found - you may not be the project manager or the project may not exist."
-        },
-    )
+    return None
 
 
 async def find_many_projects(db: AsyncIOMotorDatabase, username: str):
@@ -796,30 +775,41 @@ async def find_many_projects(db: AsyncIOMotorDatabase, username: str):
 
 async def delete_one_project(
     db: AsyncIOMotorDatabase, project_id: ObjectId, username: str
-):
-    """Cascade delete single project"""
-    project = await db["projects"].find_one(
-        {"_id": ObjectId(project_id), "created_by": username}
-    )
+) -> bool:
+    """Cascade delete single project.
 
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found.",
+    Cascade deletes project after verifying the user is the project manager.
+    The cascade delete includes associated dataset items and markup.
+    Project deletion will result in all users losing access to the project.
+    """
+    try:
+        project = await db["projects"].find_one(
+            {"_id": ObjectId(project_id), "created_by": username}
         )
 
-    # Delete project markups
-    await db["markup"].delete_many({"project_id": project_id})
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found.",
+            )
 
-    # Delete project notifications
-    await db["notifications"].delete_many({"content_id": project_id})
+        # Delete project markups
+        await db["markup"].delete_many({"project_id": project_id})
 
-    # Delete project
-    await db["projects"].delete_one({"_id": project_id, "created_by": username})
+        # Delete project notifications
+        await db["notifications"].delete_many({"content_id": project_id})
 
-    # Delete project dataset and dataset items
-    await db["data"].delete_many({"dataset_id": project["dataset_id"]})
-    await db["datasets"].delete_one({"_id": project["dataset_id"]})
+        # Delete project
+        await db["projects"].delete_one({"_id": project_id, "created_by": username})
+
+        # Delete project dataset and dataset items
+        await db["data"].delete_many({"dataset_id": project["dataset_id"]})
+        await db["datasets"].delete_one({"_id": project["dataset_id"]})
+
+        return True
+    except Exception as e:
+        logger.info(f"Error: {e}")
+        return False
 
 
 async def get_project_progress(
@@ -878,15 +868,10 @@ async def save_many_dataset_items(
     project_id: ObjectId,
     dataset_item_ids: List[ObjectId],
     username: str,
-) -> Project:
-    class SaveState(BaseModel):
-        created_by: str
-        created_at: datetime = Field(default_factory=datetime.utcnow)
+) -> SaveResponse:
+    """Saves many dataset items for a user"""
 
-        class Config:
-            arbitrary_types_allowed = True
-
-    new_save_state = SaveState(created_by=username).dict()
+    new_save_state = BaseSaveState(created_by=username).dict()
 
     markup_pipeline = [
         {"$match": {"_id": {"$in": [ObjectId(oid) for oid in dataset_item_ids]}}},
@@ -984,7 +969,7 @@ async def save_many_dataset_items(
 
         # dataset_items = await db['data']
 
-        return {"count": result.modified_count}
+        return SaveResponse(count=result.modified_count)
     else:
         # Update save state of user on dataset item
         result = await db["data"].update_one(
@@ -1099,7 +1084,7 @@ async def save_many_dataset_items(
         except Exception as e:
             logger.info(f"Error occurred calculating IAA: {e}")
 
-        return {"count": result.modified_count}
+        return SaveResponse(count=result.modified_count)
 
 
 async def get_project_annotator(
@@ -1257,3 +1242,534 @@ async def get_suggested_entities(
     suggested_entities = await db["markup"].aggregate(pipeline).to_list(None)
 
     return suggested_entities
+
+
+def flatten_dict(d: dict, parent_key: str = "", sep: str = ".") -> dict:
+    """
+    Flatten a hierarchical dictionary into a single level dictionary where each key is represented using dot notation.
+
+    Parameters:
+    d (dict): The hierarchical dictionary to be flattened.
+    parent_key (str, optional): The parent key for the current level of the dictionary. Defaults to an empty string.
+    sep (str, optional): The separator to use between keys in the flattened dictionary. Defaults to ".".
+
+    Returns:
+    dict: A single level dictionary with keys represented using dot notation.
+
+    Example:
+    >>> hierarchical_dict = {
+    ...     "a": {
+    ...         "b": {
+    ...             "c": 1,
+    ...             "d": 2
+    ...         },
+    ...         "e": 3
+    ...     },
+    ...     "f": 4
+    ... }
+    >>> flatten_dict(hierarchical_dict)
+    {'a.b.c': 1, 'a.b.d': 2, 'a.e': 3, 'f': 4}
+    """
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
+async def get_user_projects_summary(db: AsyncIOMotorDatabase, username: str) -> Summary:
+    """Creates a summary of all projects for the "home" page of QuickGraph for a given user"""
+
+    pipeline = [
+        {
+            "$project": {
+                "_id": 1,
+                "annotators": 1,
+                "settings": 1,
+                "created_by": 1,
+                "name": 1,
+            }
+        },
+        {
+            "$lookup": {
+                "from": "data",
+                "localField": "_id",
+                "foreignField": "project_id",
+                "as": "dataset_items",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "markup",
+                "localField": "_id",
+                "foreignField": "project_id",
+                "as": "markup",
+            }
+        },
+        {
+            "$lookup": {
+                "from": "social",
+                "localField": "dataset_items._id",
+                "foreignField": "dataset_item_id",
+                "as": "social",
+            }
+        },
+        {
+            "$addFields": {
+                "total_items": {"$size": "$dataset_items"},
+                "group_saved_items": {
+                    "$size": {
+                        "$filter": {
+                            "input": "$dataset_items.save_states",
+                            "cond": {
+                                "$gte": [
+                                    {"$size": "$$this.created_by"},
+                                    "$settings.annotators_per_item",
+                                ]
+                            },
+                        }
+                    }
+                },
+                "user_saved_items": {
+                    "$size": {
+                        "$filter": {
+                            "input": "$dataset_items.save_states",
+                            "cond": {"$eq": ["$$this.created_by", username]},
+                        }
+                    }
+                },
+                "entity_markup": {
+                    "$size": {
+                        "$filter": {
+                            "input": "$markup",
+                            "cond": {
+                                "$and": [
+                                    {"$eq": ["$$this.created_by", username]},
+                                    {"$eq": ["$$this.classification", "entity"]},
+                                ]
+                            },
+                        }
+                    }
+                },
+                "relation_markup": {
+                    "$size": {
+                        "$filter": {
+                            "input": "$markup",
+                            "cond": {
+                                "$and": [
+                                    {"$eq": ["$$this.created_by", username]},
+                                    {"$eq": ["$$this.classification", "relation"]},
+                                ]
+                            },
+                        }
+                    }
+                },
+                "user_comments": {
+                    "$size": {
+                        "$filter": {
+                            "input": "$social",
+                            "cond": {"$eq": ["$$this.created_by", username]},
+                        }
+                    }
+                },
+                "active_annotators": {
+                    "$size": {
+                        "$filter": {
+                            "input": "$annotators",
+                            "cond": {"$eq": ["$$this.state", "accepted"]},
+                        }
+                    }
+                },
+            }
+        },
+        {
+            "$addFields": {
+                "group_flags": {
+                    "$map": {
+                        "input": "$dataset_items",
+                        "as": "d",
+                        "in": {
+                            "$map": {
+                                "input": {"$ifNull": ["$$d.flags", []]},
+                                "as": "f",
+                                "in": {
+                                    "$mergeObjects": [
+                                        "$$f",
+                                        {
+                                            "project_id": "$_id",
+                                            "dataset_item_id": "$$d._id",
+                                            "text": "$$d.text",
+                                            "activity_type": "flag",
+                                            "project_name": "$name",
+                                        },
+                                    ]
+                                },
+                            }
+                        },
+                    }
+                }
+            }
+        },
+        {
+            "$addFields": {
+                "group_flags": {
+                    "$reduce": {
+                        "input": "$group_flags",
+                        "initialValue": [],
+                        "in": {"$concatArrays": ["$$value", "$$this"]},
+                    }
+                }
+            }
+        },
+        {
+            "$addFields": {
+                "group_comments": {
+                    "$map": {
+                        "input": "$social",
+                        "as": "s",
+                        "in": {
+                            "$mergeObjects": [
+                                "$$s",
+                                {
+                                    "activity_type": "comment",
+                                    "project_name": "$name",
+                                    "project_id": "$_id",
+                                },
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+        {
+            "$match": {
+                "$or": [
+                    {"created_by": username},
+                    {
+                        "annotators": {
+                            "$elemMatch": {
+                                "username": username,
+                                "disabled": False,
+                                "state": "accepted",
+                            },
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            "$group": {
+                "_id": "$created_by",
+                "total_projects": {"$sum": 1},
+                "complete_projects": {
+                    "$sum": {
+                        "$cond": [{"$eq": ["$total_items", "$group_saved_items"]}, 1, 0]
+                    }
+                },
+                "total_user_items_saved": {"$sum": "$user_saved_items"},
+                "total_entity_markup": {"$sum": "$entity_markup"},
+                "total_relation_markup": {"$sum": "$relation_markup"},
+                "total_comments": {"$sum": "$user_comments"},
+                "activity": {
+                    "$push": {"$concatArrays": ["$group_flags", "$group_comments"]}
+                },
+            }
+        },
+        {
+            "$addFields": {
+                "activity": {
+                    "$reduce": {
+                        "input": "$activity",
+                        "initialValue": [],
+                        "in": {"$concatArrays": ["$$value", "$$this"]},
+                    }
+                }
+            }
+        },
+    ]
+
+    results = await db["projects"].aggregate(pipeline).to_list(None)
+
+    if len(results) == 0:
+        return Summary(
+            **{
+                "summary": [
+                    {
+                        "index": 0,
+                        "name": "Projects",
+                        "value": 0,
+                    },
+                    {
+                        "index": 1,
+                        "name": "Complete Projects",
+                        "value": 0,
+                    },
+                    {
+                        "index": 2,
+                        "name": "Dataset Items Saved",
+                        "value": 0,
+                    },
+                    {
+                        "index": 3,
+                        "name": "Entity Annotations Made",
+                        "value": 0,
+                    },
+                    {
+                        "index": 4,
+                        "name": "Relation Annotations Made",
+                        "value": 0,
+                    },
+                    {
+                        "index": 5,
+                        "name": "Comments Made",
+                        "value": 0,
+                    },
+                ],
+                "activity": [],
+            }
+        )
+
+    results = results[0]
+
+    return Summary(
+        **{
+            "summary": [
+                {
+                    "index": 0,
+                    "name": "Projects",
+                    "value": results["total_projects"],
+                },
+                {
+                    "index": 1,
+                    "name": "Complete Projects",
+                    "value": results["complete_projects"],
+                },
+                {
+                    "index": 2,
+                    "name": "Dataset Items Saved",
+                    "value": results["total_user_items_saved"],
+                },
+                {
+                    "index": 3,
+                    "name": "Entity Annotations Made",
+                    "value": results["total_entity_markup"],
+                },
+                {
+                    "index": 4,
+                    "name": "Relation Annotations Made",
+                    "value": results["total_relation_markup"],
+                },
+                {
+                    "index": 5,
+                    "name": "Comments Made",
+                    "value": results["total_comments"],
+                },
+            ],
+            "activity": results["activity"],
+        }
+    )
+
+
+async def invite_users_to_project(
+    db: AsyncIOMotorDatabase,
+    sender_username: str,
+    project_id: ObjectId,
+    body: UserInviteBody,
+) -> UserInviteResponse:
+    """Invite one or more users to a project after checking existence.
+
+    TODO
+    ----
+    - add document distribution functionality.
+    """
+    project_id = ObjectId(project_id)
+    project = await db["projects"].find_one({"_id": project_id})
+
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    # Verify user is the PM of the project
+    if project["created_by"] != sender_username:
+        raise JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to invite users to this project",
+        )
+
+    # Check annotators exist and filter those that are invalid (don't exist or already on project/invited but not accepted)
+    valid_annotators = [
+        username
+        for username in body.usernames
+        if await db.users.find_one({"username": username})
+        and username not in [a["username"] for a in project["annotators"]]
+    ]
+    logger.info(f"valid_annotators: {valid_annotators}")
+
+    if len(valid_annotators) == 0:
+        return UserInviteResponse(valid=[], invalid=body.usernames)
+
+    # Create notifications
+    notifications = await create_many_project_invitations(
+        db=db,
+        project_id=project_id,
+        project_name=project["name"],
+        recipients=valid_annotators,
+        username=sender_username,
+    )
+    logger.info(f"Created {len(notifications)} notifications")
+
+    # Fetch dataset item ids to associate to users
+    # dataset_item_ids = (
+    #     await db["data"]
+    #     .find({"dataset_id": project["dataset_id"]}, {"_id": 1})
+    #     .to_list(None)
+    # )
+
+    # print("dataset_item_ids", dataset_item_ids)
+
+    # Add users to project
+    rich_annotators = [
+        Annotator(
+            username=username,
+            role=AnnotatorRoles.annotator,
+            state=AnnotatorStates.invited,
+            scope=[],  # Scope is assigned manually by PM -  [di["_id"] for di in dataset_item_ids
+        ).model_dump()
+        for username in valid_annotators
+    ]
+
+    # print("rich_annotators", rich_annotators)
+
+    await db["projects"].update_one(
+        {"_id": project_id}, {"$push": {"annotators": {"$each": rich_annotators}}}
+    )
+
+    # TODO: assign preannotation markup to invited annotators...
+    # - Check if project blue print is annotated.
+    # project_bp_dataset_id = project["blueprint_dataset_id"]
+    # bp_dataset = await db["datasets"].find_one({"_id": project_bp_dataset_id})
+    # print("bp_dataset", bp_dataset)
+
+    # return await invite_single_project_annotator(db=db)
+
+    # Return updated project with new annotators on it. The UI can determine which annotators were not added and render this to the user.
+    # return annotators
+
+    updated_project = await db["projects"].find_one(
+        {"_id": project_id}, {"annotators": 1}
+    )
+
+    # print('updated_project["annotators"]', updated_project["annotators"])
+
+    return UserInviteResponse(
+        valid=[
+            {
+                "username": a["username"],
+                "state": a["state"],
+                "role": a["role"],
+                "scope_size": len(a["scope"]),
+            }
+            for a in updated_project["annotators"]
+        ],
+        invalid=set(body.usernames) - set(valid_annotators),
+    )
+
+
+async def remove_user_from_project(
+    db: AsyncIOMotorDatabase, project_id: str, username: str, remove_annotations: bool
+) -> Dict[str, str]:
+    """Deletes a user from a project unless its the project manager."""
+    project_id = ObjectId(project_id)
+    project = await db["projects"].find_one({"_id": project_id})
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if username == project["created_by"]:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail="Cannot remove project manager from project",
+        )
+
+    # If dataset items is set to require all annotators, then this must be decremented if an annotator is removed.
+    decrementMinAnnotators = (
+        len([a for a in project["annotators"] if a["state"] == "accepted"])
+        == project["settings"]["annotators_per_item"]
+    )
+
+    if remove_annotations:
+        # Remove annotations made by this user
+        await db["markup"].delete_many(
+            {"project_id": project_id, "created_by": username}
+        )
+
+    # Remove user from this project (`annotators` field and `save_states` field)
+    result = await db["projects"].update_one(
+        {"_id": project_id},
+        {
+            "$pull": {
+                "save_states": {"created_by": username},
+                "annotators": {"username": username},
+            },
+            "$inc": {
+                "settings.annotators_per_item": -1 if decrementMinAnnotators else 0
+            },
+        },
+    )
+
+    # Remove any invitations to the project
+    await db["notifications"].delete_one(
+        {"content_id": project_id, "context": "invitation"}
+    )
+
+    logger.info(f"result.modified_count: {result.modified_count}")
+
+    return {"detail": "User removed from project"}
+
+
+async def download_project(
+    db: AsyncIOMotorDatabase, project_id: ObjectId
+) -> ProjectDownload:
+    """Creates a payload for entire project download."""
+    project = await db["projects"].find_one({"_id": project_id})
+
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+        )
+
+    # Dataset
+    dataset = await db["datasets"].find_one({"_id": project["dataset_id"]})
+
+    # Dataset items
+    dataset_items = (
+        await db["data"].find({"dataset_id": project["dataset_id"]}).to_list(None)
+    )
+
+    # Markup
+    markup = await db["markup"].find({"project_id": project_id}).to_list(None)
+
+    # Socials
+    social = (
+        await db["social"]
+        .find({"dataset_item_id": {"$in": [di["_id"] for di in dataset_items]}})
+        .to_list(None)
+    )
+
+    return ProjectDownload(
+        project=project,
+        dataset=ProjectDataset(**dataset),
+        dataset_items=[ProjectDatasetItem(**i) for i in dataset_items],
+        markup=[
+            Entity(**i) if i["classification"] == "entity" else Relation(**i)
+            for i in markup
+        ],
+        social=[ProjectSocial(**i) for i in social],
+    )
