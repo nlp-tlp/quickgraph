@@ -1,297 +1,241 @@
-import { useEffect, useState, forwardRef, useContext } from "react";
-// import TreeView from "@mui/lab/TreeView";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import PropTypes from "prop-types";
-// import { TreeItem, useTreeItem } from "@mui/x-tree-view/TreeItem";
-import clsx from "clsx";
+import React, { useState, forwardRef, useContext } from "react";
 import {
-  Typography,
   Box,
-  Stack,
   Button,
   CircularProgress,
+  Stack,
+  Typography,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { extractIds } from "../../../shared/utils/treeView";
 import { ProjectContext } from "../../../shared/context/ProjectContext";
+import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
+import { TreeItem2 } from "@mui/x-tree-view/TreeItem2";
+import { useTreeItem2Utils } from "@mui/x-tree-view/hooks";
 
-// const EntityHierarchy = ({
-//   expandedEntityIds: expandedIds,
-//   setExpandedEntityIds: setExpandedIds,
-//   open,
-// }) => {
-//   const theme = useTheme();
-//   const { state, dispatch, handleApply } = useContext(ProjectContext);
-//   const [treeData, setTreeData] = useState([]);
+const getContrastColor = (color) => {
+  // Convert hex to RGB
+  const hex = color.replace("#", "");
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
 
-//   useEffect(() => {
-//     if (state.ontology && state.ontology.entity) {
-//       setTreeData(state.ontology.entity);
-//     }
-//   }, [state]);
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-//   const handleExpandAll = () => {
-//     setExpandedIds(extractIds(treeData));
-//   };
+  return luminance > 0.5 ? "#000000" : "#ffffff";
+};
 
-//   const handleCollapseAll = () => {
-//     setExpandedIds([]);
-//   };
+const StyledTreeItem2 = styled(TreeItem2)(({ theme, itemcolor }) => ({
+  "& .MuiTreeItem-content": {
+    border: `1px solid ${itemcolor || "transparent"}`,
+    borderRadius: 0,
+    marginBottom: 2,
+    backgroundColor: itemcolor ? alpha(itemcolor, 0.75) : "transparent",
+    color: itemcolor ? getContrastColor(itemcolor) : theme.palette.text.primary,
+    "&:hover": {
+      backgroundColor: itemcolor ? itemcolor : theme.palette.action.hover,
+    },
+  },
+  "& .MuiTreeItem-iconContainer": {
+    color: itemcolor ? getContrastColor(itemcolor) : "inherit",
+  },
+}));
 
-//   const handleToggle = (event, nodeIds) => {
-//     setExpandedIds(nodeIds);
-//   };
+const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
+  const { interactions } = useTreeItem2Utils({
+    itemId: props.itemId,
+    children: props.children,
+  });
 
-//   const handleAnnotation = (nodeId) => {
-//     if (state.entityAnnotationMode && 0 < state.selectedTokenIndexes.length) {
-//       try {
-//         const textId = state.selectedTextId;
-//         const tokenIndexes = state.selectedTokenIndexes;
+  const itemColor = props.color || "inherit";
 
-//         const start = tokenIndexes[0];
-//         const end = tokenIndexes.at(-1);
+  const handleContentClick = (event) => {
+    event.defaultMuiPrevented = true;
+    interactions.handleSelection(event);
+  };
 
-//         const payload = {
-//           project_id: state.projectId,
-//           dataset_item_id: textId,
-//           extra_dataset_item_ids: Object.keys(state.texts),
-//           annotation_type: "entity",
-//           suggested: false,
-//           content: {
-//             ontology_item_id: nodeId,
-//             start: start,
-//             end: end,
-//             surface_form: state.texts[textId].tokens
-//               .filter((t) => tokenIndexes.includes(t.index))
-//               .map((t) => t.value)
-//               .join(" "),
-//           },
-//         };
-//         handleApply({ body: payload, params: { apply_all: false } });
-//       } catch (error) {
-//         console.log(
-//           `(handleAnnotation) :: Failed to apply annotation - ${error}`
-//         );
-//       }
-//     }
-//   };
+  const handleIconContainerClick = (event) => {
+    interactions.handleExpansion(event);
+    event.stopPropagation(); // Prevents the content click handler from being triggered
+  };
 
-//   const renderTree = (nodes) => {
-//     return (
-//       <CustomTreeItem
-//         key={nodes.id}
-//         nodeId={nodes.id}
-//         label={nodes.name}
-//         sx={{
-//           color: nodes.color,
-//           textAlign: "left",
-//         }}
-//         ContentProps={{
-//           nodeDisabled: !nodes.active,
-//         }}
-//       >
-//         {Array.isArray(nodes.children)
-//           ? nodes.children.map((node) => renderTree(node))
-//           : null}
-//       </CustomTreeItem>
-//     );
-//   };
+  return (
+    <StyledTreeItem2
+      {...props}
+      ref={ref}
+      itemcolor={itemColor}
+      title={`${props.fullname} (${props.itemId})` || ""}
+      slotProps={{
+        content: {
+          onClick: handleContentClick,
+          sx: {
+            "&:hover": {
+              backgroundColor: `${itemColor}20`, // 20 is hex for 12% opacity
+            },
+          },
+        },
+        iconContainer: { onClick: handleIconContainerClick },
+      }}
+    />
+  );
+});
 
-//   const CustomContent = forwardRef(function CustomContent(props, ref) {
-//     const {
-//       classes,
-//       className,
-//       label,
-//       nodeId,
-//       nodeDisabled,
-//       icon: iconProp,
-//       expansionIcon,
-//       displayIcon,
-//     } = props;
+const findItem = (id, items) => {
+  if (!items) return null;
+  for (const item of items) {
+    if (item.id === id) return item;
+    if (item.children) {
+      const found = findItem(id, item.children);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
-//     const {
-//       disabled,
-//       expanded,
-//       selected,
-//       focused,
-//       handleExpansion,
-//       handleSelection,
-//       preventSelection,
-//     } = useTreeItem(nodeId);
+const EntityTreeSelect = () => {
+  const { state, dispatch, handleApply } = useContext(ProjectContext);
 
-//     const icon = iconProp || expansionIcon || displayIcon;
+  const handleAnnotation = (nodeId) => {
+    if (state.entityAnnotationMode && 0 < state.selectedTokenIndexes.length) {
+      try {
+        const textId = state.selectedTextId;
+        const tokenIndexes = state.selectedTokenIndexes;
 
-//     const handleMouseDown = (event) => {
-//       preventSelection(event);
-//     };
+        const start = tokenIndexes[0];
+        const end = tokenIndexes.at(-1);
 
-//     const handleExpansionClick = (event) => {
-//       handleExpansion(event);
-//     };
+        const payload = {
+          project_id: state.projectId,
+          dataset_item_id: textId,
+          extra_dataset_item_ids: Object.keys(state.texts),
+          annotation_type: "entity",
+          suggested: false,
+          content: {
+            ontology_item_id: nodeId,
+            start: start,
+            end: end,
+            surface_form: state.texts[textId].tokens
+              .filter((t) => tokenIndexes.includes(t.index))
+              .map((t) => t.value)
+              .join(" "),
+          },
+        };
+        handleApply({ body: payload, params: { apply_all: false } });
+      } catch (error) {
+        console.log(
+          `(handleAnnotation) :: Failed to apply annotation - ${error}`
+        );
+      }
+    }
+  };
+  const getItemLabel = (item) => item.name;
+  const getItemId = (item) => item.id;
 
-//     const handleSelectionClick = (event, nodeId) => {
-//       handleSelection(event);
-//       dispatch({ type: "SET_VALUE", payload: { activeEntityClass: nodeId } });
-//       // dispatch(setActiveEntityClass(nodeId));
-//       handleAnnotation(nodeId);
-//     };
+  const handleSelectedItemsChange = (event, id) => {
+    dispatch({ type: "SET_VALUE", payload: { activeEntityClass: id } });
+    handleAnnotation(id);
+  };
 
-//     return (
-//       // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-//       <div
-//         className={clsx(className, classes.root, {
-//           [classes.expanded]: expanded,
-//           [classes.selected]: selected,
-//           [classes.focused]: focused,
-//           [classes.disabled]: disabled,
-//         })}
-//         onMouseDown={handleMouseDown}
-//         ref={ref}
-//         style={{
-//           border: "1px solid",
-//           borderRadius: "4px",
-//           marginBottom: "4px",
-//           padding: "4px",
-//           wordWrap: "break-word",
-//         }}
-//       >
-//         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
-//         <div onClick={handleExpansionClick} className={classes.iconContainer}>
-//           {icon}
-//         </div>
-//         <Typography
-//           onClick={(e) => !nodeDisabled && handleSelectionClick(e, nodeId)}
-//           component="div"
-//           className={classes.label}
-//           sx={{
-//             color: nodeDisabled && theme.palette.neutral.main,
-//           }}
-//           title={nodeDisabled ? "Disabled" : label}
-//         >
-//           {label}
-//         </Typography>
-//       </div>
-//     );
-//   });
+  return (
+    <Box sx={{ minHeight: 352, minWidth: 250 }}>
+      <RichTreeView
+        items={state?.ontology?.entity ?? []}
+        getItemId={getItemId}
+        getItemLabel={getItemLabel}
+        expansionTrigger="iconContainer"
+        slots={{
+          item: CustomTreeItem,
+        }}
+        slotProps={{
+          item: (item) => ({
+            item: item,
+            color: findItem(item.itemId, state.ontology.entity)?.color,
+            fullname: findItem(item.itemId, state.ontology.entity)?.fullname,
+          }),
+        }}
+        onSelectedItemsChange={handleSelectedItemsChange}
+      />
+    </Box>
+  );
+};
 
-//   CustomContent.propTypes = {
-//     /**
-//      * Override or extend the styles applied to the component.
-//      */
-//     classes: PropTypes.object.isRequired,
-//     /**
-//      * className applied to the root element.
-//      */
-//     className: PropTypes.string,
-//     /**
-//      * The icon to display next to the tree node's label. Either a parent or end icon.
-//      */
-//     displayIcon: PropTypes.node,
-//     /**
-//      * The icon to display next to the tree node's label. Either an expansion or collapse icon.
-//      */
-//     expansionIcon: PropTypes.node,
-//     /**
-//      * The icon to display next to the tree node's label.
-//      */
-//     icon: PropTypes.node,
-//     /**
-//      * The tree node label.
-//      */
-//     label: PropTypes.node,
-//     /**
-//      * The id of the node.
-//      */
-//     nodeId: PropTypes.string.isRequired,
-//   };
+const EntityHierarchy = ({
+  expandedEntityIds: expandedIds,
+  setExpandedEntityIds: setExpandedIds,
+}) => {
+  const { state, dispatch, handleApply } = useContext(ProjectContext);
+  const [treeData, setTreeData] = useState([]);
 
-//   const CustomTreeItem = (props) => (
-//     <TreeItem
-//       nodeId={props.nodeId}
-//       ContentComponent={CustomContent}
-//       {...props}
-//     />
-//   );
+  const handleExpandAll = () => {
+    setExpandedIds(extractIds(treeData));
+  };
 
-//   return (
-//     <>
-//       {state.projectLoading ? (
-//         <Box
-//           key="entity-hierarchy-loading-container"
-//           p={2}
-//           height="auto"
-//           display="flex"
-//           alignItems="center"
-//           justifyContent="center"
-//         >
-//           <Stack
-//             direction="row"
-//             alignItems="center"
-//             spacing={2}
-//             justifyContent="center"
-//             width="100%"
-//           >
-//             <CircularProgress size={14} />
-//             <Typography>Loading Entity Hierarchy</Typography>
-//           </Stack>
-//         </Box>
-//       ) : (
-//         <>
-//           <Box pt={1} pb={2}>
-//             <Stack
-//               direction="row"
-//               spacing={2}
-//               alignItems="center"
-//               justifyContent="space-evenly"
-//             >
-//               <Button
-//                 onClick={handleExpandAll}
-//                 size="small"
-//                 title="Click to expand entity hierarchy"
-//                 variant="outlined"
-//               >
-//                 Expand All
-//               </Button>
-//               <Button
-//                 onClick={handleCollapseAll}
-//                 size="small"
-//                 title="Click to collapse entity hierarchy"
-//                 variant="outlined"
-//               >
-//                 Collapse All
-//               </Button>
-//             </Stack>
-//           </Box>
-//           <Box
-//             pl={2}
-//             pr={1}
-//             sx={{
-//               maxHeight: open ? "calc(100vh - 554px)" : "calc(100vh - 410px)",
-//               overflowY: "auto",
-//             }}
-//           >
-//             <TreeView
-//               aria-label="controlled"
-//               defaultCollapseIcon={<ExpandMoreIcon />}
-//               defaultExpandIcon={<ChevronRightIcon />}
-//               defaultExpanded={expandedIds}
-//               expanded={expandedIds}
-//               onNodeToggle={handleToggle}
-//               sx={{
-//                 flexGrow: 1,
-//                 width: "100%",
-//               }}
-//             >
-//               {state.ontology.entity.map((parent) => renderTree(parent))}
-//             </TreeView>
-//           </Box>
-//         </>
-//       )}
-//     </>
-//   );
-// };
+  const handleCollapseAll = () => {
+    setExpandedIds([]);
+  };
 
-const EntityHierarchy = () => <div>Awaiting Deps. Fix.</div>;
+  const handleToggle = (event, nodeIds) => {
+    setExpandedIds(nodeIds);
+  };
+
+  return (
+    <>
+      {state.projectLoading ? (
+        <Box
+          key="entity-hierarchy-loading-container"
+          p={2}
+          height="auto"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2}
+            justifyContent="center"
+            width="100%"
+          >
+            <CircularProgress size={14} />
+            <Typography>Loading Entity Hierarchy</Typography>
+          </Stack>
+        </Box>
+      ) : (
+        <>
+          {/* <Box pt={1} pb={2}>
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              justifyContent="space-evenly"
+            >
+              <Button
+                onClick={handleExpandAll}
+                size="small"
+                title="Click to expand entity hierarchy"
+                variant="outlined"
+              >
+                Expand All
+              </Button>
+              <Button
+                onClick={handleCollapseAll}
+                size="small"
+                title="Click to collapse entity hierarchy"
+                variant="outlined"
+              >
+                Collapse All
+              </Button>
+            </Stack>
+          </Box> */}
+          <Box>
+            <EntityTreeSelect />
+          </Box>
+        </>
+      )}
+    </>
+  );
+};
 
 export default EntityHierarchy;

@@ -1,35 +1,27 @@
-import SchemaTreeViewWithButtons from "../../../shared/components/SchemaTreeView";
 import useResource from "../../../shared/hooks/api/resource";
+import SchemaTreeViewWithControls from "../../../shared/components/SchemaTreeViewWithControls";
 
-const Ontology = ({ values, setValues, editable }) => {
+const Ontology = ({ values, setValues }) => {
   const { updateResource } = useResource();
-
-  const handleUpdate = () => {
+  const handleUpdate = (updatedData) => {
     return updateResource({
       id: values._id,
       classification: values.classification,
       sub_classification: values.sub_classification,
-      content: values.content,
+      content: updatedData,
     });
   };
 
   return (
-    <SchemaTreeViewWithButtons
-      details={{
-        resource_id: values._id,
-        name: values.name,
-        classification: values.classification,
-        sub_classification: values.sub_classification,
-      }}
-      treeData={values.content}
-      setTreeData={(treeData) =>
+    <SchemaTreeViewWithControls
+      initialData={values.content}
+      handleDataChange={(treeData) =>
         setValues({
           ...values,
           content: treeData,
         })
       }
-      editable={editable}
-      onUpdate={handleUpdate}
+      handleDataUpdate={handleUpdate}
     />
   );
 };

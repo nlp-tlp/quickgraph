@@ -12,10 +12,10 @@ import {
   Divider,
   alpha,
 } from "@mui/material";
-import SchemaTreeViewWithButtons from "../../../../shared/components/SchemaTreeView";
 import { DashboardContext } from "../../../../shared/context/dashboard-context";
 import useResource from "../../../../shared/hooks/api/resource";
 import { useParams } from "react-router-dom";
+import SchemaTreeViewWithControls from "../../../../shared/components/SchemaTreeViewWithControls";
 
 const Resources = () => {
   const { state } = useContext(DashboardContext);
@@ -136,13 +136,12 @@ const OntologyComponent = ({ classification, subClassification }) => {
     }
   }, [loading, subClassification]);
 
-  const handleUpdate = () => {
-    // console.log("editable resource update", editableResource);
+  const handleUpdate = (updatedData) => {
     return updateResource({
       project_id: projectId,
       classification: classification,
       sub_classification: subClassification,
-      content: editableResource,
+      content: updatedData,
     });
   };
 
@@ -154,18 +153,10 @@ const OntologyComponent = ({ classification, subClassification }) => {
         sx={{ height: "calc(100vh - 294px)", overflowY: "auto" }}
       >
         {!loading && (
-          <SchemaTreeViewWithButtons
-            details={{
-              id: `ontology-editor-${subClassification}`,
-              name: `project-${state.name}`,
-              classification: classification,
-              sub_classification: subClassification,
-            }}
-            treeData={editableResource}
-            setTreeData={(treeData) => setEditableResource([...treeData])}
-            editable={true}
-            canDeleteItems={false}
-            onUpdate={handleUpdate}
+          <SchemaTreeViewWithControls
+            initialData={editableResource}
+            handleDataChange={(treeData) => setEditableResource([...treeData])}
+            handleDataUpdate={handleUpdate}
           />
         )}
       </Grid>
