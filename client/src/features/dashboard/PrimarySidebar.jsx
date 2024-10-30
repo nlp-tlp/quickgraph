@@ -30,11 +30,13 @@ import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAuth } from "../../shared/context/AuthContext";
+import { useAuthRedirect } from "../../shared/hooks/useAuthRedirect";
 
 const PrimarySidebar = ({ open, setOpen }) => {
   const { state, dispatch } = useContext(DashboardContext);
   const { projectId, view } = useParams();
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
+  const { logoutWithRedirect } = useAuthRedirect();
   const theme = useTheme();
 
   const [openModal, setOpenModal] = useState(false);
@@ -237,7 +239,7 @@ const PrimarySidebar = ({ open, setOpen }) => {
               </Tooltip>
               <Tooltip title="Click to logout" placement="right">
                 <ListItemButton
-                  onClick={() => logout({ returnTo: window.location.origin })}
+                  onClick={logoutWithRedirect}
                   sx={{
                     minHeight: 48,
                     justifyContent: open ? "initial" : "center",

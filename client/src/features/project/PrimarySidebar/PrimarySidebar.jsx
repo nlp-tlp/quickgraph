@@ -28,11 +28,13 @@ import ShortcutIcon from "@mui/icons-material/Shortcut";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAuth } from "../../../shared/context/AuthContext";
+import { useAuthRedirect } from "../../../shared/hooks/useAuthRedirect";
 
 const PrimarySidebar = ({ open, setOpen }) => {
   const theme = useTheme();
   const { state, dispatch, handleSave } = useContext(ProjectContext);
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
+  const { logoutWithRedirect } = useAuthRedirect();
   const { projectId } = useParams();
 
   const unsavedItemsCount =
@@ -225,7 +227,7 @@ const PrimarySidebar = ({ open, setOpen }) => {
               </Tooltip>
               <Tooltip title="Click to logout" placement="right">
                 <ListItemButton
-                  onClick={() => logout({ returnTo: window.location.origin })}
+                  onClick={logoutWithRedirect}
                   sx={{
                     minHeight: 48,
                     justifyContent: open ? "initial" : "center",

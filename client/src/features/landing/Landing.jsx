@@ -74,8 +74,8 @@ export const ResponsiveTypography = (props) => {
 
 export const Header = () => {
   const theme = useTheme();
-  const { logout, isAuthenticated } = useAuth();
-  const { logoutWithRedirect } = useAuthRedirect();
+  const { isAuthenticated } = useAuth();
+  const { logoutWithRedirect, loginWithRedirect } = useAuthRedirect();
 
   const [open, setOpen] = useState(false);
 
@@ -161,7 +161,9 @@ export const Header = () => {
                     <ListItem key={isAuthenticated ? "logout" : "login"}>
                       <ListItemButton
                         onClick={() =>
-                          isAuthenticated ? logout() : loginWithRedirect()
+                          isAuthenticated
+                            ? logoutWithRedirect()
+                            : loginWithRedirect()
                         }
                       >
                         <ListItemIcon>
@@ -216,7 +218,7 @@ export const Header = () => {
                 variant="contained"
                 disableElevation
                 title={isAuthenticated ? "Click to logout" : "Click to log in"}
-                onClick={isAuthenticated ? logout : undefined}
+                onClick={isAuthenticated ? logoutWithRedirect : undefined}
                 component={isAuthenticated ? "button" : Link}
                 to={isAuthenticated ? undefined : "/auth?option=login"}
                 endIcon={isAuthenticated ? <LogoutIcon /> : <LoginIcon />}

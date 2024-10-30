@@ -24,10 +24,12 @@ import { PrimaryNavItems, RedirectMenuItems } from "./data";
 import ListItemWithChildren from "./ListItemWithChildren";
 import UserListItem from "./UserListItem";
 import { useAuth } from "../../../context/AuthContext";
+import { useAuthRedirect } from "../../../hooks/useAuthRedirect";
 
 const Sidebar = ({ open, setOpen }) => {
   const theme = useTheme();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { logoutWithRedirect } = useAuthRedirect();
   const location = useLocation();
 
   return (
@@ -179,7 +181,7 @@ const Sidebar = ({ open, setOpen }) => {
             <Tooltip title="Click to logout" placement="right">
               <ListItem disablePadding>
                 <ListItemButton
-                  onClick={logout}
+                  onClick={logoutWithRedirect}
                   sx={{
                     minHeight: 48,
                     justifyContent: open ? "initial" : "center",
