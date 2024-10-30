@@ -49,6 +49,8 @@ const Social = ({ state, dispatch }) => {
     return <ErrorAlert />;
   }
 
+  console.log(state);
+
   if (!state.discussionDatasetItemId) {
     return (
       <Box
@@ -122,7 +124,9 @@ const Social = ({ state, dispatch }) => {
       <Divider />
       <Box p={2} display="flex" alignItems="center" justifyContent="center">
         <FormControl variant="outlined" sx={{ width: "100%" }}>
-          <InputLabel htmlFor="outlined-comment">Comment</InputLabel>
+          <InputLabel htmlFor="outlined-comment">
+            {state.settings.disable_discussion ? "Disabled" : "Comment"}
+          </InputLabel>
           <OutlinedInput
             id="outlined-comment"
             type="text"
@@ -130,6 +134,7 @@ const Social = ({ state, dispatch }) => {
             value={submitting ? "Posting..." : text}
             onChange={(e) => setText(e.target.value)}
             maxRows={2}
+            disabled={state.settings.disable_discussion}
             endAdornment={
               <InputAdornment position="end">
                 {submitting ? (
@@ -148,7 +153,7 @@ const Social = ({ state, dispatch }) => {
                 )}
               </InputAdornment>
             }
-            label="Comment"
+            label={state.settings.disable_discussion ? "Disabled" : "Comment"}
           />
         </FormControl>
       </Box>
