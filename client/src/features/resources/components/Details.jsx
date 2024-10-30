@@ -82,15 +82,16 @@ const ResourceDetails = ({ values, setValues, resources, loading }) => {
             ? "Loading..."
             : `${values.sub_classification} Ontology`,
           caption: `Choose the ${values.sub_classification} ontology that your ${values.classification} uses`,
-          options: loading
-            ? [{ name: "Please wait", value: "" }]
-            : resources
-                .filter((r) => r.sub_classification === "entity")
-                .map((r) => ({
-                  name: `${r.name} (${r.instances.length})`,
-                  value: r.id,
-                  title: `${r.instances.join(", ")}`,
-                })),
+          options:
+            loading || !resources
+              ? [{ name: "Please wait", value: "" }]
+              : resources
+                  .filter((r) => r.sub_classification === "entity")
+                  .map((r) => ({
+                    name: `${r.name} (${r.instances.length})`,
+                    value: r.id,
+                    title: `${r.instances.join(", ")}`,
+                  })),
         },
       ]}
     />

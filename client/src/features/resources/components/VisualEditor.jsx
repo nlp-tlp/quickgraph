@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import moment from "moment";
-import SchemaTreeViewWithButtons from "../../projectcreation/steps/SchemaTreeView";
+// import SchemaTreeViewWithButtons from "../../projectcreation/steps/SchemaTreeView";
 
 const ResourceEditor = ({
   createResource,
@@ -35,7 +35,8 @@ const ResourceEditor = ({
 
   return (
     <>
-      {selectedResource ? (
+      <div>Coming soon!</div>
+      {/* {selectedResource ? (
         <>
           <Grid item xs={12} sx={{ textAlign: "center" }}>
             <Typography variant="h6">
@@ -161,7 +162,7 @@ const ResourceEditor = ({
         <Grid item xs={12} sx={{ textAlign: "center" }} p={2}>
           <Typography>No resource selected - select or create one.</Typography>
         </Grid>
-      )}
+      )} */}
     </>
   );
 };

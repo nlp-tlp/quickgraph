@@ -129,27 +129,27 @@ const Editor = ({ values, setValues }) => {
               </Button>
             </Tooltip>
             {/* <Tooltip
-                  title={`Click to toggle ${
-                    values.visualMode ? "text" : "visual"
-                  } editor`}
-                  arrow
-                  placement="top"
-                >
-                  <Button
-                    startIcon={
-                      values.visualMode ? <SubjectIcon /> : <AccountTreeIcon />
-                    }
-                    onClick={() =>
-                      setValues((prevState) => ({
-                        ...prevState,
-                        visualMode: !values.visualMode,
-                      }))
-                    }
-                    disabled
-                  >
-                    {values.visualMode ? "Text" : "Visual"} Mode
-                  </Button>
-                </Tooltip> */}
+              title={`Click to toggle ${
+                values.visualMode ? "text" : "visual"
+              } editor`}
+              arrow
+              placement="top"
+            >
+              <Button
+                startIcon={
+                  values.visualMode ? <SubjectIcon /> : <AccountTreeIcon />
+                }
+                onClick={() =>
+                  setValues((prevState) => ({
+                    ...prevState,
+                    visualMode: !values.visualMode,
+                  }))
+                }
+                disabled
+              >
+                {values.visualMode ? "Text" : "Visual"} Mode
+              </Button>
+            </Tooltip> */}
             <TextField
               title="Click to change the data format"
               variant="standard"
