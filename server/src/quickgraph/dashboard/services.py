@@ -10,7 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..dashboard.schemas import Annotator, DashboardInformation
 from ..markup.schemas import Classifications as MarkupClassifications
-from ..projects.schemas import OntologyItem, ProjectOntology
+from ..project.schemas import OntologyItem, ProjectOntology
 from ..utils.misc import flatten_hierarchical_ontology
 
 DATE_FORMAT = "%d/%m/%Y"

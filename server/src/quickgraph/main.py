@@ -16,7 +16,7 @@ from .dependencies import get_db
 from .graph.router import router as graph_router
 from .markup.router import router as markup_router
 from .notifications.router import router as notifications_router
-from .projects.router import router as projects_router
+from .project.router import router as project_router
 from .resources.router import router as resources_router
 from .settings import get_settings, settings, Settings
 from .social.router import router as social_router
@@ -88,7 +88,7 @@ app.include_router(markup_router)
 app.include_router(dashboard_router)
 app.include_router(graph_router)
 app.include_router(dataset_router)
-app.include_router(projects_router)
+app.include_router(project_router)
 
 
 @app.get("/status")

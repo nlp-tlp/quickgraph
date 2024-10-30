@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..markup.schemas import RichCreateEntity, RichCreateRelation
-from ..projects.schemas import FlagState, OntologyItem
+from ..project.schemas import FlagState, OntologyItem
 from ..settings import settings
 from ..social.schemas import Comment
 from ..utils.misc import flatten_hierarchical_ontology

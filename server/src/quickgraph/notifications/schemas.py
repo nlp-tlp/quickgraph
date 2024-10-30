@@ -47,6 +47,7 @@ class CreateNotification(BaseModel):
         default=None,
         description="The state associated with the notification (if applicable)",
     )
+    detail: Dict[str, str] = Field(description="The details of the notification")
 
     model_config = ConfigDict(use_enum_values=True)
 

@@ -11,7 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..dataset.schemas import QualityFilter
 from ..dependencies import get_db, get_user
-from ..projects.schemas import OntologyItem
+from ..project.schemas import OntologyItem
 from ..users.schemas import UserDocumentModel
 from ..utils.misc import flatten_hierarchical_ontology
 from .schemas import (

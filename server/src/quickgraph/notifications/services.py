@@ -17,33 +17,33 @@ async def find_many_project_notifications(
     db: AsyncIOMotorDatabase, project_id: ObjectId, username: str = None
 ) -> List[Notification]:
     """Finds notifications related to a specific project"""
-
     _filter = {
         **{"content_id": project_id},
         **({"recipient": username} if username else {}),
     }
-
-    # print("_filter", _filter)
-
     notifications = await db["notifications"].find(_filter).to_list(None)
-
     return [Notification(**n) for n in notifications]
 
 
 async def create_notification(
     db: AsyncIOMotorDatabase, notification: CreateNotification
 ) -> Notification:
-    created_notification = await db["notifications"].insert_one(notification.dict())
-
+    """Creates a notification."""
+    created_notification = await db["notifications"].insert_one(
+        notification.model_dump()
+    )
     notification = await db["notifications"].find_one(
         {"_id": created_notification.inserted_id}
     )
-
     return Notification(**notification)
 
 
 async def create_many_project_invitations(
-    db: AsyncIOMotorDatabase, project_id: ObjectId, recipients: List[str], username: str
+    db: AsyncIOMotorDatabase,
+    project_id: ObjectId,
+    project_name: str,
+    recipients: List[str],
+    username: str,
 ):
     """Sends project invitations to users."""
     notification_docs = [
@@ -52,6 +52,7 @@ async def create_many_project_invitations(
             created_by=username,
             context=NotificationContext.invitation,
             content_id=project_id,
+            detail={"name": project_name},
         ).model_dump()
         for recipient in recipients
     ]

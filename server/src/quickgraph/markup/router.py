@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from ..dependencies import get_db, get_user
 from ..examples import get_examples
-from ..projects.schemas import (
+from ..project.schemas import (
     CreateFlag,
     Flag,
     FlagState,

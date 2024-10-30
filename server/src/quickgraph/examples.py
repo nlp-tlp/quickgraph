@@ -4,8 +4,8 @@ import bson
 from bson import ObjectId
 
 from .markup.schemas import CreateEntity, CreateMarkupApply, EntityMarkup, InMarkupApply
-from .projects.schemas import CreateProject  # TokenizerEnum,
-from .projects.schemas import (
+from .project.schemas import CreateProject  # TokenizerEnum,
+from .project.schemas import (
     BasicEntity,
     DatasetItem,
     PreannotationResource,

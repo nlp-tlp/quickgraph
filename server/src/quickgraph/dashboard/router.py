@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..dataset.schemas import QualityFilter, SaveStateFilter
-from ..dependencies import get_db, get_user
-from ..projects.schemas import FlagState, OntologyItem
+from ..dependencies import get_db, get_active_project_user
+from ..project.schemas import FlagState, OntologyItem
 from ..users.schemas import UserDocumentModel
 from ..utils.agreement import AgreementCalculator
 from ..utils.misc import flatten_hierarchical_ontology
@@ -26,9 +26,9 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
 @router.get("/{project_id}")
-async def get_dashboard_info(
+async def get_dashboard_info_endpoint(
     project_id: str,
-    user: UserDocumentModel = Depends(get_user),
+    user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Fetches a high-level project information"""
@@ -40,7 +40,7 @@ async def get_dashboard_info(
 @router.get("/overview/{project_id}")
 async def get_overview(
     project_id: str,
-    user: UserDocumentModel = Depends(get_user),
+    user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """
@@ -316,6 +316,7 @@ async def get_adjudication(
         title="Dataset Item Id",
         description="Dataset item id to filter dataset items on.",
     ),
+    user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Gets adjudication information for a single dataset item
@@ -717,7 +718,7 @@ async def get_effort(
     saved: int = Query(default=SaveStateFilter.everything),
     quality: int = Query(default=QualityFilter.everything),
     min_agreement: int = Query(default=0, ge=0, le=100),
-    user: UserDocumentModel = Depends(get_user),
+    user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Fetches a summary of annotation effort on a given project. Effort is used summarise the progress made by each annotator.
@@ -745,7 +746,7 @@ async def get_download(
     flags: list = Query(default=None),
     usernames: str = Query(default=None),
     # min_agreement: int = Query(default=0, ge=0, le=100),
-    user: UserDocumentModel = Depends(get_user),
+    user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Fetches annotations for download

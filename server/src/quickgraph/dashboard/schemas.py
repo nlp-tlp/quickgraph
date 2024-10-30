@@ -5,7 +5,7 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..projects.schemas import (
+from ..project.schemas import (
     AnnotatorRoles,
     AnnotatorStates,
     Guidelines,

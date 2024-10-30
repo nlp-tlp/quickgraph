@@ -15,8 +15,8 @@ from pymongo import DeleteOne
 
 from ..dataset.schemas import DatasetItem
 from ..dataset.services import find_one_dataset_item
-from ..projects.schemas import OntologyItem, Project, ProjectOntology
-from ..projects.services import find_one_project
+from ..project.schemas import OntologyItem, Project, ProjectOntology
+from ..project.services import find_one_project
 from .schemas import (
     Classifications,
     CreateEntity,

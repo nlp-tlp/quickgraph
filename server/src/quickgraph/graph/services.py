@@ -1,13 +1,11 @@
-"""
-    Services to support Graph route
-"""
+"""Graph services."""
 
 from collections import defaultdict
 from itertools import groupby
 from operator import itemgetter
 from typing import Dict, List, Union
 
-from ..projects.schemas import OntologyItem
+from ..project.schemas import OntologyItem
 from .schemas import (
     Graph,
     GraphData,
@@ -161,9 +159,9 @@ def aggregate_graph(data):
     ):
         group = list(group)
         new_node = group[0].copy()
-        new_node[
-            "id"
-        ] = f"{new_node['label']}-{new_node['ontology_item_id']}-{new_node['suggested']}"
+        new_node["id"] = (
+            f"{new_node['label']}-{new_node['ontology_item_id']}-{new_node['suggested']}"
+        )
         new_node["value"] = len(group)
         aggregated_nodes[new_node["id"]] = new_node
 
@@ -212,16 +210,16 @@ def aggregate_graph(data):
         group = list(group)
         new_link = group[0].copy()
         new_link["value"] = len(group)
-        new_link[
-            "source"
-        ] = f"{new_link['source']['label']}-{new_link['source']['ontology_item_id']}-{new_link['source']['suggested']}"
+        new_link["source"] = (
+            f"{new_link['source']['label']}-{new_link['source']['ontology_item_id']}-{new_link['source']['suggested']}"
+        )
 
-        new_link[
-            "target"
-        ] = f"{new_link['target']['label']}-{new_link['target']['ontology_item_id']}-{new_link['target']['suggested']}"
-        new_link[
-            "id"
-        ] = f"{new_link['source']}-{new_link['label']}-{new_link['target']}"
+        new_link["target"] = (
+            f"{new_link['target']['label']}-{new_link['target']['ontology_item_id']}-{new_link['target']['suggested']}"
+        )
+        new_link["id"] = (
+            f"{new_link['source']}-{new_link['label']}-{new_link['target']}"
+        )
 
         aggregated_links[new_link["id"]] = new_link
 
