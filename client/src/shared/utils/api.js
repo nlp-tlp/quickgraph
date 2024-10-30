@@ -12,15 +12,30 @@ class TokenError extends Error {
   }
 }
 
+// Define public routes that don't need authentication
+const publicRoutes = [
+  "/users/register",
+  "/users/token",
+  "/users/reset-password",
+];
+
 const axiosInstance = axios.create({
   baseURL,
   withCredentials: true,
 });
 
+const isPublicRoute = (url) => {
+  return publicRoutes.some((route) => url.includes(route));
+};
+
 // Request interceptor to add token
 axiosInstance.interceptors.request.use(
   (config) => {
     try {
+      if (isPublicRoute(config.url)) {
+        return config;
+      }
+
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -50,6 +65,10 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (isPublicRoute(error.config?.url)) {
+      return Promise.reject(error);
+    }
+
     // Handle 401 errors
     if (error.response?.status === 401) {
       // Clear invalid token
