@@ -1,54 +1,50 @@
-version: "3.8"
 services:
-  client:
-    image: quickgraph-client
-    build: ./client/
-    stdin_open: true
-    ports:
-      - "3020:3000"
-    networks:
-      - quickgraph-app
-    volumes:
-      - ./client/:/usr/src/app
-      - /usr/src/app/node_modules
-    depends_on:
-      - server
   server:
     image: quickgraph-server
-    build: ./server/
-    stdin_open: true
-    ports:
-      - "3010:3010"
-    networks:
-      - quickgraph-app
-    volumes:
-      - ./server/:/usr/src/app
-      - /usr/src/app/node_modules
+    build:
+     context: ./server
+     dockerfile: Dockerfile
     depends_on:
-      - mongo
-  mongo:
-    image: mongo:4.4.8
-    ports:
-      - "27018:27017"
-    networks:
-      - quickgraph-app
-    volumes:
-      - mongo-data:/data/db
-    depends_on:
-      - server_cluster
-  server_cluster:
-    image: quickgraph-server-cluster
-    build: ./server_cluster
-    stdin_open: true
+      - mongodb
     ports:
       - "8000:8000"
     networks:
-      - quickgraph-app
+      - app-network
 
-networks:
-  quickgraph-app:
-    driver: bridge
+  client:
+    image: quickgraph-client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+      # - docs
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    networks:
+      - app-network
+
+  # docs:
+  #   build:
+  #     context: ./docs
+  #   ports:
+  #     - "4000:4000"
 
 volumes:
-  mongo-data:
-    driver: local
+  mongodb_data:
+
+networks:
+  app-network:
+    driver: bridge
