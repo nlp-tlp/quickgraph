@@ -20,7 +20,7 @@ import MainContainer from "../../shared/components/Layout/MainContainer";
 
 const Profile = () => {
   const { loading, data, error, getProfile, updateProfile } = useProfile();
-  const [selectedColor, setSelectedColor] = useState(data ? data.color : null);
+  const [selectedColor, setSelectedColor] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -33,7 +33,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (!loading && data) {
-      setSelectedColor(data.user_metadata.color);
+      setSelectedColor(data.color);
     }
   }, [loading]);
 
