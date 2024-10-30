@@ -382,7 +382,7 @@ export const ProjectProvider = (props) => {
         },
       });
 
-      const res = await axiosInstance.patch("/project/save/", {
+      const res = await axiosInstance.patch("/project/save", {
         project_id: state.projectId,
         dataset_item_ids: dataset_item_ids,
       });
@@ -498,7 +498,7 @@ export const ProjectProvider = (props) => {
   const fetchSuggestedEntities = async ({ projectId, surfaceForm }) => {
     try {
       const res = await axiosInstance.get(
-        `/projects/suggested-entities/${projectId}/${surfaceForm}`
+        `/project/suggested-entities/${projectId}/${surfaceForm}`
       );
 
       if (res.status === 200) {

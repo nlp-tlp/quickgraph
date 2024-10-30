@@ -214,7 +214,7 @@ export const DashboardProvider = (props) => {
     try {
       const token = await getAccessToken();
 
-      const res = await axiosInstance.delete("/project/user/", {
+      const res = await axiosInstance.delete("/project/user", {
         params: {
           project_id: projectId,
           username: username,
