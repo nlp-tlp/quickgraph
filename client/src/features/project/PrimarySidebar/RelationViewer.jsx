@@ -74,9 +74,6 @@ const RelationStack = ({ relations }) => {
       // acceptAction({ markupId: relation.id, params: { apply_all: false } });
     }
   };
-
-  console.log(relations);
-
   return (
     <List
       disablePadding
