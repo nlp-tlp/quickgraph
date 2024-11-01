@@ -10,6 +10,10 @@ services:
       - "8000:8000"
     networks:
       - app-network
+    environment:
+      - MONGODB__DATABASE_NAME=quickgraph
+      - MONGODB__URI=mongodb://root:example@mongodb:27017
+      - AUTH__SECRET_KEY=example
 
   client:
     image: quickgraph-client
@@ -23,6 +27,9 @@ services:
       # - docs
     networks:
       - app-network
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_DOC_BASE_URL=http://localhost:4000
 
   mongodb:
     image: mongo:latest
@@ -31,16 +38,16 @@ services:
     volumes:
       - mongodb_data:/data/db
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
     networks:
       - app-network
 
-  docs:
-    build:
-      context: ./docs
-    ports:
-      - "4000:4000"
+  # docs:
+  #   build:
+  #     context: ./docs
+  #   ports:
+  #     - "4000:4000"
 
 volumes:
   mongodb_data:
