@@ -8,71 +8,36 @@ import {
   ListItemAvatar,
   ListItemText,
   Link as MuiLink,
-  Skeleton,
+  Button,
   Paper,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import moment from "moment";
 import { useAuth } from "../../shared/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 
-// Mock fetch function
-const fetchActivities = async (page, limit) => {
-  // Example implementation:
-  // const response = await fetch(`/api/activities?page=${page}&limit=${limit}`);
-  // const data = await response.json();
-  // return { items: data.items, hasMore: data.hasMore };
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        items: [],
-        hasMore: false,
-      });
-    }, 1000);
-  });
-};
+const ITEMS_PER_PAGE = 20;
 
-const ActivityFeed = () => {
-  const [activities, setActivities] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const ITEMS_PER_PAGE = 20;
+const ActivityFeed = ({ data = [] }) => {
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      try {
-        const result = await fetchActivities(1, ITEMS_PER_PAGE);
-        setActivities(result.items);
-        setHasMore(result.hasMore);
-      } catch (error) {
-        console.error("Failed to fetch activities:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Sort data by most recent first and memoize to prevent unnecessary re-sorting
+  const sortedActivities = useMemo(() => {
+    return [...data].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+  }, [data]);
 
-    loadInitialData();
-  }, []);
+  // Get current slice of data to display
+  const displayedActivities = sortedActivities.slice(0, displayCount);
 
-  const handleShowMore = async () => {
-    if (loadingMore) return;
+  // Check if there's more data to show
+  const hasMore = displayCount < sortedActivities.length;
 
-    setLoadingMore(true);
-    try {
-      const nextPage = page + 1;
-      const result = await fetchActivities(nextPage, ITEMS_PER_PAGE);
-
-      setActivities((prev) => [...prev, ...result.items]);
-      setPage(nextPage);
-      setHasMore(result.hasMore);
-    } catch (error) {
-      console.error("Failed to load more activities:", error);
-    } finally {
-      setLoadingMore(false);
-    }
+  const handleShowMore = () => {
+    setDisplayCount((prevCount) =>
+      Math.min(prevCount + ITEMS_PER_PAGE, sortedActivities.length)
+    );
   };
 
   return (
@@ -83,66 +48,55 @@ const ActivityFeed = () => {
       display="flex"
       flexDirection="column"
     >
-      {loading ? (
-        <Skeleton variant="rectangular" height="100%" width="100%" />
+      <Box sx={{ textAlign: "center" }} p={2}>
+        <Typography variant="button">
+          Activity Feed ({sortedActivities.length})
+        </Typography>
+      </Box>
+
+      <Divider />
+
+      {sortedActivities.length === 0 ? (
+        <Box p={2} sx={{ textAlign: "center" }}>
+          <Typography>No activity detected</Typography>
+        </Box>
       ) : (
-        <>
-          <Box sx={{ textAlign: "center" }} p={2}>
-            <Typography variant="button">
-              Activity Feed ({activities?.length ?? 0})
-            </Typography>
-          </Box>
+        <Box display="flex" flexDirection="column" height="100%">
+          <List
+            sx={{
+              width: "100%",
+              overflowY: "auto",
+              flex: 1,
+            }}
+          >
+            {displayedActivities.map((item, index) => (
+              <ActivityListItem
+                key={`activity-${index}`}
+                item={item}
+                index={index}
+              />
+            ))}
+          </List>
 
-          <Divider />
-
-          {activities.length === 0 ? (
-            <Box p={2} sx={{ textAlign: "center" }}>
-              <Typography>No activity detected</Typography>
-            </Box>
-          ) : (
-            <Box display="flex" flexDirection="column" height="100%">
-              <List
-                sx={{
-                  width: "100%",
-                  overflowY: "auto",
-                  flex: 1,
-                }}
+          {hasMore && (
+            <Box
+              p={2}
+              sx={{
+                textAlign: "center",
+                borderTop: 1,
+                borderColor: "divider",
+              }}
+            >
+              <Button
+                onClick={handleShowMore}
+                variant="text"
+                sx={{ minWidth: 120 }}
               >
-                {activities
-                  ?.sort(
-                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-                  )
-                  .map((item, index) => (
-                    <ActivityListItem
-                      key={`activity-${index}`}
-                      item={item}
-                      index={index}
-                    />
-                  ))}
-              </List>
-
-              {hasMore && (
-                <Box
-                  p={2}
-                  sx={{
-                    textAlign: "center",
-                    borderTop: 1,
-                    borderColor: "divider",
-                  }}
-                >
-                  <Button
-                    onClick={handleShowMore}
-                    disabled={loadingMore}
-                    variant="text"
-                    sx={{ minWidth: 120 }}
-                  >
-                    {loadingMore ? <CircularProgress size={24} /> : "Show More"}
-                  </Button>
-                </Box>
-              )}
+                Show More
+              </Button>
             </Box>
           )}
-        </>
+        </Box>
       )}
     </Box>
   );
