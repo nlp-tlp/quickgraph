@@ -32,7 +32,6 @@ const EntityContextMenuItems = (props) => {
   } = useContext(ProjectContext);
 
   const handleDeleteAction = (applyAll) => {
-    console.log("entity delete - span", span);
     // deleteMarkupOptimistically({
     //   markupId: spanId,
     //   datasetItemId: textId,

@@ -24,8 +24,6 @@ const useProject = ({ state, dispatch }) => {
     };
 
     deleteAction = (payload) => {
-      console.log("demo delete payload", payload);
-
       if (payload.annotationType === "entity") {
         dispatch({
           type: "DELETE_ANNOTATION",
@@ -123,7 +121,6 @@ const useProject = ({ state, dispatch }) => {
       }
     };
     acceptAction = (payload) => {
-      console.log("demo accept payload", payload);
       // dispatch({ type: "ACCEPT_ANNOTATION", payload: "" });
     };
 

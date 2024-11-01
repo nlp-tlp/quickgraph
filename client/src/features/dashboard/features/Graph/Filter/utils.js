@@ -51,7 +51,6 @@ function getNodeNeighbors(nodes, links) {
  */
 
 function filterGraphByLabel(data, searchText) {
-  console.log("Filtering graph by label");
   const { nodes, links } = data;
 
   // Filter nodes based on case-insensitive substring match on the "label"
@@ -61,8 +60,6 @@ function filterGraphByLabel(data, searchText) {
     }
     return filtered;
   }, {});
-
-  console.log("filtered nodes", filteredNodes);
 
   // Add nodes that are one link away from the filtered nodes
   const filteredLinks = Object.values(links).reduce((filtered, link) => {
@@ -77,8 +74,6 @@ function filterGraphByLabel(data, searchText) {
     return filtered;
   }, filteredNodes);
 
-  console.log("filtered links", filteredLinks);
-
   // Filter links based on the filtered nodes
   const filteredLinks2 = Object.values(links).reduce((filtered, link) => {
     const linkSourceId = link.source?.id ?? link.source;
@@ -89,8 +84,6 @@ function filterGraphByLabel(data, searchText) {
     }
     return filtered;
   }, {});
-
-  console.log("filtered links2", filteredLinks2);
 
   return {
     nodes: filteredLinks,
@@ -321,11 +314,9 @@ export function filterData(data, options = {}) {
 
   if (searchTerm) {
     filteredData = filterGraphByLabel(filteredData, searchTerm);
-    console.log("searchTerm filteredData", filteredData);
   }
 
   if (exclude_ontology_item_ids.length > 0) {
-    // console.log("exclude_ontology_item_ids", exclude_ontology_item_ids);
     filteredData = excludeNodesAndLinksByOntologyItemIds(
       filteredData,
       exclude_ontology_item_ids
@@ -334,19 +325,14 @@ export function filterData(data, options = {}) {
 
   if ([0, 1].includes(quality)) {
     filteredData = filterGraphByQuality(filteredData, quality);
-    // console.log("quality filteredData", filteredData);
   }
 
   if (!show_orphans) {
     filteredData = removeOrphanNodes(filteredData);
-    // console.log("show_orphans filteredData", filteredData);
   }
 
   if (aggregate) {
     filteredData = aggregateGraph(filteredData);
   }
-
-  // console.log("filteredData", filteredData);
-
   return filteredData;
 }

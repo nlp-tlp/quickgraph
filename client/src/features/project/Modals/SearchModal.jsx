@@ -69,32 +69,6 @@ const SearchModal = () => {
   const theme = useTheme();
   const inputRef = useRef(null);
 
-  // useEffect(() => {
-  //   if (inputRef.current) {
-  //     inputRef.current.focus();
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   const fetchSuggestions = async () => {
-  //     if (loadingSuggestions && state.selectedTextId) {
-  //       console.log("Fetching suggestions...");
-  //       const data = await fetchSuggestedEntities({
-  //         projectId: state.projectId,
-  //         surfaceForm: state.texts[state.selectedTextId].tokens
-  //           .filter((t) => state.selectedTokenIndexes.includes(t.index))
-  //           .map((t) => t.value)
-  //           .join(" "),
-  //       });
-  //       setSuggestions(data);
-  //     }
-  //   };
-  //   console.log("Fetching suggestions v1...");
-  //   fetchSuggestions();
-  // }, [loadingSuggestions, state.selectedTextId]);
-
-  // console.log("suggestions", suggestions);
-
   useEffect(() => {
     if (state.ontology) {
       setData(flattenTree(state.ontology.entity));
@@ -141,7 +115,6 @@ const SearchModal = () => {
         };
         handleApply({ body: payload, params: { apply_all: false } });
       } catch (error) {
-        console.log(`Failed to apply annotation - ${error}`);
       } finally {
         handleClose();
       }
@@ -172,7 +145,6 @@ const SearchModal = () => {
   let currentSurfaceForm = "";
   if (state.selectedTextId !== null && state.selectedTextId !== undefined) {
     const textId = state.selectedTextId;
-    // console.log("textId", textId);
     const tokenIndexes = state.selectedTokenIndexes;
     currentSurfaceForm =
       state.texts?.[textId]?.tokens

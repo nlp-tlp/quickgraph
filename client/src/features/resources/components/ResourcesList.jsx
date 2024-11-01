@@ -25,9 +25,6 @@ const ResourcesList = ({
   if (loadingResources) {
     return <p>Loading resources...</p>;
   }
-
-  console.log("resources", resources);
-
   return (
     <Box
       as={Paper}

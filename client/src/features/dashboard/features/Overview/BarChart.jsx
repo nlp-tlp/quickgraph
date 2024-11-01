@@ -56,8 +56,6 @@ const DashboardBarChart = ({
   ];
 
   const hasLabelColors = metadata?.label_colors ?? false;
-  // console.log("hasLabelColors", hasLabelColors);
-
   const bars = uniqueUsernames.map((username, index) => {
     const alphaValue = 1 - index / uniqueUsernames.length;
 

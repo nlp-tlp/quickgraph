@@ -61,8 +61,6 @@ const reducer = (state, action) => {
     }
 
     case "APPLY_ANNOTATION": {
-      console.log("APPLY ANNOTATION", action.payload);
-
       // User is applying an entity
       const updatedEntityTextIds = Object.keys(action.payload.entities);
       const newEntities = Object.assign(
@@ -76,9 +74,6 @@ const reducer = (state, action) => {
                   .map((e2) => e2._id.toString())
                   .includes(e._id.toString())
             );
-
-            console.log(action.payload.entities);
-
             return {
               [textId]: [
                 ...filteredEntities,
@@ -129,8 +124,6 @@ const reducer = (state, action) => {
       };
     }
     case "ACCEPT_ANNOTATION": {
-      // console.log("Accepting annotation", action.payload);
-
       // User is applying an entity
       const updatedEntityTextIds = Object.keys(action.payload.entities);
       const newEntities = Object.assign(
@@ -153,8 +146,6 @@ const reducer = (state, action) => {
         })
       );
 
-      // console.log("new entities", newEntities);
-
       // User is applying a relation
       const updatedRelationTextIds = Object.keys(action.payload.relations);
       const newRelations = Object.assign(
@@ -176,9 +167,6 @@ const reducer = (state, action) => {
           }
         })
       );
-
-      // console.log("new relations", newRelations);
-
       const toastInfo = {
         action: "accept",
         applyAll: false,
@@ -288,7 +276,6 @@ const reducer = (state, action) => {
       }
     }
     case "SET_SOURCE_SPAN": {
-      // console.log("SETTING SOURCE SPAN");
       /**
        * Updates state of entities (source, related, unrelated) for contextual styling and
        * Sets source span for relation annotation
@@ -328,7 +315,6 @@ const reducer = (state, action) => {
       };
     }
     case "REMOVE_SOURCE_TARGET_RELS": {
-      // console.log("REMOVE_SOURCE_TARGET_RELS");
       // Will be used when user changes annotationMode
       state.entities = Object.assign(
         {},

@@ -14,8 +14,6 @@ const useGraph = () => {
 
   const fetchGraph = async (params) => {
     try {
-      console.log("params", params);
-
       const res = await axiosInstance.get(`/graph/${state.projectId}`, {
         params: params,
         paramsSerializer: (params) => {
@@ -24,8 +22,6 @@ const useGraph = () => {
       });
 
       if (res.status === 200) {
-        console.log("fetchGraph res!!!", res.data);
-
         setData(res.data);
 
         // dispatch({

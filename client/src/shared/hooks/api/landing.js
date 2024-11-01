@@ -11,11 +11,9 @@ const useLanding = ({ state, dispatch }) => {
 
   const fetchData = async () => {
     // Fetches demo project for landing page - no auth required.
-    console.log("Fetching demo data");
     axiosInstance
       .get("/demo")
       .then((res) => {
-        console.log(res.data);
         dispatch({
           type: "SET_DEMO",
           payload: res.data,
@@ -26,8 +24,6 @@ const useLanding = ({ state, dispatch }) => {
   };
 
   const deleteAction = (payload) => {
-    console.log("demo delete payload", payload);
-
     if (payload.annotationType === "entity") {
       dispatch({
         type: "DELETE_ANNOTATION",
@@ -51,7 +47,6 @@ const useLanding = ({ state, dispatch }) => {
     }
   };
   const applyAction = (payload) => {
-    console.log("demo apply payload", payload);
     let label;
 
     if (payload.annotationType === "entity") {
@@ -124,8 +119,6 @@ const useLanding = ({ state, dispatch }) => {
     }
   };
   const acceptAction = (payload) => {
-    console.log("demo accept payload", payload);
-
     // dispatch({ type: "ACCEPT_ANNOTATION", payload: "" });
   };
 

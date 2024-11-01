@@ -67,9 +67,6 @@ const mapping = (item) => {
 const History = () => {
   const { state } = useContext(ProjectContext);
   const [open, setOpen] = useState(true);
-
-  // console.log("history", state.history, state.history.size);
-
   return (
     <>
       <Box p={2} sx={{ textAlign: "left" }}>

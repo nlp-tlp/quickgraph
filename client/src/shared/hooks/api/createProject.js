@@ -18,11 +18,8 @@ const useCreateProject = () => {
     try {
       setSubmitting(true);
       setError(false);
-
       const res = await axiosInstance.post("/project", body);
-
       if (res.status === 200) {
-        // console.log("res.data", res.data);
         snackbarDispatch({
           type: "UPDATE_SNACKBAR",
           payload: {

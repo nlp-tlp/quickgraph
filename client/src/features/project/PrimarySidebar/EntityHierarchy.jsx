@@ -173,11 +173,7 @@ const EntityTreeSelect = () => {
           },
         };
         handleApply({ body: payload, params: { apply_all: false } });
-      } catch (error) {
-        console.log(
-          `(handleAnnotation) :: Failed to apply annotation - ${error}`
-        );
-      }
+      } catch (error) {}
     }
   };
   const getItemLabel = (item) => item.name;

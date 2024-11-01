@@ -212,7 +212,6 @@ const useDataset = () => {
   };
 
   //   const updateDataset = async (resource) => {
-  //     console.log("updating dataset");
   //     setProcessingDataset(true);
   //     getAccessTokenSilently()
   //       .then((token) => {
@@ -225,7 +224,7 @@ const useDataset = () => {
   //           .then((res) => {
   //             setProcessingDataset(false);
   //           })
-  //           .catch((error) => console.log("Failed to update dataset"));
+  //           .catch((error) => console.error("Failed to update dataset"));
   //       })
   //       .finally(() => setProcessingDataset(false));
   //   };

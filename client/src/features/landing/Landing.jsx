@@ -93,9 +93,6 @@ export const Header = () => {
     color: "red",
     fontWeight: "bold",
   };
-
-  console.log(showPricing);
-
   return (
     <AppBar
       position="static"

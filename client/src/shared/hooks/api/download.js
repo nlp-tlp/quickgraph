@@ -20,7 +20,6 @@ const useDownload = () => {
       });
 
       if (res.status === 200) {
-        console.log("download response", res.data);
         setIsDownloading(false);
 
         // Prepare for file download

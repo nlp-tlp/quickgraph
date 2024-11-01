@@ -27,7 +27,6 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
 
   useEffect(() => {
     const calculateSurfaceForm = (span) => {
-      // console.log("span", span);
       if (!span) return "";
 
       const tokens = state.texts[textId]?.tokens;
@@ -49,7 +48,6 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
   const flatRelationOntology = state.flatRelationOntology.sort(
     (a, b) => state.relationCounts[b.id] - state.relationCounts[a.id]
   );
-  // console.log("flatRelationOntology", flatRelationOntology);
   // `filteredRelations` are those that are shown as chips on entity spans.
   const filteredRelations =
     state.relations[textId] === undefined
@@ -60,8 +58,6 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
             r.source_id === state.sourceSpan.id &&
             r.target_id === state.targetSpan.id
         );
-
-  // console.log("filteredRelations", filteredRelations);
 
   const handleRejectDeleteAction = ({ applyAll, relationId }) => {
     handleDelete({
@@ -211,8 +207,6 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
         sx={{ maxHeight: 200, overflowY: "auto", width: 400, pb: 1 }}
       >
         {flatRelationOntology.map((relation) => {
-          // console.log("relation", relation);
-
           // `matchedRelations` filters the relation ontology down to those that have been applied between the src/tgt entities
           // Note: `relation.id` is the ontology_item_id.
           const matchedRelations = filteredRelations.filter(
@@ -223,16 +217,10 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
             ? matchedRelations.filter((r) => r.suggested).length > 0
             : hasRelation;
 
-          // console.log("matchedRelations", matchedRelations);
-          // console.log("hasRelation", hasRelation);
-          // console.log("hasSuggestedRelation", hasSuggestedRelation);
-
           const matchedRelationMap = Object.assign(
             {},
             ...matchedRelations.map((r) => ({ [r.ontology_item_id]: r.id }))
           );
-
-          // console.log("matchRelationMap", matchedRelationMap);
 
           return (
             <Stack

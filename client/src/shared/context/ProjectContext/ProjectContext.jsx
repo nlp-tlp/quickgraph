@@ -132,8 +132,6 @@ export const ProjectProvider = (props) => {
   //         (i) => i.id === body.content.ontology_item_id
   //       )[0];
 
-  //       console.log("_optimisticEntityContent", _optimisticEntityContent);
-
   //       const _optimisticPayload = {
   //         count: 1,
   //         label_name: _optimisticEntityContent.name,
@@ -159,7 +157,6 @@ export const ProjectProvider = (props) => {
   //         apply_all: params.apply_all,
   //       };
 
-  //       console.log("_optimisticPayload", _optimisticPayload);
   //       // Optimistically update state - minimum info required {'count': 0, 'entities': [{id, surface_form, fullname, color, start, end, suggested, ontology_item_id, state, name}, ...], 'relations': [{... },...],
   //       dispatch({ type: "APPLY_ANNOTATION", payload: _optimisticPayload });
 
@@ -226,7 +223,6 @@ export const ProjectProvider = (props) => {
   //     });
 
   //     if (res.status === 200) {
-  //       console.log("res.data", res.data);
   //       // dispatch({ type: "APPLY_ANNOTATION", payload: res.data });
 
   //       dispatch({ type: "UPDATE_MARKUP_STATUS", payload: res.data });

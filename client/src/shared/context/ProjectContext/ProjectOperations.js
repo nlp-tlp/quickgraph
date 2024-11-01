@@ -28,8 +28,6 @@ export const handleApply = async ({
     //     (i) => i.id === body.content.ontology_item_id
     //   )[0];
 
-    //   console.log("_optimisticEntityContent", _optimisticEntityContent);
-
     //   const _optimisticPayload = {
     //     count: 1,
     //     label_name: _optimisticEntityContent.name,
@@ -55,21 +53,9 @@ export const handleApply = async ({
     //     apply_all: params.apply_all,
     //   };
 
-    //   console.log("_optimisticPayload", _optimisticPayload);
     //   // Optimistically update state - minimum info required {'count': 0, 'entities': [{id, surface_form, fullname, color, start, end, suggested, ontology_item_id, state, name}, ...], 'relations': [{... },...],
 
     //   dispatch(applyAnnotation({ entities: _optimisticPayload.entities }));
-
-    //   //   TEST entity matching
-    //   console.log(
-    //     "findMatches",
-    //     findMatches(
-    //       state.texts,
-    //       ["wrench"],
-    //       state.entities,
-    //       _optimisticEntityContent.id
-    //     )
-    //   );
 
     //   //   dispatch({ type: "APPLY_ANNOTATION", payload: _optimisticPayload });
 
@@ -133,11 +119,8 @@ export const handleApply = async ({
     });
 
     if (res.status === 200) {
-      console.log("res.data", res.data);
       dispatch({ type: "APPLY_ANNOTATION", payload: res.data });
-
       // dispatch(updateOptimisticItemState({ entities: res.data.entities }));
-
       snackbarDispatch({
         type: "UPDATE_SNACKBAR",
         payload: {
@@ -195,15 +178,12 @@ export const deleteMarkupOptimistically = async ({
   const markupToDelete = state.entities[datasetItemId].filter(
     (e) => e.id === markupId
   )[0];
-  // console.log("markupToDelete", markupToDelete);
-
   // Optimistically remove the markup from the state
   dispatch(deleteAnnotation({ entity_ids: markupId }));
 
   try {
     // Call the API to delete the markup
     // throw new Error(`API returned status code: ${res.status}`);
-
     const res = await axiosInstance.delete(`/markup/${markupId}`, {
       params: params,
     });

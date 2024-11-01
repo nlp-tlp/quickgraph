@@ -45,9 +45,6 @@ const FileUploadButton = forwardRef(({ onUpload }, ref) => {
 
           data.push(obj);
         }
-
-        console.log("csv data", data);
-
         setFileContents(data);
       } else if (extension === "json") {
         // Handle .json file contents

@@ -32,7 +32,6 @@ const CreateProject = () => {
 
   useEffect(() => {
     if (loadingResources) {
-      // console.log("Loading resources...");
       fetchResources({ aggregate: false, include_system: true });
     }
   }, [loadingResources]);

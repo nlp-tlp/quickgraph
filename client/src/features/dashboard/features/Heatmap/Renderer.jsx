@@ -16,12 +16,10 @@ export const Renderer = ({
   const boundsHeight = height - MARGIN.top - MARGIN.bottom;
 
   const allYGroups = useMemo(() => [...new Set(data.map((d) => d.y))], [data]);
-  // console.log("allYGroups", allYGroups);
   const allXGroups = useMemo(
     () => [...new Set(data.map((d) => String(d.x)))],
     [data]
   );
-  // console.log("allXGroups", allXGroups);
 
   const xScale = useMemo(() => {
     return d3
@@ -40,7 +38,6 @@ export const Renderer = ({
   }, [data, height]);
 
   const allRects = data.map((d, i) => {
-    // console.log("allRects", d);
     const xPos = xScale(String(d.x));
     const yPos = yScale(d.y);
 
@@ -91,7 +88,6 @@ export const Renderer = ({
   });
 
   const yLabels = allYGroups.map((name, i) => {
-    // console.log("yLabels", name);
     const yPos = yScale(name);
     if (yPos) {
       return (

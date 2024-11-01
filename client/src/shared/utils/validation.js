@@ -38,7 +38,6 @@ export const ValidateCreateUpload = (corpusType, corpus, entityOntology) => {
   } else {
     // Annotation upload (object)
     const corpusValidation = ValidateAnnotatedData(corpus, entityOntology);
-    // console.log("ValidateCreateUpload", corpusValidation);
     validCorpus = corpusValidation.valid;
   }
 

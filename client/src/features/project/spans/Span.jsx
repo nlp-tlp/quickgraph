@@ -75,7 +75,6 @@ const Span = ({
       textId === state.sourceSpan.textId // Ensures that cross document relations are not created.
     ) {
       setAnchorEl(event.currentTarget);
-      // console.log("SET_VALUE TARGET");
       dispatch({
         type: "SET_VALUE",
         payload: {
@@ -142,12 +141,12 @@ const Span = ({
   }
 
   /*
-    
+
     relation mode span rendering and logic
-   
+
     Render span in relation mode. User can click on span to interact.
     Related spans are automatically detected when a source span is clicked on.
-   
+
     If the span has a suggested relation, it will be rendered.
   */
   if (!state.entityAnnotationMode && (!suggested || hasSuggestedRelation)) {
@@ -204,8 +203,6 @@ const Span = ({
         case "SET_SOURCE":
           // User clicked on source span
           // Get all related spans that share a, or set of, relation(s)
-          // console.log("SET_SOURCE_SPAN", textId, span);
-
           dispatch({
             type: "SET_SOURCE_SPAN",
             payload: {
@@ -216,7 +213,6 @@ const Span = ({
           break;
         case "UNSET_SOURCE":
           // User clicks on source to unfocus - unsets source, target and related spans
-          // console.log("UNSET_SOURCE");
           dispatch({ type: "REMOVE_SOURCE_TARGET_RELS" });
           break;
         default:

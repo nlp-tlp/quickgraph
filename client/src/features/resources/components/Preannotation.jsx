@@ -2,8 +2,6 @@ import { Grid, Box, Stack, Button, Paper, Divider } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
 const Preannotation = ({ values, setValues }) => {
-  console.log("values", values);
-
   const columns = [
     { field: "id", hide: true },
     {

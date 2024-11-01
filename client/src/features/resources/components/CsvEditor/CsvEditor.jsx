@@ -31,7 +31,6 @@ export default function CsvEditor(props) {
 
   const handleSave = () => {
     // Here, you could send the updated CSV data to your server for processing
-    console.log("Updated CSV data:", data);
   };
 
   if (!data || !data.length) {

@@ -25,13 +25,11 @@ const TrayFlag = ({ state, dispatch, textId }) => {
       state.texts[textId].flags.filter((f) => f.state === flagState).length ===
       1
     ) {
-      console.log("Deleting flag");
       deleteFlag({
         datasetItemId: textId,
         flagState: flagState,
       });
     } else {
-      console.log("Adding flag");
       applyFlag({
         datasetItemId: textId,
         flagState: flagState,

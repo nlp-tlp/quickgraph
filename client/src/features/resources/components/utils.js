@@ -85,9 +85,6 @@ export function validateJSONData(
       break;
     case "preannotation":
       if (sub_classification === "entity") {
-        console.log(
-          `creating preannotation validator with classes ${entityClasses}`
-        );
         validator = createValidator(
           dynamicPreannotationEntitySchema(entityClasses)
         );

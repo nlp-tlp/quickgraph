@@ -65,8 +65,6 @@ export const Table = ({ state, dispatch, demo = false }) => {
       )
         return;
 
-      console.log("path", path);
-
       const ontologyItem = findOntologyItem(
         { children: entity_ontology },
         path

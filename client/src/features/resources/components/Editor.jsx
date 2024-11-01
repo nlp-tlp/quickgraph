@@ -61,7 +61,6 @@ const Editor = ({ values, setValues }) => {
 
   const onUpload = ({ fileExtension, fileContents }) => {
     if (fileContents) {
-      console.log(fileExtension, fileContents);
       setValues((prevState) => ({
         ...prevState,
         data: JSON.stringify(fileContents),
@@ -71,7 +70,6 @@ const Editor = ({ values, setValues }) => {
 
   useEffect(() => {
     // Validate the data whenever its value changes.
-    console.log("Validating data");
     setValues((prevState) => ({
       ...prevState,
       errors: validateJSONData(

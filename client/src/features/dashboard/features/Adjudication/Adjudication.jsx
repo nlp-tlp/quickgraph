@@ -197,14 +197,11 @@ const Adjudication = () => {
         selectedAnnotators
       );
       setEntities(filteredEntities);
-      // console.log("set entities");
-
       if (relationProject) {
         const filteredRelations = filterRelationData(
           data.relations,
           selectedAnnotators
         );
-        // console.log("filteredRelations", filteredRelations);
         setRelations(filteredRelations);
       }
     }

@@ -20,7 +20,6 @@ const TableView = ({
 }) => {
   useEffect(() => {
     if (loading) {
-      console.log("Fetching data...");
       fetchFunction();
     }
   }, [loading]);

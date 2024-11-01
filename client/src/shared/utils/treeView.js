@@ -324,10 +324,6 @@ export function hasTreeDataChanged(oldData, newData) {
 
   oldData = _.orderBy(oldData, ["id"], ["asc"]);
   newData = _.orderBy(newData, ["id"], ["asc"]);
-
-  console.log("oldData", oldData);
-  console.log("newData", newData);
-
   // return !_.isEqual(sortTreeData(oldData), sortTreeData(newData));
   return !_.isEqual(
     _.orderBy(oldData, ["id"], ["asc"]),

@@ -104,7 +104,6 @@ const LoginForm = ({ onResetPassword }) => {
     try {
       const success = await loginWithRedirect(username, password);
       if (success) {
-        console.log("Logged in successfully");
       } else {
         setError("Login failed. Please check your credentials and try again.");
       }
@@ -201,7 +200,6 @@ const SignupForm = () => {
         securityAnswer
       );
       if (success) {
-        console.log("Registered successfully");
       } else {
         setError(
           "Registration failed. Please try a different username or password."
@@ -325,7 +323,6 @@ const ResetPasswordForm = ({ onBack }) => {
         newPassword
       );
       if (success) {
-        console.log("Password reset successfully");
         onBack(); // Go back to login form after successful reset
       } else {
         setError(

@@ -15,8 +15,6 @@ import { useTheme } from "@mui/material/styles";
 const RelationList = ({ itemHasRelations, entities, relations }) => {
   const theme = useTheme();
 
-  // console.log("entities", entities, "relations", relations);
-
   const readableRelations =
     relations
       .map((r) => ({
@@ -43,8 +41,6 @@ const RelationList = ({ itemHasRelations, entities, relations }) => {
       .sort((a, b) =>
         a.source.surface_form.localeCompare(b.source.surface_form)
       ) ?? [];
-
-  // console.log(readableRelations);
 
   return (
     <>

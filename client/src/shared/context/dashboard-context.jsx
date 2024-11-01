@@ -320,13 +320,10 @@ export const DashboardProvider = (props) => {
   const fetchAnnotators = async ({ projectId }) => {
     try {
       const token = await getAccessToken();
-
       const res = await axiosInstance.get(`/project/${projectId}/annotators`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.status === 200) {
-        // console.log(res.data);
         dispatch({ type: "SET_VALUE", payload: res.data });
         return res.data;
       } else {

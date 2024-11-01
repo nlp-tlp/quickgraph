@@ -224,8 +224,6 @@ export const reducer = (state, action) => {
       };
     }
     case ActionTypes.UPDATE_OPTIMISTIC_ITEM_STATE: {
-      //   console.log("update markup status", action.payload);
-
       const updatedEntities = { ...state.entities }; // create a copy of the target object
       if (action.payload.entities) {
         action.payload.entities.forEach((item) => {
@@ -317,13 +315,10 @@ export const reducer = (state, action) => {
           relations: filteredRelations,
         };
       } catch (error) {
-        console.log("error DELETE_ANNOTATION", error);
         break;
       }
     }
     case ActionTypes.RESTORE_MARKUP: {
-      console.log(action.payload);
-
       let restoredEntities = { ...state.entities };
       if (action.payload.entities) {
         Object.keys(restoredEntities).forEach((key) => {
@@ -355,12 +350,10 @@ export const reducer = (state, action) => {
       };
     }
     case ActionTypes.SET_SOURCE_SPAN: {
-      // console.log("SETTING SOURCE SPAN");
       /**
        * Updates state of entities (source, related, unrelated) for contextual styling and
        * Sets source span for relation annotation
        */
-
       const span = action.payload.span;
       const textId = action.payload.textId;
       const textRelations = state.relations[textId]
@@ -391,9 +384,7 @@ export const reducer = (state, action) => {
       };
     }
     case "REMOVE_SOURCE_TARGET_RELS": {
-      // console.log("REMOVE_SOURCE_TARGET_RELS");
       // Will be used when user changes annotationMode
-
       state.entities = Object.assign(
         {},
         ...Object.keys(state.entities).map((textId) => ({

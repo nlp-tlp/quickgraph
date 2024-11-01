@@ -58,7 +58,6 @@ const Downloads = () => {
   }, [loading]);
 
   const handleFilterApply = () => {
-    console.log("Applying filters");
     // Update prevFilters with the filter used for the update
     setLoading(true);
     setPrevFilters(filters);

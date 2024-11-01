@@ -48,9 +48,6 @@ const Social = ({ state, dispatch }) => {
   if (error) {
     return <ErrorAlert />;
   }
-
-  console.log(state);
-
   if (!state.discussionDatasetItemId) {
     return (
       <Box

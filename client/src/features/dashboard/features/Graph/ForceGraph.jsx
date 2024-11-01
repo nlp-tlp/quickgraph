@@ -21,19 +21,10 @@ const ForceGraph = ({ data, width = 800, height = 800 }) => {
     (node) => {
       // https://stackoverflow.com/questions/54346040/react-hooks-ref-is-not-avaiable-inside-useeffect
       if (node !== null) {
-        // node.d3Force("link").distance((link) => LINK_LENGTH_CONSTANT);
         node.d3Force("link").distance(500); //.strength(0.9);
         node.d3Force("charge").strength(-250);
         node.d3Force("charge").distanceMax(2500);
         node.d3Force("collide", d3.forceCollide(50));
-
-        // if (!initialCenter) {
-        //   // console.log("zooming to fit");
-        //   node.zoomToFit(100, 100);
-        //   // Turn off forces so adding nodes doesn't disturb the graph
-        //   node.d3Force("charge").strength(null);
-        //   node.d3Force("link").strength(1);
-        // }
       }
     },
     [initialCenter]
@@ -137,33 +128,3 @@ const ForceGraph = ({ data, width = 800, height = 800 }) => {
 };
 
 export default ForceGraph;
-
-// console.log("link", link);
-
-// TODO: http://bl.ocks.org/mbostock/1153292
-
-// var dx = link.target.x - link.source.x;
-// var dy = link.target.y - link.source.y;
-// var dr = Math.sqrt(dx * dx + dy * dy);
-// var arc =
-//   "M" +
-//   link.source.x +
-//   "," +
-//   link.source.y +
-//   "A" +
-//   dr +
-//   "," +
-//   dr +
-//   " 0 0,1 " +
-//   link.target.x +
-//   "," +
-//   link.target.y;
-
-// console.log(dx, dy, dr, arc);
-
-// ctx.beginPath();
-// ctx.arc(25, 25, 20, 0, Math.PI);
-// ctx.strokeStyle = "red";
-// ctx.lineWidth = 4;
-
-//console.log(link)

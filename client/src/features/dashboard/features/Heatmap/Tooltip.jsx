@@ -4,8 +4,6 @@ export const Tooltip = ({ interactionData, width, height }) => {
   if (!interactionData) {
     return null;
   }
-
-  // console.log(interactionData);
   return (
     // Wrapper div: a rect on top of the viz area
     <div

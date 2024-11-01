@@ -8,7 +8,6 @@ const DatasetDetails = ({ values, setValues }) => {
 
   useEffect(() => {
     if (values.datasetType !== 0) {
-      console.log("Fetching ontology information");
       fetchResources({ aggregate: false, include_system: true });
     }
   }, [values.datasetType]);

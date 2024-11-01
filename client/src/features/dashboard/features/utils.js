@@ -83,8 +83,6 @@ export function filterEntityData(data, usernames = []) {
 }
 
 export function filterRelationData(data, usernames = []) {
-  console.log("filterRelationData", data, usernames);
-
   if (usernames.length === 0) {
     usernames = Object.keys(data);
   }
@@ -107,8 +105,6 @@ export function filterRelationData(data, usernames = []) {
       }
     }
   }
-
-  console.log("relation counts", relationCounts);
 
   const agreedUponRelations = [];
 

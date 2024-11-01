@@ -54,10 +54,6 @@ const Summary = ({
   entities,
   relations,
 }) => {
-  // console.log("data", data);
-  // console.log("entities", entities);
-  // console.log("relations", relations);
-
   let annotationTextToCopy = "";
 
   try {

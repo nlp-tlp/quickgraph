@@ -95,7 +95,6 @@ const CreateResource = () => {
   });
 
   const submitFunction = (values) => {
-    // console.log("Creating resource");
     const payload = {
       name: values.name,
       // description:
@@ -105,9 +104,6 @@ const CreateResource = () => {
       content: JSON.parse(values.data),
       is_blueprint: true,
     };
-
-    // console.log("payload", payload);
-
     return createResource(payload);
   };
 

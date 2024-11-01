@@ -24,9 +24,6 @@ const Resources = () => {
     sub_classification: "entity",
   });
   const isRelationProject = state.tasks.relation;
-
-  console.log(state);
-
   return (
     <Grid item xs={12} container>
       <Grid item xs={3} as={Paper} variant="outlined" sx={{ height: "100%" }}>

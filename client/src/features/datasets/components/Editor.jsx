@@ -43,7 +43,6 @@ const Editor = ({ values, setValues }) => {
   };
 
   useEffect(() => {
-    // console.log("Checking error state");
     switch (values.dataType) {
       case "text":
         setValues((prevState) => ({
@@ -52,7 +51,6 @@ const Editor = ({ values, setValues }) => {
         }));
         break;
       case "json":
-        // console.log("values.resources", values.resources);
         setValues((prevState) => ({
           ...prevState,
           errors: validateData({
@@ -62,7 +60,6 @@ const Editor = ({ values, setValues }) => {
             relationClasses: values.resources.relationClasses,
           }),
         }));
-
         break;
       default:
         break;
@@ -93,7 +90,6 @@ const Editor = ({ values, setValues }) => {
         });
       } catch (error) {
         // This error will be likely triggered for invalid JSON - passing.
-        // console.log("error creating metrics", error);
       }
     }
   }, [values.data, values.errors]);

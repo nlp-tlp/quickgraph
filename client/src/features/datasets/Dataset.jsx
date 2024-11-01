@@ -99,7 +99,6 @@ const Dataset = () => {
   }, [loading]);
 
   const handleItemDelete = () => {
-    // console.log("Staging items for deletion", selectedItemIds);
     deleteDatasetItems(datasetId, selectedItemIds);
   };
 
