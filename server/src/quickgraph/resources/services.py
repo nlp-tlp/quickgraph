@@ -1,12 +1,11 @@
 """Resources services."""
 
-import itertools
 import json
 import logging
 import random
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -395,3 +394,41 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #             )
     #     except Exception as e:
     #         logger.info(f"Failed to handle preannotation resource:\n{e}")
+
+
+async def get_project_ontology_items(
+    db: AsyncIOMotorDatabase, project_id: ObjectId
+) -> Tuple[List[OntologyItem], List[OntologyItem], List[OntologyItem]]:
+    """
+    Get project ontology items.
+
+    Returns:
+        tuple: (entity_onto, relation_onto, combined_onto) where relation_onto might be empty
+    """
+    # Get all ontology items for the project
+    entity_onto = await db[COLLECTION_NAME].find_one(
+        {
+            "classification": "ontology",
+            "sub_classification": "entity",
+            "project_id": project_id,
+        }
+    )
+    relation_onto = await db[COLLECTION_NAME].find_one(
+        {
+            "classification": "ontology",
+            "sub_classification": "relation",
+            "project_id": project_id,
+        }
+    )
+
+    entity_onto = [OntologyItem(**o) for o in entity_onto["content"]]
+
+    if relation_onto is None:
+        relation_onto = []
+    else:
+        relation_onto = [OntologyItem(**o) for o in relation_onto["content"]]
+
+    # Combine ontologies, even if relation_onto is empty
+    combined_onto = entity_onto + relation_onto
+
+    return entity_onto, relation_onto, combined_onto
