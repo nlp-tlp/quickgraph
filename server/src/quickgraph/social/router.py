@@ -22,19 +22,19 @@ async def create_one_comment(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Create a single comment"""
-    print("body", body)
-    print("body.dict()", body.dict())
+    comment = await db.social.insert_one(
+        {**body.model_dump(), "created_by": user.username}
+    )
 
-    try:
-        comment = await db["social"].insert_one(
-            {**body.dict(), "created_by": user.username}
+    new_comment = await db.social.find_one({"_id": comment.inserted_id})
+
+    if new_comment is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to create comment",
         )
 
-        new_comment = await db["social"].find_one({"_id": comment.inserted_id})
-
-        return Comment(**new_comment, read_only=False)
-    except Exception as e:
-        print(e)
+    return Comment(**new_comment, read_only=False)
 
 
 # @router.patch("/{comment_id}")
@@ -83,32 +83,8 @@ async def list_dataset_item_comments(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Gets all comments made against a single dataset item for a given context"""
-
-    print("dataset_item_id", dataset_item_id)
-    print("context", context)
-
-    comments = (
-        await db["social"]
-        .find({"dataset_item_id": ObjectId(dataset_item_id), "context": context})
-        .to_list(None)
-    )
+    comments = await db.social.find(
+        {"dataset_item_id": ObjectId(dataset_item_id), "context": context}
+    ).to_list(None)
 
     return [Comment(**c) for c in comments]
-
-    # try:
-    #     datasets = await dataset_services.list_datasets(
-    #         db=db,
-    #         username=user.username,
-    #         include_dataset_size=include_dataset_size,
-    #         include_system=include_system,
-    #     )
-    # except Exception as e:
-    #     print(e)
-
-    # # TODO: investigate why `id` isnt being serialised out, `_id` is.
-
-    # if len(datasets) == 0:
-    #     return []
-
-    # return datasets
-    pass

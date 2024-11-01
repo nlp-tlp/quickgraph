@@ -1,8 +1,11 @@
 """Miscellaneous utilities."""
 
+import logging
 from typing import List
 
 from ..resources.schemas import OntologyItem
+
+logger = logging.getLogger(__name__)
 
 
 def flatten_hierarchical_ontology(ontology: List[OntologyItem]) -> List[OntologyItem]:
@@ -15,4 +18,4 @@ def flatten_hierarchical_ontology(ontology: List[OntologyItem]) -> List[Ontology
                 flat_ontology += flatten_hierarchical_ontology(node.children)
         return flat_ontology
     except Exception as e:
-        print(f"Failed to flatten hierarchical ontology - {e}")
+        logger.info(f"Failed to flatten hierarchical ontology - {e}")

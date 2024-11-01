@@ -2,6 +2,7 @@
 
 import asyncio
 import datetime
+import logging
 import os
 import shutil
 import subprocess
@@ -13,6 +14,8 @@ import typer
 from server.src.quickgraph.dataset.services import create_system_datasets
 from server.src.quickgraph.resources.services import create_system_resources
 from server.src.quickgraph.settings import settings
+
+logger = logging.getLogger(__name__)
 
 app = typer.Typer()
 
@@ -58,13 +61,13 @@ app = typer.Typer()
 #                 )
 #                 tarinfo.size = len(str(document).encode("utf-8"))
 #                 tar.addfile(tarinfo, fileobj=str(document).encode("utf-8"))
-#     print(f"MongoDB backup created at {backup_path}")
+#     logger.info(f"MongoDB backup created at {backup_path}")
 
 
 # @app.command()
 # async def backup():
 #     await backup_database()
-#     print("MongoDB backup complete")
+#     logger.info("MongoDB backup complete")
 
 
 # @app.command()
@@ -138,13 +141,13 @@ def drop_database():
 @app.command()
 def run(drop_db: bool = False, add_resources: bool = False, add_datasets: bool = False):
     if drop_db:
-        print("Dropping database...")
+        logger.info("Dropping database...")
         drop_database()
     if add_datasets:
-        print("Adding datasets...")
+        logger.info("Adding datasets...")
         add_system_datasets()
     if add_resources:
-        print("Adding resources...")
+        logger.info("Adding resources...")
         add_system_resources()
 
 

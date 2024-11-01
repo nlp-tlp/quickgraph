@@ -255,7 +255,7 @@ async def update_annotator_assignments_endpoint(
                 existing_dataset_item_ids.add(dataset_item_id)
                 out_of_scope_dataset_item_ids.add(dataset_item_id)
 
-        print(f'"out_of_scope_dataset_item_ids": {out_of_scope_dataset_item_ids}')
+        logger.info(f'"out_of_scope_dataset_item_ids": {out_of_scope_dataset_item_ids}')
 
         # Update the visibility of existing items
         annotator_scope_updated = [
@@ -293,7 +293,9 @@ async def update_annotator_assignments_endpoint(
                     .to_list(None)
                 )
 
-                print(f"Found {len(oos_dataset_items)} out of scope dataset items")
+                logger.info(
+                    f"Found {len(oos_dataset_items)} out of scope dataset items"
+                )
 
                 # Create mapping between blueprint and project dataset item ids
                 dataset_item_id_map_bp2project = {
@@ -301,7 +303,7 @@ async def update_annotator_assignments_endpoint(
                     for di in oos_dataset_items
                 }
 
-                print(
+                logger.info(
                     f'"dataset_item_id_map_bp2project": {dataset_item_id_map_bp2project}'
                 )
 
@@ -310,7 +312,7 @@ async def update_annotator_assignments_endpoint(
                     di["blueprint_dataset_item_id"] for di in oos_dataset_items
                 ]
 
-                print(f'"oos_bp_dataset_item_ids": {oos_bp_dataset_item_ids}')
+                logger.info(f'"oos_bp_dataset_item_ids": {oos_bp_dataset_item_ids}')
 
                 bp_markup = (
                     await db["markup"]
@@ -325,7 +327,7 @@ async def update_annotator_assignments_endpoint(
                     .to_list(None)
                 )
 
-                print(
+                logger.info(
                     f"Found {len(bp_markup)} blueprint markups that will be associated with this annotator"
                 )
 
@@ -361,10 +363,10 @@ async def update_annotator_assignments_endpoint(
                         new_markup = await db["markup"].insert_one({**copy_markup})
                         return new_markup.inserted_id
                     except Exception as e:
-                        print(f"Failed to copy bp markup: {e}")
+                        logger.info(f"Failed to copy bp markup: {e}")
 
                 # Process entity markup first
-                print("Copying entity markup(s)")
+                logger.info("Copying entity markup(s)")
                 for markup in [m for m in bp_markup if m["classification"] == "entity"]:
                     old_markup_id = markup["_id"]  # This is the blueprints _id
                     new_markup_id = await _copy_bp_markup(
@@ -372,24 +374,24 @@ async def update_annotator_assignments_endpoint(
                     )
                     bp_entity_markup_id_map[old_markup_id] = new_markup_id
 
-                print("bp_entity_markup_id_map", bp_entity_markup_id_map)
+                logger.info("bp_entity_markup_id_map", bp_entity_markup_id_map)
 
                 # Process relation markup if project requests it
                 if project["tasks"]["relation"]:
-                    print("Copying relation markup(s)")
+                    logger.info("Copying relation markup(s)")
                     for markup in [
                         m for m in bp_markup if m["classification"] == "relation"
                     ]:
                         await _copy_bp_markup(classification="relation", markup=markup)
 
                 # Output the completion of the addition of annotated data markup copies
-                print("Annotated data markup copies have been added.")
+                logger.info("Annotated data markup copies have been added.")
 
         return JSONResponse(
             status_code=200, content={"detail": {"update_count": result.modified_count}}
         )
     except Exception as e:
-        print(e)
+        logger.info(e)
 
 
 @router.get("/{project_id}/annotators")
@@ -451,13 +453,8 @@ async def get_project_annotators_endpoint(
         },
     ]
 
-    try:
-        result = await db["projects"].aggregate(pipeline).to_list(None)
-    except Exception as e:
-        print(e)
-
+    result = await db["projects"].aggregate(pipeline).to_list(None)
     result = result[0]
-    # print("result", result)
 
     return {
         "annotators": [

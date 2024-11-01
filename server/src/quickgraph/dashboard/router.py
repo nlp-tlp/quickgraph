@@ -97,28 +97,24 @@ async def get_overview(
     # Calculate overview metrics
     project_progress_metrics = await calculate_project_progress(project_id, db)
 
-    try:
-        dataset_item_pipeline = [
-            {"$match": {"project_id": project_id}},
-            {
-                "$project": {
-                    "_id": 1,
-                    "save_count": {"$size": {"$ifNull": ["$save_states", []]}},
-                }
-            },
-            {
-                "$match": {
-                    "save_count": {"$gte": project["settings"]["annotators_per_item"]}
-                }
-            },
-        ]
+    dataset_item_pipeline = [
+        {"$match": {"project_id": project_id}},
+        {
+            "$project": {
+                "_id": 1,
+                "save_count": {"$size": {"$ifNull": ["$save_states", []]}},
+            }
+        },
+        {
+            "$match": {
+                "save_count": {"$gte": project["settings"]["annotators_per_item"]}
+            }
+        },
+    ]
 
-        dataset_items = await db["data"].aggregate(dataset_item_pipeline).to_list(None)
-        dataset_item_ids = [di["_id"] for di in dataset_items]
-        print(f"calculating agreement on {len(dataset_items)} dataset items")
-
-    except Exception as e:
-        print(e)
+    dataset_items = await db["data"].aggregate(dataset_item_pipeline).to_list(None)
+    dataset_item_ids = [di["_id"] for di in dataset_items]
+    logger.info(f"calculating agreement on {len(dataset_items)} dataset items")
 
     # Get agreement metrics for accepted entities on dataset items that have been saved by majority
     entity_markup = (
@@ -182,117 +178,108 @@ async def get_overview(
 
         relation_markup = await db["markup"].aggregate(pipeline).to_list(None)
 
-    try:
-        agreement_calculator = AgreementCalculator(
-            entity_data=[
-                {
-                    "start": m["start"],
-                    "end": m["end"],
-                    "label": m["ontology_item_id"],
-                    "username": m["created_by"],
-                    "doc_id": str(m["dataset_item_id"]),
-                }
-                for m in entity_markup
-            ],
-            relation_data=[
-                {
-                    "label": m["ontology_item_id"],
-                    "username": m["created_by"],
-                    "source": {
-                        "start": m["source"]["start"],
-                        "end": m["source"]["end"],
-                        "label": m["source"]["ontology_item_id"],
-                    },
-                    "target": {
-                        "start": m["target"]["start"],
-                        "end": m["target"]["end"],
-                        "label": m["target"]["ontology_item_id"],
-                    },
-                    "doc_id": str(m["dataset_item_id"]),
-                }
-                for m in relation_markup
-            ],
-        )
-
-        entity_overall_agreement_score = agreement_calculator.overall_agreement()
-
-        relation_overall_agreement_score = agreement_calculator.overall_agreement(
-            "relation"
-        )
-
-        overall_agreement_score = agreement_calculator.overall_average_agreement()
-
-        agreed_entity_count = agreement_calculator.count_majority_agreements()
-
-        agreed_relation_count = agreement_calculator.count_majority_agreements(
-            "relation"
-        )
-
-    except Exception as e:
-        print(f"Failed to get agreements: {e}")
-
-    try:
-        output = {
-            "metrics": [
-                {
-                    "index": 0,
-                    "name": "Project Progress",
-                    "title": "Progress made to date (only counts documents saved by the minimum number of annotators)",
-                    "value": f"{project_progress_metrics['percentage']:0.0f}%",
+    agreement_calculator = AgreementCalculator(
+        entity_data=[
+            {
+                "start": m["start"],
+                "end": m["end"],
+                "label": m["ontology_item_id"],
+                "username": m["created_by"],
+                "doc_id": str(m["dataset_item_id"]),
+            }
+            for m in entity_markup
+        ],
+        relation_data=[
+            {
+                "label": m["ontology_item_id"],
+                "username": m["created_by"],
+                "source": {
+                    "start": m["source"]["start"],
+                    "end": m["source"]["end"],
+                    "label": m["source"]["ontology_item_id"],
                 },
-                {
-                    "index": 2,
-                    "name": "Average Entity Agreement",
-                    "title": "Average entity inter-annotator agreement",
-                    "value": (
-                        None
-                        if entity_overall_agreement_score is None
-                        else f"{entity_overall_agreement_score*100:0.0f}%"
-                    ),
+                "target": {
+                    "start": m["target"]["start"],
+                    "end": m["target"]["end"],
+                    "label": m["target"]["ontology_item_id"],
                 },
-                {
-                    "index": 4,
-                    "name": "Entities Created",
-                    "title": "Count of agreed upon entities (silver and weak) created by annotators",
-                    "value": agreed_entity_count,
-                },
-            ],
-            "plots": plot_data,
-        }
+                "doc_id": str(m["dataset_item_id"]),
+            }
+            for m in relation_markup
+        ],
+    )
 
-        if project["tasks"]["relation"]:
-            output["metrics"] += [
-                {
-                    "index": 3,
-                    "name": "Average Relation Agreement",
-                    "title": "Average relation inter-annotator agreement",
-                    "value": (
-                        None
-                        if relation_overall_agreement_score is None
-                        else f"{relation_overall_agreement_score*100:0.0f}%"
-                    ),
-                },
-                {
-                    "index": 5,
-                    "name": "Triples Created",
-                    "title": "Count of agreed upon triples (silver and weak) created by annotators",
-                    "value": agreed_relation_count,
-                },
-                {
-                    "index": 1,
-                    "name": "Overall Agreement",
-                    "title": "Weighted average overall inter-annotator agreement",
-                    "value": (
-                        None
-                        if (overall_agreement_score is None)
-                        else f"{overall_agreement_score*100:0.0f}%"
-                    ),
-                },
-            ]
+    entity_overall_agreement_score = agreement_calculator.overall_agreement()
 
-        return output
-    except Exception as e:
-        print("e", e)
+    relation_overall_agreement_score = agreement_calculator.overall_agreement(
+        "relation"
+    )
+
+    overall_agreement_score = agreement_calculator.overall_average_agreement()
+
+    agreed_entity_count = agreement_calculator.count_majority_agreements()
+
+    agreed_relation_count = agreement_calculator.count_majority_agreements("relation")
+
+    output = {
+        "metrics": [
+            {
+                "index": 0,
+                "name": "Project Progress",
+                "title": "Progress made to date (only counts documents saved by the minimum number of annotators)",
+                "value": f"{project_progress_metrics['percentage']:0.0f}%",
+            },
+            {
+                "index": 2,
+                "name": "Average Entity Agreement",
+                "title": "Average entity inter-annotator agreement",
+                "value": (
+                    None
+                    if entity_overall_agreement_score is None
+                    else f"{entity_overall_agreement_score*100:0.0f}%"
+                ),
+            },
+            {
+                "index": 4,
+                "name": "Entities Created",
+                "title": "Count of agreed upon entities (silver and weak) created by annotators",
+                "value": agreed_entity_count,
+            },
+        ],
+        "plots": plot_data,
+    }
+
+    if project["tasks"]["relation"]:
+        output["metrics"] += [
+            {
+                "index": 3,
+                "name": "Average Relation Agreement",
+                "title": "Average relation inter-annotator agreement",
+                "value": (
+                    None
+                    if relation_overall_agreement_score is None
+                    else f"{relation_overall_agreement_score*100:0.0f}%"
+                ),
+            },
+            {
+                "index": 5,
+                "name": "Triples Created",
+                "title": "Count of agreed upon triples (silver and weak) created by annotators",
+                "value": agreed_relation_count,
+            },
+            {
+                "index": 1,
+                "name": "Overall Agreement",
+                "title": "Weighted average overall inter-annotator agreement",
+                "value": (
+                    None
+                    if (overall_agreement_score is None)
+                    else f"{overall_agreement_score*100:0.0f}%"
+                ),
+            },
+        ]
+
+    return output
 
 
 @router.get("/adjudication/{project_id}")
@@ -345,14 +332,14 @@ async def get_adjudication(
     }
 
     if dataset_item_id:
-        print('Filtering adjudication on "dataset_item_id')
+        logger.info('Filtering adjudication on "dataset_item_id')
         match_condition["$match"] = {
             **match_condition["$match"],
             "_id": ObjectId(dataset_item_id),
         }
 
     if search_term:
-        print('Filtering adjudication on "search_term"')
+        logger.info('Filtering adjudication on "search_term"')
         search_term_regex = create_search_regex(
             search_term
         )  # re.compile(rf"\b{re.escape(search_term)}\b", re.IGNORECASE)
@@ -362,14 +349,14 @@ async def get_adjudication(
         }
 
     if flags:
-        print(f"Flags :: {flags}")
+        logger.info(f"Flags :: {flags}")
         # Sanitize flags and ensure they are expected
         flags = [
             f
             for f in (f.strip() for f in flags.split(","))
             if f in list(set(FlagState)) + ["everything", "no_flags"]
         ]
-        print(f"Filters for flags :: {flags}")
+        logger.info(f"Filters for flags :: {flags}")
 
         if "everything" in flags:
             pass
@@ -384,14 +371,14 @@ async def get_adjudication(
                 "flags": {"$elemMatch": {"state": {"$in": flags}}},
             }
 
-    print(f"match condition: {match_condition}")
+    logger.info(f"match condition: {match_condition}")
 
     # Get project dataset id
     project = await db["projects"].find_one(
         {"_id": project_id},
         {"dataset_id": 1, "annotators": 1, "tasks": 1, "ontology": 1},
     )
-    print("Loaded project...")
+    logger.info("Loaded project...")
 
     dataset_item_pipeline = [
         match_condition,
@@ -484,7 +471,7 @@ async def get_adjudication(
 
     if len(dataset_item) == 0:
         # No dataset items found
-        print("No dataset items found")
+        logger.info("No dataset items found")
         return {
             "save_states": [],
             "agreement": (
@@ -511,7 +498,7 @@ async def get_adjudication(
             **({"relations": {}} if project["tasks"]["relation"] else {}),
         }
 
-    # print("dataset_item post pipeline\n", dataset_item[0])
+    # logger.info(f"dataset_item post pipeline\n: {dataset_item[0]}"")
 
     dataset_item = dataset_item[0]
 
@@ -531,31 +518,22 @@ async def get_adjudication(
 
     saved_users = [ss["created_by"] for ss in dataset_item["save_states"]]
 
-    print("saved_users\n", saved_users)
-
     # Get count of dataset items
-    print("match condition".upper(), match_condition["$match"])
     total_dataset_items = await db["data"].count_documents(match_condition["$match"])
-    print("total_dataset_items\n", total_dataset_items)
 
     def get_markup(base_markup, classification: str) -> list:
         markup = [m for m in base_markup if m.get("classification") == classification]
 
         if len(markup) == 0:
-            print("No markup found")
+            logger.info("No markup found")
             return []
-
-        print("markup", len(markup))
 
         # Convert ontology_item_ids into their fullnames for human readability
         ontology = project["ontology"][classification]
-        # print(ontology)
 
         ontology = [OntologyItem.parse_obj(item) for item in ontology]
 
         flat_ontology = flatten_hierarchical_ontology(ontology=ontology)
-
-        # print("flat_ontology", flat_ontology)
 
         # Default to purple color if none exists (relations do not have this attribute)
         ontology_id2details = {
@@ -566,9 +544,6 @@ async def get_adjudication(
             }
             for item in flat_ontology
         }
-
-        # print("ontology_id2details", ontology_id2details)
-
         # add keys on markup
         markup = [
             {
@@ -585,18 +560,12 @@ async def get_adjudication(
             }
             for m in markup
         ]
-
-        # print("enriched markup", markup)
-
         return markup
 
     # Aggregate data into expected format
     entity_markup = get_markup(
         base_markup=dataset_item["markup"], classification="entity"
     )
-
-    # print("entity_markup", entity_markup)
-
     # Get entity agreement score and markup
     relation_markup = []
     if project["tasks"]["relation"]:
@@ -604,122 +573,98 @@ async def get_adjudication(
             base_markup=dataset_item["markup"], classification="relation"
         )
 
-    try:
-        agreement_calculator = AgreementCalculator(
-            entity_data=[
-                {
-                    "start": m["start"],
-                    "end": m["end"],
-                    "label": m["ontology_item_id"],
-                    "username": m["created_by"],
-                    "doc_id": str(dataset_item["_id"]),
-                }
-                for m in entity_markup
-                if m["created_by"] in saved_users
-            ],
-            relation_data=[
-                {
-                    "label": m["ontology_item_id"],
-                    "username": m["created_by"],
-                    "source": {
-                        "start": m["source"]["start"],
-                        "end": m["source"]["end"],
-                        "label": m["source"]["ontology_item_id"],
-                    },
-                    "target": {
-                        "start": m["target"]["start"],
-                        "end": m["target"]["end"],
-                        "label": m["target"]["ontology_item_id"],
-                    },
-                    "doc_id": str(dataset_item["_id"]),
-                }
-                for m in relation_markup
-                if m["created_by"] in saved_users
-            ],
-        )
+    agreement_calculator = AgreementCalculator(
+        entity_data=[
+            {
+                "start": m["start"],
+                "end": m["end"],
+                "label": m["ontology_item_id"],
+                "username": m["created_by"],
+                "doc_id": str(dataset_item["_id"]),
+            }
+            for m in entity_markup
+            if m["created_by"] in saved_users
+        ],
+        relation_data=[
+            {
+                "label": m["ontology_item_id"],
+                "username": m["created_by"],
+                "source": {
+                    "start": m["source"]["start"],
+                    "end": m["source"]["end"],
+                    "label": m["source"]["ontology_item_id"],
+                },
+                "target": {
+                    "start": m["target"]["start"],
+                    "end": m["target"]["end"],
+                    "label": m["target"]["ontology_item_id"],
+                },
+                "doc_id": str(dataset_item["_id"]),
+            }
+            for m in relation_markup
+            if m["created_by"] in saved_users
+        ],
+    )
 
-        entity_overall_agreement_score = agreement_calculator.overall_agreement()
-        # print("entity_overall_agreement_score", entity_overall_agreement_score)
+    entity_overall_agreement_score = agreement_calculator.overall_agreement()
+    entity_pairwise_agreement_scores = agreement_calculator.calculate_agreements()
+    relation_overall_agreement_score = agreement_calculator.overall_agreement(
+        "relation"
+    )
+    relation_pairwise_agreement_scores = agreement_calculator.calculate_agreements(
+        "relation"
+    )
 
-        entity_pairwise_agreement_scores = agreement_calculator.calculate_agreements()
-        # print("entity_pairwise_agreement_scores", entity_pairwise_agreement_scores)
-
-        relation_overall_agreement_score = agreement_calculator.overall_agreement(
-            "relation"
-        )
-        relation_pairwise_agreement_scores = agreement_calculator.calculate_agreements(
-            "relation"
-        )
-
-        overall_agreement_score = agreement_calculator.overall_average_agreement()
-    except Exception as e:
-        print(f"Failed to get agreements: {e}")
+    overall_agreement_score = agreement_calculator.overall_average_agreement()
 
     # Find the last updated markup and convert to string for serialization
-    try:
-        # print("markup", dataset_item["markup"])
-
-        last_updated = (
-            max([m["updated_at"] for m in dataset_item["markup"]])
-            if dataset_item.get("markup")
-            and len([m for m in dataset_item["markup"] if bool(m)]) > 0
-            else None
-        )
-        # print("last updated\n", last_updated)
-    except Exception as e:
-        print("last updated error", e)
-
-    try:
-        output = {
-            "save_states": dataset_item["save_states"],
-            "agreement": (
-                {
-                    "overall": overall_agreement_score,
-                    "relation": relation_overall_agreement_score,
-                    "entity": entity_overall_agreement_score,
-                }
-                if project["tasks"]["relation"]
-                else {
-                    "overall": entity_overall_agreement_score,
-                    "entity": entity_overall_agreement_score,
-                }
-            ),
-            "pairwise_agreement": (
-                {
-                    "relation": relation_pairwise_agreement_scores,
-                    "entity": entity_pairwise_agreement_scores,
-                }
-                if project["tasks"]["relation"]
-                else {"entity": entity_pairwise_agreement_scores}
-            ),
-            "tokens": dataset_item["tokens"],
-            "original": dataset_item["original"],
-            "total_items": total_dataset_items,
-            "_id": str(dataset_item["_id"]),
-            "updated_at": last_updated,
-            "annotators": [
-                a["username"] for a in project["annotators"] if a["state"] == "accepted"
-            ],
-            "flags": dataset_item["flags"],
-            "social": social,
-            "entities": {
-                **group_data_by_key(data=entity_markup, key="created_by"),
-            },
-            **(
-                {
-                    "relations": {
-                        **group_data_by_key(data=relation_markup, key="created_by")
-                    }
-                }
-                if project["tasks"]["relation"]
-                else {}
-            ),
-        }
-        # print("output", output)
-    except Exception as e:
-        print("output exception", e)
-
-    return output
+    last_updated = (
+        max([m["updated_at"] for m in dataset_item["markup"]])
+        if dataset_item.get("markup")
+        and len([m for m in dataset_item["markup"] if bool(m)]) > 0
+        else None
+    )
+    return {
+        "save_states": dataset_item["save_states"],
+        "agreement": (
+            {
+                "overall": overall_agreement_score,
+                "relation": relation_overall_agreement_score,
+                "entity": entity_overall_agreement_score,
+            }
+            if project["tasks"]["relation"]
+            else {
+                "overall": entity_overall_agreement_score,
+                "entity": entity_overall_agreement_score,
+            }
+        ),
+        "pairwise_agreement": (
+            {
+                "relation": relation_pairwise_agreement_scores,
+                "entity": entity_pairwise_agreement_scores,
+            }
+            if project["tasks"]["relation"]
+            else {"entity": entity_pairwise_agreement_scores}
+        ),
+        "tokens": dataset_item["tokens"],
+        "original": dataset_item["original"],
+        "total_items": total_dataset_items,
+        "_id": str(dataset_item["_id"]),
+        "updated_at": last_updated,
+        "annotators": [
+            a["username"] for a in project["annotators"] if a["state"] == "accepted"
+        ],
+        "flags": dataset_item["flags"],
+        "social": social,
+        "entities": {
+            **group_data_by_key(data=entity_markup, key="created_by"),
+        },
+        **(
+            {"relations": {**group_data_by_key(data=relation_markup, key="created_by")}}
+            if project["tasks"]["relation"]
+            else {}
+        ),
+    }
 
 
 @router.get("/effort/{project_id}")
@@ -768,8 +713,6 @@ async def get_download_endpoint(
         - implement gold standard
         - implement min_agreement query param
     """
-    print('"get_download"')
-
     if usernames is None:
         usernames = [current_user.username]
     else:
@@ -777,14 +720,13 @@ async def get_download_endpoint(
 
     project_id = ObjectId(project_id)
 
-    print(f"downloading for users: {usernames} on project {project_id}")
+    logger.info(f"downloading for users: {usernames} on project {project_id}")
 
     # Convert ontology_item_ids into their fullnames for human readability
     project = await db["projects"].find_one(
         {"_id": project_id},
         {"tasks": 1, "entity_ontology_id": 1, "relation_ontology_id": 1},
     )
-    print("project", project)
 
     if project["tasks"]["entity"]:
         # Get entity id from project
@@ -807,12 +749,7 @@ async def get_download_endpoint(
             ontology.append(OntologyItem(**item))
 
     flat_ontology = flatten_hierarchical_ontology(ontology=ontology)
-
-    # print("flat_ontology size:", len(flat_ontology))
-
     ontology_id2fullname = {item.id: item.fullname for item in flat_ontology}
-
-    # print("ontology_id2fullname", ontology_id2fullname)
 
     dataset_items = await db.data.find(
         {"project_id": project_id},
@@ -834,10 +771,6 @@ async def get_download_endpoint(
     _map = defaultdict(list)
     for m in markup:
         _map[(str(m["dataset_item_id"]), m["created_by"])].append(m)
-    # print("_map", _map)
-
-    # markup2di = {str(di["_id"]): m for m in markup}
-    # print(len(markup2di.keys()))
 
     entity_markup = defaultdict(list)
     relation_markup = defaultdict(list)
@@ -851,8 +784,6 @@ async def get_download_endpoint(
     output = defaultdict(dict)
     for di in dataset_items:
         di_id = str(di["_id"])
-
-        # print(entity_markup[di_id])
 
         _entity_markup = [
             {
@@ -885,7 +816,6 @@ async def get_download_endpoint(
     try:
         for di in dataset_items:
             for username in usernames:
-                # print("processing username", username)
                 di_id = str(di["_id"])
                 _markup = _map.get((di_id, username), [])
 
@@ -919,14 +849,10 @@ async def get_download_endpoint(
                     if m["classification"] == "relation"
                 ]
 
-                # print("entity_markup", entity_markup)
-                # print("relation_markup", relation_markup)
-
                 # classification = m["classification"]
                 # is_entity = classification == "entity"
                 if di_id not in output[username].keys():
                     di_save_states = di.get("save_states", None)
-                    # print("matched_di", matched_di)
 
                     saved_by_creator = (
                         (
@@ -951,7 +877,6 @@ async def get_download_endpoint(
                     else:
                         user_flags = []
 
-                    # print("saved_by_creator", saved_by_creator)
                     output[username][di_id] = {
                         "id": di_id,
                         "original": di["original"],
@@ -966,7 +891,7 @@ async def get_download_endpoint(
                     }
 
     except Exception as e:
-        print(f"Exception: {e}")
+        logger.info(f"Exception: {e}")
 
     # Convert output into {"username": list(dataset_item with markup)}
     return {

@@ -68,18 +68,11 @@ def push_keys_to_extra_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     >>> print(updated_dict)
     {'extra_fields': {'key1': 'value1', 'key2': 'value2'}, 'tokens': ['token1', 'token2'], 'external_id': 12345}
     """
-
-    print("data", data)
-
     extra_fields = {}
     for key in data.keys():
         if key not in {"tokens", "tags", "original", "external_id"}:
-            print("key", key)
             extra_fields[key] = data[key]
     data["extra_fields"] = extra_fields
-
-    print("extra_fields", extra_fields)
-
     for key in extra_fields.keys():
         del data[key]
     return data
@@ -566,18 +559,11 @@ async def find_one_dataset(
         #     {"$match": {"_id": dataset_id, "created_by": {"$in": [username, "system"]}}}
         # ] + (agg_pipeline_segment if include_dataset_size else [])
 
-        # # print("pipeline\n", pipeline)
-
         # datasets = await db[DATASETS_COLLECTION].aggregate(pipeline).to_list(None)
-
-        # # print("RETURNING DATASET\n", datasets[0])
-        # # print("datasets[0]['preprocessing']", datasets[0]["preprocessing"])
 
         # if len(datasets) == 1:
         #     logger.info("Found one dataset")
         #     dataset = datasets[0]
-
-        #     # print("dataset\n", dataset)
 
         #     # Check if dataset is a "project" or "blueprint" dataset
         #     is_project_dataset = (
@@ -589,8 +575,6 @@ async def find_one_dataset(
         #     if is_project_dataset:
         #         # Only a single project will be associated with a project dataset as the bp is copied for all projects
         #         projects = dataset.pop("projects")
-
-        #         # print('projects', projects)
 
         #         dataset["project"] = projects[0]
 
@@ -626,8 +610,6 @@ async def find_one_dataset(
         #             dataset["relation_ontology_resource_id"] = str(
         #                 dataset["relation_ontology_resource_id"]
         #             )
-
-        #         # print("dataset", dataset)
 
         #         return RichProjectDataset.model_validate(dataset)
         #     else:
@@ -852,32 +834,18 @@ async def create_annotated_dataset_items(
     Create annotated dataset items.
 
     This function assigns a "dataset_id" to dataset items and creates blueprint entity/relation markup.
-
-    Params
-    ------
-
-    Returns
-    -------
-
-    Notes
-    -----
-
-
     """
     entity_ontology = await get_entity_ontology(db, dataset)
-    print("entity_ontology", entity_ontology)
 
     entity_fullname2id = convert_ontology_to_id_mapping(
         entity_ontology, flatten_hierarchical_ontology
     )
-    print("entity_fullname2id", entity_fullname2id)
 
     inserted_di_ids = []
     for item in dataset_items:
         dataset_item_id = await insert_dataset_item(
             db, item, dataset, dataset_id, project_id
         )
-        print("dataset_item_id", dataset_item_id)
         inserted_di_ids.append(dataset_item_id)
 
         inserted_entities = {}
@@ -896,10 +864,6 @@ async def create_annotated_dataset_items(
                 inserted_entities[entity["id"]] = result.inserted_id
 
         if dataset["dataset_type"] == DatasetType.relation_annotation:
-            print(
-                "relation_ontology_resource_id",
-                dataset["relation_ontology_resource_id"],
-            )
             relation_ontology = await get_relation_ontology(db, dataset)
             relation_fullname2id = convert_ontology_to_id_mapping(
                 relation_ontology, flatten_hierarchical_ontology
@@ -924,21 +888,18 @@ async def process_dataset_items(
     db, dataset_items, dataset, dataset_id, username: str, project_id: ObjectId = None
 ):
     if dataset["is_annotated"]:
-        print("Creating annotated dataset")
         await create_annotated_dataset_items(
             db, dataset_items, dataset, dataset_id, username, project_id
         )
-
     else:
-        print("Creating rich dataset items")
         enriched_items = create_rich_dataset_items(
             dataset_items=dataset_items,
             is_blueprint=dataset["is_blueprint"],
             dataset_id=dataset_id,
         )
-
-        print("Inserting dataset items")
-        await db[DATA_COLLECTION].insert_many([ei.dict() for ei in enriched_items])
+        await db[DATA_COLLECTION].insert_many(
+            [ei.model_dump() for ei in enriched_items]
+        )
 
 
 async def create_dataset(
@@ -1195,7 +1156,6 @@ async def filter_dataset(
 
     try:
         search_term_regx = create_search_regex(search_terms=filters.search_term)
-        # print("search_term_regx", search_term_regx)
     except Exception as e:
         logger.info(f"Error with search term reg: {e}")
 
@@ -1216,7 +1176,6 @@ async def filter_dataset(
 
     quality_filter = []
     if filters.quality != QualityFilter.everything.value:
-        # print("Handing annotation quality filter")
         quality_filter = [
             {
                 "$match": {
@@ -1229,10 +1188,7 @@ async def filter_dataset(
 
     relations_filter = []
     if filters.relations != RelationsFilter.everything.value:
-        # print("Handling annotation relation filter")
-
         # TODO: fix - seems to return documents with no annotations as part of the 'has_relations' filter... which is not supposed to happen.
-
         relations_filter = [
             {
                 "$addFields": {
@@ -1491,16 +1447,11 @@ async def filter_dataset(
 
 async def create_system_datasets(db: AsyncIOMotorDatabase):
     """Prepopulates system with default/preset datasets"""
-    print("Creating system datasets")
-
     # Load JSON
     data = json.load(open(f"{settings.SYSTEM_DEFAULTS_DIR}/datasets.json", "r"))
-
-    print(f"Loaded {len(data)} datasets")
-
     # Parse datasets
     datasets = [
-        CreateDatasetBody.parse_obj(
+        CreateDatasetBody(
             {**d, "is_blueprint": True, "is_annotated": False, "is_suggested": False}
         )
         for d in data
@@ -1508,7 +1459,6 @@ async def create_system_datasets(db: AsyncIOMotorDatabase):
 
     for dataset in datasets:
         # Check existence of datasets before creating them to ensure UUID is preserved.
-        print(f'Processing dataset: "{dataset.name}"')
         existing_dataset = await db["datasets"].find_one(
             {
                 "name": dataset.name,
@@ -1516,7 +1466,6 @@ async def create_system_datasets(db: AsyncIOMotorDatabase):
             }
         )
         if not existing_dataset:
-            print("Creating dataset...")
             await create_dataset(
                 db=db, dataset=dataset, username=settings.api.system_username
             )

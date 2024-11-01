@@ -194,46 +194,41 @@ async def create_one_flag(
 ):
     """Creates a single flag against a project dataset item"""
     # TODO: update to give flag items an _id?
+    dataset_item_id = ObjectId(dataset_item_id)
+    dataset_item = await db.data.find_one({"_id": dataset_item_id})
 
-    try:
-        print('Calling: "create_one_flag')
-        dataset_item_id = ObjectId(dataset_item_id)
-        dataset_item = await db["data"].find_one({"_id": dataset_item_id})
-
-        if dataset_item is None:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={"detail": "Dataset item not found"},
-            )
-
-        new_flag = Flag(state=state, created_by=user.username)
-
-        # Update the document with the new flag item
-        result = await db["data"].update_one(
-            {
-                "_id": dataset_item_id,
-                "flags": {
-                    "$not": {
-                        "$elemMatch": {
-                            "state": new_flag.state,
-                            "created_by": new_flag.created_by,
-                        }
-                    }
-                },
-            },
-            {"$push": {"flags": new_flag.dict()}},
+    if dataset_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset item not found",
         )
 
-        if result.modified_count > 0:
-            # TODO: update this route to use response_model
-            return new_flag.dict()
-        else:
-            return JSONResponse(
-                status_code=status.HTTP_409_CONFLICT,
-                content={"details": "Flag already exists on this dataset item"},
-            )
-    except Exception as e:
-        print(f"Error: {e}")
+    new_flag = Flag(state=state, created_by=user.username)
+
+    # Update the document with the new flag item
+    result = await db.data.update_one(
+        {
+            "_id": dataset_item_id,
+            "flags": {
+                "$not": {
+                    "$elemMatch": {
+                        "state": new_flag.state,
+                        "created_by": new_flag.created_by,
+                    }
+                }
+            },
+        },
+        {"$push": {"flags": new_flag.model_dump()}},
+    )
+
+    if result.modified_count > 0:
+        # TODO: update this route to use response_model
+        return new_flag.model_dump()
+    else:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"details": "Flag already exists on this dataset item"},
+        )
 
 
 @router.delete("/flag/{dataset_item_id}")
@@ -244,38 +239,33 @@ async def delete_one_flag(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Delete a single flag from a dataset item"""
+    dataset_item_id = ObjectId(dataset_item_id)
 
-    try:
-        dataset_item_id = ObjectId(dataset_item_id)
-
-        # Find the flag to delete
-        result = await db["data"].update_one(
-            {
-                "_id": dataset_item_id,
-                "flags.state": state,
-                "flags.created_by": user.username,
-            },
-            {
-                "$pull": {
-                    "flags": {
-                        "state": state,
-                        "created_by": user.username,
-                    }
+    # Find the flag to delete
+    result = await db.data.update_one(
+        {
+            "_id": dataset_item_id,
+            "flags.state": state,
+            "flags.created_by": user.username,
+        },
+        {
+            "$pull": {
+                "flags": {
+                    "state": state,
+                    "created_by": user.username,
                 }
-            },
+            }
+        },
+    )
+
+    # Check if the update was successful
+    if result.modified_count > 0:
+        return "Flag item deleted from dataset item"
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Flag item not found",
         )
-
-        # Check if the update was successful
-        if result.modified_count > 0:
-            return "Flag item deleted from dataset item"
-        else:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={"detail": "Flag item or dataset item not found"},
-            )
-
-    except Exception as e:
-        print(f"Error: {e}")
 
 
 @router.get("/insights/{project_id}")
@@ -333,11 +323,7 @@ async def get_annotation_insights(
         {"$project": {"_id": 0, "result": "$result"}},
     ]
 
-    try:
-        result = await db["markup"].aggregate(pipeline).to_list(None)
-        # print("result", result)
-    except Exception as e:
-        print(e)
+    result = await db["markup"].aggregate(pipeline).to_list(None)
 
     # Get ontology item details to make output human readable
     project = await db["projects"].find_one(
@@ -347,18 +333,16 @@ async def get_annotation_insights(
     project = await db["projects"].find_one(
         {"_id": ObjectId(project_id)}, {"_id": 0, "ontology": 1}
     )
-    ontology = ProjectOntology.parse_obj(project["ontology"])
+    ontology = ProjectOntology(**project["ontology"])
 
     flat_ontology = flatten_hierarchical_ontology(ontology=ontology.entity)
-
-    # print("flat_ontology", len(flat_ontology))
 
     ontology_meta_map = {
         i.id: {"color": i.color, "name": i.name, "fullname": i.fullname}
         for i in flat_ontology
     }
 
-    destructured_result = result[0]["result"][0]  # This is not ideal... but whatever.
+    destructured_result = result[0]["result"][0]
 
     output = []
     for key, value in destructured_result.items():

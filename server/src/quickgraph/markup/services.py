@@ -1358,7 +1358,6 @@ async def delete_single_entity_annotation(db, markup_id: ObjectId, username: str
             )
             .to_list(None)
         )
-        print(f"relations: {relations}")
 
         # Delete relations and markup
         relation_ids = [r["_id"] for r in relations]

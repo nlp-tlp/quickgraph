@@ -37,21 +37,28 @@ def initialize_ontology(
     parent_color: str = None,
     parent_path: List[int] = [],
 ) -> List[Dict[str, any]]:
-    """
-    Recursively adds ids, fullnames, colors, and additional information to the dictionary elements in a list. Paths are indexed from 0.
+    """Initialize ontology data.
 
-    Args:
-    - data (List[Dict[str, any]]): The list of dictionary elements.
-    - parent_names (List[str]): The list of parent names. Defaults to an empty list.
-    - parent_id (str): The id of the parent element. Defaults to an empty string.
-    - parent_color (str): The color of the parent element. Defaults to None.
-    - parent_path (List[int]): The list of parent path. Defaults to an empty list.
+    Recursively adds ids, fullnames, colors, and additional information to
+    the dictionary elements in a list. Paths are indexed from 0.
+
+    Parameters
+    ----------
+    data :
+        The list of dictionary elements.
+    parent_names :
+        The list of parent names. Defaults to an empty list.
+    parent_id :
+        The id of the parent element. Defaults to an empty string.
+    parent_color :
+        The color of the parent element. Defaults to None.
+    parent_path :
+        The list of parent path. Defaults to an empty list.
 
     Returns:
-    - data (List[Dict[str, any]]): The updated list of dictionary elements.
+    - data : The updated list of dictionary elements.
     """
     for i, item in enumerate(data):
-        print("item", item)
         # Create a unique id for the item
         item_id = item.get("id") or str(uuid.uuid4().hex[:8])
         # Create the fullname for the item
@@ -145,11 +152,8 @@ async def create_one_resource(
     resource: Union[CreateResourceModel, CreatePreannotationResource],
     username: str,
 ):
-    resource = resource.dict(exclude_none=True)
+    resource = resource.model_dump(exclude_none=True)
     content = resource.pop("content")
-    # print(f"new resource: {resource}")
-
-    print("content", content)
 
     new_resource = await db[COLLECTION_NAME].insert_one(
         {
@@ -309,21 +313,15 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
 
     # Load resources JSON file
     data = json.load(open(f"{settings.SYSTEM_DEFAULTS_DIR}/resources.json", "r"))
-    print("Loaded data")
-    print("data", data)
 
     # Parse data and add "is_blueprint" key to ontologies
     ontologies = [
-        CreateResourceModel.parse_obj({**d, "is_blueprint": True})
+        CreateResourceModel(**{**d, "is_blueprint": True})
         for d in data
         if d["classification"] == "ontology"
     ]
-    print(f"Loaded {len(ontologies)} ontologies")
-
     db_ontologies = {}  # This is used to ground other resources via reference
     for ontology in ontologies:
-        print("ontology", ontology)
-
         try:
             # Check if resource exists (do not want to replace as `_id` is linked to other documents)
             existing_resource = await db[COLLECTION_NAME].find_one(
@@ -339,15 +337,12 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
                     db=db, resource=ontology, username=settings.api.system_username
                 )
 
-                print("created_resource", created_resource["_id"])
                 db_ontologies[created_resource["_id"]] = created_resource
             else:
                 db_ontologies[existing_resource["_id"]] = existing_resource
 
         except Exception as e:
-            print(f"Failed to process resource:\n{e}")
-
-    print(db_ontologies)
+            logger.info(f"Failed to process resource:\n{e}")
 
     # Create preannotation resources
 
@@ -363,10 +358,10 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #                 "created_by": settings.api.system_username,
     #             }
     #         )
-    #         print("ontology_resource", ontology_resource)
+    #         logger.info("ontology_resource", ontology_resource)
 
     #         # _ontology = ResourceModel(**ontology_resource)
-    #         # print("_ontology", _ontology)
+    #         # logger.info("_ontology", _ontology)
     #         # TODO: fix issue with ontology not being ResourceModel and not working with `flatten_hierarchical_ontology`
 
     #         existing_resource = await db[COLLECTION_NAME].find_one(
@@ -379,7 +374,7 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #             }
     #         )
 
-    #         print("preannotation resource exists", existing_resource)
+    #         logger.info("preannotation resource exists", existing_resource)
 
     #         # Add ontology meta-data to the preannotation resource
     #         resource.ontology_id = ontology_resource["_id"]
@@ -389,7 +384,7 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #         flat_ontology = flatten_hierarchical_ontology(
     #             ontology=ontology_resource["ontology"]
     #         )
-    #         print("flat_ontology", flat_ontology)
+    #         logger.info("flat_ontology", flat_ontology)
     #         # 2. Match on preannotation items based on `fullname` attributes and add `ontology_item_id` to items
 
     #         if not existing_resource:
@@ -399,4 +394,4 @@ async def create_system_resources(db: AsyncIOMotorDatabase):
     #                 username=settings.api.system_username,
     #             )
     #     except Exception as e:
-    #         print(f"Failed to handle preannotation resource:\n{e}")
+    #         logger.info(f"Failed to handle preannotation resource:\n{e}")

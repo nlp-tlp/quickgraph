@@ -36,6 +36,8 @@ from .services import (
     lighten_hex_color,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/graph", tags=["Graph"])
 
 
@@ -67,23 +69,6 @@ async def get_graph(
     """Creates a project graph dataset.
 
     This function aggregates project markup into a graph dataset. The default graph is built on only agreed upon annotations on dataset items with minimum annotator saves.
-
-    Parameters
-    ----------
-
-
-    Returns
-    -------
-
-    Raises
-    ------
-
-
-
-    Notes
-    -----
-
-
     """
 
     if username == "":
@@ -101,33 +86,25 @@ async def get_graph(
             status_code=status.HTTP_404_NOT_FOUND, content={"detail": "Graph not found"}
         )
 
-    entity_ontology = [
-        OntologyItem.parse_obj(item) for item in project["ontology"]["entity"]
-    ]
+    entity_ontology = [OntologyItem(**item) for item in project["ontology"]["entity"]]
     relation_ontology = [
-        OntologyItem.parse_obj(item) for item in project["ontology"]["relation"]
+        OntologyItem(**item) for item in project["ontology"]["relation"]
     ]
 
-    try:
-        ontology_id2details = {}
-        for ontology_type, ontology_items in [
-            ("entity", entity_ontology),
-            ("relation", relation_ontology),
-        ]:
-            flat_ontology = flatten_hierarchical_ontology(ontology=ontology_items)
+    ontology_id2details = {}
+    for ontology_type, ontology_items in [
+        ("entity", entity_ontology),
+        ("relation", relation_ontology),
+    ]:
+        flat_ontology = flatten_hierarchical_ontology(ontology=ontology_items)
 
-            # Default to purple color if none exists (relations do not have this attribute)
-            for item in flat_ontology:
-                ontology_id2details[(ontology_type, item.id)] = {
-                    "fullname": item.fullname,
-                    "color": (
-                        item.color if item and hasattr(item, "color") else "#7b1fa2"
-                    ),
-                    "name": item.name,
-                }
-        print("Created ontology_id2details")
-    except Exception as e:
-        print(f"Error creating ontology_id2details: {e}")
+        # Default to purple color if none exists (relations do not have this attribute)
+        for item in flat_ontology:
+            ontology_id2details[(ontology_type, item.id)] = {
+                "fullname": item.fullname,
+                "color": (item.color if item and hasattr(item, "color") else "#7b1fa2"),
+                "name": item.name,
+            }
 
     # Fetch dataset items that have minimum saves if "group" graph otherwise filter for "created_by"
     if username is None:
@@ -158,7 +135,7 @@ async def get_graph(
             )
             .to_list(None)
         )
-        print(f"Loaded: {len(dataset_items)} dataset_items")
+        logger.info(f"Loaded: {len(dataset_items)} dataset_items")
 
     # Fetch markup associated
     markup_query = {
@@ -197,7 +174,6 @@ async def get_graph(
         )
 
     entity_markup_ids = [e["_id"] for e in entity_markup]
-    print("entity_markup", len(entity_markup))
 
     # Fetch relations
     relation_markup_pipeline = [
@@ -231,7 +207,6 @@ async def get_graph(
     relation_markup = (
         await db["markup"].aggregate(relation_markup_pipeline).to_list(None)
     )
-    print("relation_markup", len(relation_markup))
 
     # markup_pipeline = [
     #     {"$match": markup_query},
@@ -266,8 +241,6 @@ async def get_graph(
 
     # markup = await db["markup"].aggregate(markup_pipeline).to_list(None)
 
-    # print(f"Loaded: {len(markup)} markup")
-
     # Annotator graph - TODO: generalise for group graph.
 
     nodes = entity_markup
@@ -282,76 +255,54 @@ async def get_graph(
         }  # This should be done when fetching entity markup otherwise less than the node limit can be returned.
         nodes = [n for n in nodes if n["_id"] in connected_node_ids]
 
-    try:
-        nodes = {
-            str(i["_id"]): Node(
-                classification=ontology_id2details[("entity", i["ontology_item_id"])][
-                    "name"
+    nodes = {
+        str(i["_id"]): Node(
+            classification=ontology_id2details[("entity", i["ontology_item_id"])][
+                "name"
+            ],
+            color=NodeColor(
+                border=ontology_id2details[("entity", i["ontology_item_id"])]["color"],
+                background=ontology_id2details[("entity", i["ontology_item_id"])][
+                    "color"
                 ],
-                color=NodeColor(
-                    border=ontology_id2details[("entity", i["ontology_item_id"])][
-                        "color"
-                    ],
-                    background=ontology_id2details[("entity", i["ontology_item_id"])][
-                        "color"
-                    ],
-                ),
-                font=NodeFont(
-                    color=get_font_color(
-                        ontology_id2details[("entity", i["ontology_item_id"])]["color"],
-                    )
-                ),
-                id=str(i["_id"]),
-                label=i["surface_form"],
-                title=ontology_id2details[("entity", i["ontology_item_id"])][
-                    "fullname"
-                ],
-                value=1,
-                suggested=i["suggested"],
-                ontology_item_id=i["ontology_item_id"],
-            ).dict()
-            for i in nodes
-        }
-        # print("nodes 1", nodes)
-    except Exception as e:
-        print(f"issue with nodes: {e}")
+            ),
+            font=NodeFont(
+                color=get_font_color(
+                    ontology_id2details[("entity", i["ontology_item_id"])]["color"],
+                )
+            ),
+            id=str(i["_id"]),
+            label=i["surface_form"],
+            title=ontology_id2details[("entity", i["ontology_item_id"])]["fullname"],
+            value=1,
+            suggested=i["suggested"],
+            ontology_item_id=i["ontology_item_id"],
+        ).model_dump()
+        for i in nodes
+    }
 
-    try:
-        links = {
-            str(i["_id"]): Link(
-                id=str(i["_id"]),
-                label=ontology_id2details[("relation", i["ontology_item_id"])]["name"],
-                source=str(i["source"]["_id"]),
-                target=str(i["target"]["_id"]),
-                title=ontology_id2details[("relation", i["ontology_item_id"])][
-                    "fullname"
-                ],
-                value=1,
-                suggested=i["suggested"],
-                color=ontology_id2details[("relation", i["ontology_item_id"])]["color"],
-                ontology_item_id=i["ontology_item_id"],
-            ).dict()
-            for i in links
-        }
-    except Exception as e:
-        print(f"Issue with links: {e}")
+    links = {
+        str(i["_id"]): Link(
+            id=str(i["_id"]),
+            label=ontology_id2details[("relation", i["ontology_item_id"])]["name"],
+            source=str(i["source"]["_id"]),
+            target=str(i["target"]["_id"]),
+            title=ontology_id2details[("relation", i["ontology_item_id"])]["fullname"],
+            value=1,
+            suggested=i["suggested"],
+            color=ontology_id2details[("relation", i["ontology_item_id"])]["color"],
+            ontology_item_id=i["ontology_item_id"],
+        ).model_dump()
+        for i in links
+    }
 
     if aggregate:
-        try:
-            return Graph(
-                data=GraphData.parse_obj(
-                    aggregate_graph(data={"nodes": nodes, "links": links})
-                )
-            )
-        except Exception as e:
-            print("aggregation error", e)
+        return Graph(
+            data=GraphData(**aggregate_graph(data={"nodes": nodes, "links": links}))
+        )
     else:
         # Create relations between node and links
-        try:
-            relationships = get_node_neighbors(nodes=nodes, links=links)
-        except Exception as e:
-            print("Failed to create relationships", e)
-
+        relationships = get_node_neighbors(nodes=nodes, links=links)
         return Graph(
             data=GraphData(nodes=nodes, links=links, relationships=relationships)
         )

@@ -90,12 +90,9 @@ async def create_progress_plot_data(
         # Create array of dates starting from the first save state creation to the current date - this will form the timeline (x-axis).
         user_save_dates = defaultdict(list)
         for save in _dataset_items:
-            try:
-                username = save["created_by"]
-                date = datetime.datetime.strftime(save["created_at"], DATE_FORMAT)
-                user_save_dates[date].append(username)
-            except Exception as e:
-                print(f"Error occurred: {e}")
+            username = save["created_by"]
+            date = datetime.datetime.strftime(save["created_at"], DATE_FORMAT)
+            user_save_dates[date].append(username)
 
         # Aggregate user dataset item saves
         data = [
@@ -404,13 +401,14 @@ async def filter_annotations(
         download_format : Flag indicating whether annotations (markups) should be returned as download format e.g. rich objects. If `False` counts will be returned. This allows the function to be reusuable as an overview and rich download process.
     """
 
-    print(f"Filters: saved {saved} - quality {quality} min_agreement {min_agreement}")
+    logger.info(
+        f"Filters: saved {saved} - quality {quality} min_agreement {min_agreement}"
+    )
 
     # Fetch save_states of dataset items
     project = await db["projects"].find_one(
         {"_id": project_id}, {"annotators": 1, "tasks": 1}
     )
-    print("Loaded project...")
 
     # Create markup filters
 
@@ -421,12 +419,9 @@ async def filter_annotations(
     #     if saved == 1
     #     else {"$exists": True}
     # )
-    # print("filter_saved", filter_saved)
-
     filter_quality = (
         True if quality == 0 else False if quality == 1 else {"$in": [True, False]}
     )
-    print("filter_quality", filter_quality)
 
     # Fetch created markup
     # markup = (
@@ -440,8 +435,6 @@ async def filter_annotations(
     #     )
     #     .to_list(None)
     # )
-    # print(f"Fetched {len(markup)} project markup(s)")
-
     markup_pipeline = [
         {"$match": {"project_id": project_id, "suggested": filter_quality}},
         {
@@ -466,37 +459,29 @@ async def filter_annotations(
     ]
 
     markup = await db["markup"].aggregate(markup_pipeline).to_list(None)
-    print(f"Fetched {len(markup)} project markup(s)")
-    print("example markup", markup[:5])
 
     # Aggregate individual efforts
-    print("Aggregating individual annotator efforts...")
     output = {}
     for a in project["annotators"]:
         if a["state"] != "accepted":
             # Only accepted (active) annotators will be considered.
             continue
         username = a["username"]
-        print(f"Processing: {username}")
 
         # Get saved items
         _saved_items = set([str(m["dataset_item_id"]) for m in markup if m["saved"]])
-        print("_saved_items", len(_saved_items))
 
         _entities = [
             m
             for m in markup
             if m["created_by"] == username and m["classification"] == "entity"
         ]
-        print(f"Entities found for {username}: {len(_entities)}")
 
         _entity_dataset_items = set([str(e["dataset_item_id"]) for e in _entities])
-        # print("_entity_dataset_items", _entity_dataset_items)
 
         _saved_entity_dataset_items = len(
             _saved_items.intersection(_entity_dataset_items)
         )
-        # print("_saved_entity_dataset_items", _saved_entity_dataset_items)
 
         _triples = []
         if project["tasks"]["relation"]:
@@ -505,7 +490,7 @@ async def filter_annotations(
                 for m in markup
                 if m["created_by"] == username and m["classification"] == "relation"
             ]
-            print(f"Triples found: {len(_triples)}")
+            logger.info(f"Triples found: {len(_triples)}")
 
             _triple_dataset_items = set([str(t["dataset_item_id"]) for t in _triples])
             _saved_triple_dataset_items = len(
@@ -519,11 +504,6 @@ async def filter_annotations(
                 (str(i["dataset_item_id"]), i["classification"], str(i["_id"])): i
                 for i in _entities + _triples
             }
-
-            for group, values in itertools.groupby(
-                [*_entities, *_triples], key=lambda x: x["dataset_item_id"]
-            ):
-                print(group, len(list(values)))
 
             _dataset_items = {}
             for k, v in _x.items():

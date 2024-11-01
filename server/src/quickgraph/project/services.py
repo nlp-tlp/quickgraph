@@ -1732,8 +1732,6 @@ async def invite_users_to_project(
     #     .to_list(None)
     # )
 
-    # print("dataset_item_ids", dataset_item_ids)
-
     # Add users to project
     rich_annotators = [
         Annotator(
@@ -1745,8 +1743,6 @@ async def invite_users_to_project(
         for username in valid_annotators
     ]
 
-    # print("rich_annotators", rich_annotators)
-
     await db["projects"].update_one(
         {"_id": project_id}, {"$push": {"annotators": {"$each": rich_annotators}}}
     )
@@ -1755,8 +1751,6 @@ async def invite_users_to_project(
     # - Check if project blue print is annotated.
     # project_bp_dataset_id = project["blueprint_dataset_id"]
     # bp_dataset = await db["datasets"].find_one({"_id": project_bp_dataset_id})
-    # print("bp_dataset", bp_dataset)
-
     # return await invite_single_project_annotator(db=db)
 
     # Return updated project with new annotators on it. The UI can determine which annotators were not added and render this to the user.
@@ -1765,8 +1759,6 @@ async def invite_users_to_project(
     updated_project = await db["projects"].find_one(
         {"_id": project_id}, {"annotators": 1}
     )
-
-    # print('updated_project["annotators"]', updated_project["annotators"])
 
     return UserInviteResponse(
         valid=[

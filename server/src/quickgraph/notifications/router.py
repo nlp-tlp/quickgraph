@@ -22,15 +22,8 @@ async def list_notifications(
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-
     logger.info(f"Fetching notifications for {user.username}")
     notifications = await find_many_notifications(db=db, username=user.username)
-
-    # print("notifications", notifications)
-
-    # notifications_v2 = [Notification(**n) for n in notifications]
-    # print("notifications_v2", notifications_v2)
-    # return notifications_v2
 
     # TODO: refactor this once new notification items are added to the application
     projects = (
@@ -40,9 +33,6 @@ async def list_notifications(
     )
 
     id2project = {str(p["_id"]): {"name": p["name"]} for p in projects}
-
-    # print("projects", projects)
-
     return [
         {
             "id": str(n["_id"]),
@@ -55,7 +45,7 @@ async def list_notifications(
             "detail": id2project[str(n["content_id"])],
         }
         for n in notifications
-    ]  # TODO: figuree out why noticications model doesnt serialize...
+    ]
 
 
 @router.post("/")
@@ -74,8 +64,6 @@ async def invite_notification(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     # TODO: update based on conditional invite information; but for now all are project invitations
-    # print("hello world")
-
     notification_id = ObjectId(notification_id)
 
     # Retrieve the notification from the database using the ID
@@ -83,49 +71,34 @@ async def invite_notification(
         {"_id": notification_id}
     )  # get_notification_by_id(notification_id)
 
-    # print("notification", notification)
-
     if accepted:
         # Update the notification to indicate that it was accepted
-        try:
-            await db["notifications"].update_one(
-                {"_id": notification_id},
-                {"$set": {"state": NotificationStates.accepted.value, "seen": True}},
-            )
-            # print("Updated notification")
-            # Add user to project and icnrement annotators_per_item by one unit (PM can reduce this)
-            await db["projects"].update_one(
-                {
-                    "_id": notification["content_id"],
-                    "annotators.username": notification["recipient"],
-                },
-                {
-                    "$set": {"annotators.$.state": NotificationStates.accepted.value},
-                    "$inc": {"settings.annotators_per_item": 1},
-                },
-            )  # Content id is the project_id if notification is an invitation.
-            # print("Updated project")
-        except Exception as e:
-            print(f"Error occurred: {e}")
-
+        await db["notifications"].update_one(
+            {"_id": notification_id},
+            {"$set": {"state": NotificationStates.accepted.value, "seen": True}},
+        )
+        # Add user to project and icnrement annotators_per_item by one unit (PM can reduce this)
+        await db["projects"].update_one(
+            {
+                "_id": notification["content_id"],
+                "annotators.username": notification["recipient"],
+            },
+            {
+                "$set": {"annotators.$.state": NotificationStates.accepted.value},
+                "$inc": {"settings.annotators_per_item": 1},
+            },
+        )  # Content id is the project_id if notification is an invitation.
     else:
         # Update the notification to indicate that it was declined
-        try:
-            await db["notifications"].update_one(
-                {"_id": notification_id},
-                {"$set": {"state": NotificationStates.declined.value, "seen": True}},
-            )
-            # print("Updated notification")
-
-            await db["projects"].update_one(
-                {
-                    "_id": notification["content_id"],
-                    "annotators.username": notification["recipient"],
-                },
-                {"$set": {"annotators.$.state": NotificationStates.declined.value}},
-            )  # Content id is the project_id if notification is an invitation.
-            # print("Updated project")
-        except Exception as e:
-            print(f"Error occurred: {e}")
-
+        await db["notifications"].update_one(
+            {"_id": notification_id},
+            {"$set": {"state": NotificationStates.declined.value, "seen": True}},
+        )
+        await db["projects"].update_one(
+            {
+                "_id": notification["content_id"],
+                "annotators.username": notification["recipient"],
+            },
+            {"$set": {"annotators.$.state": NotificationStates.declined.value}},
+        )  # Content id is the project_id if notification is an invitation.
     return {"message": "Notification updated successfully."}

@@ -18,7 +18,7 @@ from .markup.router import router as markup_router
 from .notifications.router import router as notifications_router
 from .project.router import router as project_router
 from .resources.router import router as resources_router
-from .settings import get_settings, settings, Settings
+from .settings import Settings, get_settings, settings
 from .social.router import router as social_router
 from .users.router import router as users_router
 
@@ -45,9 +45,6 @@ origins = [
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore
     settings = get_settings()
-
-    print(settings.mongodb.uri)
-
     connect_to_mongo(uri=settings.mongodb.uri)
     try:
         yield

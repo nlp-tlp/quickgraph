@@ -105,12 +105,7 @@ async def get_graph_data(db, project_id: str):
 
     #  TODO: Revise this service when ontology/resources are decoupled.
     """
-
-    print("project_id", project_id)
-
     project = await db["projects"].find_one({"_id": project_id})
-
-    print(project)
 
 
 def get_node_neighbors(nodes, links):
@@ -159,9 +154,9 @@ def aggregate_graph(data):
     ):
         group = list(group)
         new_node = group[0].copy()
-        new_node["id"] = (
-            f"{new_node['label']}-{new_node['ontology_item_id']}-{new_node['suggested']}"
-        )
+        new_node[
+            "id"
+        ] = f"{new_node['label']}-{new_node['ontology_item_id']}-{new_node['suggested']}"
         new_node["value"] = len(group)
         aggregated_nodes[new_node["id"]] = new_node
 
@@ -210,16 +205,16 @@ def aggregate_graph(data):
         group = list(group)
         new_link = group[0].copy()
         new_link["value"] = len(group)
-        new_link["source"] = (
-            f"{new_link['source']['label']}-{new_link['source']['ontology_item_id']}-{new_link['source']['suggested']}"
-        )
+        new_link[
+            "source"
+        ] = f"{new_link['source']['label']}-{new_link['source']['ontology_item_id']}-{new_link['source']['suggested']}"
 
-        new_link["target"] = (
-            f"{new_link['target']['label']}-{new_link['target']['ontology_item_id']}-{new_link['target']['suggested']}"
-        )
-        new_link["id"] = (
-            f"{new_link['source']}-{new_link['label']}-{new_link['target']}"
-        )
+        new_link[
+            "target"
+        ] = f"{new_link['target']['label']}-{new_link['target']['ontology_item_id']}-{new_link['target']['suggested']}"
+        new_link[
+            "id"
+        ] = f"{new_link['source']}-{new_link['label']}-{new_link['target']}"
 
         aggregated_links[new_link["id"]] = new_link
 
@@ -233,62 +228,53 @@ def aggregate_graph(data):
 def add_details_and_create_objects(
     items: dict, ontology_id2details: dict, is_node: bool
 ):  #  Dict[str, Union[Node, Link]]
-    try:
-        if is_node:
-            return {
-                id: Node(
-                    classification=ontology_id2details[
-                        ("entity", i["ontology_item_id"])
-                    ]["name"],
-                    color=NodeColor(
-                        border=ontology_id2details[("entity", i["ontology_item_id"])][
-                            "color"
-                        ],
-                        background=ontology_id2details[
-                            ("entity", i["ontology_item_id"])
-                        ]["color"],
-                    ),
-                    font=NodeFont(
-                        color=get_font_color(
-                            ontology_id2details[("entity", i["ontology_item_id"])][
-                                "color"
-                            ],
-                        )
-                    ),
-                    id=str(i["id"]),
-                    label=i["surface_form"],
-                    title=ontology_id2details[("entity", i["ontology_item_id"])][
-                        "fullname"
-                    ],
-                    value=i["value"],
-                    suggested=i["suggested"],
-                    ontology_item_id=i["ontology_item_id"],
-                )
-                for id, i in items.items()
-            }
-        else:
-            return {
-                id: Link(
-                    id=i["id"],
-                    label=ontology_id2details[("relation", i["ontology_item_id"])][
-                        "name"
-                    ],
-                    source=i["source"],
-                    target=i["target"],
-                    title=ontology_id2details[("relation", i["ontology_item_id"])][
-                        "fullname"
-                    ],
-                    value=i["value"],
-                    suggested=i["suggested"],
-                    color=ontology_id2details[("relation", i["ontology_item_id"])][
+    if is_node:
+        return {
+            id: Node(
+                classification=ontology_id2details[("entity", i["ontology_item_id"])][
+                    "name"
+                ],
+                color=NodeColor(
+                    border=ontology_id2details[("entity", i["ontology_item_id"])][
                         "color"
                     ],
-                    ontology_item_id=i["ontology_item_id"],
-                )
-                for id, i in items.items()
-            }
-    except Exception as e:
-        print("Failed to add details - ", e)
+                    background=ontology_id2details[("entity", i["ontology_item_id"])][
+                        "color"
+                    ],
+                ),
+                font=NodeFont(
+                    color=get_font_color(
+                        ontology_id2details[("entity", i["ontology_item_id"])]["color"],
+                    )
+                ),
+                id=str(i["id"]),
+                label=i["surface_form"],
+                title=ontology_id2details[("entity", i["ontology_item_id"])][
+                    "fullname"
+                ],
+                value=i["value"],
+                suggested=i["suggested"],
+                ontology_item_id=i["ontology_item_id"],
+            )
+            for id, i in items.items()
+        }
+    else:
+        return {
+            id: Link(
+                id=i["id"],
+                label=ontology_id2details[("relation", i["ontology_item_id"])]["name"],
+                source=i["source"],
+                target=i["target"],
+                title=ontology_id2details[("relation", i["ontology_item_id"])][
+                    "fullname"
+                ],
+                value=i["value"],
+                suggested=i["suggested"],
+                color=ontology_id2details[("relation", i["ontology_item_id"])]["color"],
+                ontology_item_id=i["ontology_item_id"],
+            )
+            for id, i in items.items()
+        }
 
 
 def filter_gold_standard(markup):
@@ -336,7 +322,6 @@ def filter_gold_standard(markup):
             gold_markup_counts["entity"][di_id][_key] += 1
         elif clf == "relation":
             # Relations have their source/target populated.
-            print("relation", m)
             _key = (
                 m["ontology_item_id"],
                 m["source"]["start"],
@@ -355,13 +340,9 @@ def filter_gold_standard(markup):
         for key, value in gold_markup_counts.items()
     }
 
-    # print("gold_markup_counts", converted_gold_markup_counts)
-
     _markup_di_annotators_counts = {
         di_id: len(usernames) for di_id, usernames in _markup_di_annotators.items()
     }
-
-    # print("_markup_di_annotators_counts", _markup_di_annotators_counts)
 
     # Filter counts based on min
     gold_entity_markup = {
@@ -380,9 +361,6 @@ def filter_gold_standard(markup):
         }
         for di_id, markup_counts in converted_gold_markup_counts["relation"].items()
     }
-
-    # print("gold_entity_markup", gold_entity_markup)
-    # print("gold_relation_markup", gold_relation_markup)
 
     # Split markup into entities and relations and add human readable attributes to markup
     # try:
@@ -445,7 +423,7 @@ def filter_gold_standard(markup):
     #                 f"Invalid markup classification: {m['classification']}"
     #             )
     # except Exception as e:
-    #     print("exception", e, m, markup_by_classification)
+    #     logger.info("exception", e, m, markup_by_classification)
 
 
 def add_metadata():
@@ -564,4 +542,3 @@ def filter_ontology_by_ids(
     # ]
 
     # markup = await db["data"].aggregate(pipeline_v2).to_list(None)
-    # print(f"Found {len(markup)} markup")

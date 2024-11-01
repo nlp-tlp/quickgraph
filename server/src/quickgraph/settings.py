@@ -26,15 +26,6 @@ class SettingsAPI(BaseModel):
     dummy_username: str = "janedoe"
 
 
-class SettingsAuth0(BaseModel):
-    domain: str
-    api_audience: str
-    algorithms: str
-    issuer: str
-    mgmt_client_id: str
-    mgmt_secret: str
-
-
 class SettingsAuth(BaseModel):
     secret_key: SecretStr = Field(...)
     algorithm: str = Field(default="HS256")
@@ -48,7 +39,6 @@ class SettingsAuth(BaseModel):
 class Settings(BaseSettings):
     mongodb: SettingsMongoDB
     api: SettingsAPI = SettingsAPI()
-    auth0: SettingsAuth0
     auth: SettingsAuth
 
     model_config = SettingsConfigDict(

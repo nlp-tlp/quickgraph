@@ -128,7 +128,6 @@ class AgreementCalculator:
 
         agreements = defaultdict(dict)
         for user1, user2 in itertools.combinations(users, 2):
-            # print(data_type, len(user_data[user1]), len(user_data[user2]))
             similarity = self.jaccard_similarity(user_data[user1], user_data[user2])
             agreements[user1][user2] = similarity
             agreements[user2][user1] = similarity
