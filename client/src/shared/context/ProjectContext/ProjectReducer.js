@@ -52,27 +52,36 @@ export const reducer = (state, action) => {
         tasks: action.payload.tasks,
         name: action.payload.name,
         description: action.payload.description,
-        ontology: action.payload.ontology,
+        ontology: {
+          entity: action.payload.entity_ontology.content,
+          relation: action.payload.tasks.relation
+            ? action.payload.relation_ontology.content
+            : [],
+        },
         settings: action.payload.settings,
         projectLoading: false,
         textsLoading: true,
         guidelines: action.payload.guidelines,
         relationCounts: action.payload.relation_counts,
         flatOntology: [
-          ...getFlatOntology(action.payload.ontology.entity).map((i) => ({
-            ...i,
-            classification: "entity",
-          })),
+          ...getFlatOntology(action.payload.entity_ontology.content).map(
+            (i) => ({
+              ...i,
+              classification: "entity",
+            })
+          ),
           ...(action.payload.tasks.relation
-            ? getFlatOntology(action.payload.ontology.relation).map((i) => ({
-                ...i,
-                classification: "relation",
-              }))
+            ? getFlatOntology(action.payload.relation_ontology.content).map(
+                (i) => ({
+                  ...i,
+                  classification: "relation",
+                })
+              )
             : []),
         ],
         keyBinding: Object.assign(
           {},
-          ...action.payload.ontology.entity
+          ...action.payload.entity_ontology.content
             .filter((item) => item.active)
             .map((label, index) => ({
               [index + 1]: label,
@@ -81,7 +90,7 @@ export const reducer = (state, action) => {
         ...(action.payload.tasks.relation
           ? {
               flatRelationOntology: getFlatOntology(
-                action.payload.ontology.relation
+                action.payload.relation_ontology.content
               ).filter((i) => i.active),
             }
           : {}),

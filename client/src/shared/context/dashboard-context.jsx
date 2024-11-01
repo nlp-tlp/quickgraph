@@ -36,7 +36,12 @@ const reducer = (state, action) => {
         annotators: action.payload.annotators,
         createdAt: action.payload.created_at,
         updatedAt: action.payload.updated_at,
-        ontology: action.payload.ontology,
+        ontology: {
+          entity: action.payload.entity_ontology.content,
+          relation: action.payload.relation_ontology?.content || null,
+        },
+        entity_ontology_id: action.payload.entity_ontology._id,
+        relation_ontology_id: action.payload.relation_ontology?._id || null,
         loading: false,
         datasetSize: action.payload.dataset_size,
         datasetId: action.payload.dataset_id,
@@ -105,8 +110,6 @@ export const DashboardProvider = (props) => {
       );
 
       if (res.status === 200) {
-        console.log("guideline update res.data", res.data);
-
         dispatch({
           type: "SET_VALUE",
           payload: {

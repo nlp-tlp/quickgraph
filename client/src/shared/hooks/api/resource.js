@@ -97,10 +97,10 @@ const useResource = () => {
     }
   };
 
-  const updateResource = async (resource) => {
+  const updateResource = async ({ resourceId, body }) => {
     try {
       setSubmitting(true);
-      const res = await axiosInstance.patch("/resources", resource);
+      const res = await axiosInstance.patch(`/resources/${resourceId}`, body);
 
       if (res.status === 200) {
         setSubmitting(false);

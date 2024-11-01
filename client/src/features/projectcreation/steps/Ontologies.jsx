@@ -187,7 +187,9 @@ export const Ontologies = ({
     },
   ];
 
-  const rows = resources.filter((r) => r.classification === "ontology");
+  const rows = resources
+    .filter((r) => r.classification === "ontology")
+    .map((r) => ({ ...r, id: r._id }));
 
   const handleRowStyle = (row) => {
     if (row.sub_classification === "relation") {

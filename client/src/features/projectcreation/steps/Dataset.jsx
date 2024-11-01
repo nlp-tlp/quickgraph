@@ -176,7 +176,6 @@ export const Dataset = ({
     },
   ];
 
-  // TODO: remove when backend has fixed `id`/`_id` issue.
   const rows = datasets?.map((d) => ({ ...d, id: d._id }));
 
   const handleRowStyle = (row) => {
