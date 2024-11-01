@@ -2,6 +2,7 @@ import React, { useState, forwardRef, useContext } from "react";
 import {
   Box,
   Button,
+  Chip,
   CircularProgress,
   Stack,
   Typography,
@@ -37,9 +38,20 @@ const StyledTreeItem2 = styled(TreeItem2)(({ theme, itemcolor }) => ({
     "&:hover": {
       backgroundColor: itemcolor ? itemcolor : theme.palette.action.hover,
     },
+    // Add styles for the content layout
+    display: "flex",
+    alignItems: "center",
+    padding: theme.spacing(0.5, 1),
   },
   "& .MuiTreeItem-iconContainer": {
     color: itemcolor ? getContrastColor(itemcolor) : "inherit",
+  },
+  // Add styles for the label and chip container
+  "& .MuiTreeItem-label": {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 }));
 
@@ -50,6 +62,8 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
   });
 
   const itemColor = props.color || "inherit";
+  const path = props.path || [];
+  const shortcut = path.length > 0 ? path.map((num) => num + 1).join("") : null;
 
   const handleContentClick = (event) => {
     event.defaultMuiPrevented = true;
@@ -61,18 +75,40 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
     event.stopPropagation(); // Prevents the content click handler from being triggered
   };
 
+  const contentWithShortcut = (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        width: "100%",
+        justifyContent: "space-between",
+      }}
+    >
+      <span>{props.label}</span>
+      {shortcut && (
+        <Chip
+          label={shortcut}
+          size="small"
+          sx={{ ml: 1 }}
+          title="Keyboard shortcut"
+        />
+      )}
+    </div>
+  );
+
   return (
     <StyledTreeItem2
       {...props}
       ref={ref}
       itemcolor={itemColor}
       title={`${props.fullname} (${props.itemId})` || ""}
+      label={contentWithShortcut}
       slotProps={{
         content: {
           onClick: handleContentClick,
           sx: {
             "&:hover": {
-              backgroundColor: `${itemColor}20`, // 20 is hex for 12% opacity
+              backgroundColor: `${itemColor}20`,
             },
           },
         },
@@ -81,6 +117,20 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
     />
   );
 });
+
+// Helper function to calculate paths for all nodes
+const calculatePaths = (items, currentPath = []) => {
+  return items.map((item, index) => {
+    const newPath = [...currentPath, index];
+    const newItem = { ...item, path: newPath };
+
+    if (item.children && item.children.length > 0) {
+      newItem.children = calculatePaths(item.children, newPath);
+    }
+
+    return newItem;
+  });
+};
 
 const findItem = (id, items) => {
   if (!items) return null;
@@ -153,6 +203,7 @@ const EntityTreeSelect = () => {
             item: item,
             color: findItem(item.itemId, state.ontology.entity)?.color,
             fullname: findItem(item.itemId, state.ontology.entity)?.fullname,
+            path: findItem(item.itemId, state.ontology.entity)?.path,
           }),
         }}
         onSelectedItemsChange={handleSelectedItemsChange}

@@ -1,4 +1,10 @@
-import React, { useContext, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import TextContainer from "./TextContainer";
 import {
   Grid,
@@ -23,30 +29,52 @@ export const Table = ({ state, dispatch, demo = false }) => {
   const { handleApply } = useContext(ProjectContext);
   const loading = state.textsLoading ?? true;
   const hasTexts = !loading && Object.keys(state.texts).length !== 0;
+  const [selectedWords, setSelectedWords] = useState([]);
+  const [activeTextIndex, setActiveTextIndex] = useState(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [keyQueue, setKeyQueue] = useState([]);
+  const keyQueueTimeoutRef = useRef(null);
 
-  const handleMarkupKeyDownEvent = (e) => {
-    const {
-      entityAnnotationMode,
-      keyBinding,
-      selectedTokenIndexes,
-      selectedTextId,
-      settings: { disable_propagation },
-      texts,
-      projectId,
-    } = state;
+  const findOntologyItem = useCallback((ontology, path) => {
+    let currentItem = ontology;
+    for (let i = 0; i < path.length; i++) {
+      if (currentItem.children && currentItem.children[path[i]]) {
+        currentItem = currentItem.children[path[i]];
+      } else {
+        return null;
+      }
+    }
+    return currentItem;
+  }, []);
 
-    if (entityAnnotationMode) {
-      const keyDigit = e.code.split("Digit")[1];
-      const extraDatasetItemIds = Object.keys(texts);
+  const processKeyPath = useCallback(
+    (path, stateSnapshot, shiftKey) => {
+      const {
+        ontology: { entity: entity_ontology },
+        selectedTokenIndexes,
+        selectedTextId,
+        settings: { disable_propagation },
+        texts,
+        projectId,
+      } = stateSnapshot;
 
-      // Check if the key pressed corresponds to a valid key binding and
-      // there are selected tokens to annotate
       if (
-        keyBinding.hasOwnProperty(keyDigit) &&
-        selectedTokenIndexes.length > 0
-      ) {
-        const applyAll = !disable_propagation && e.shiftKey;
-        const ontologyItemId = keyBinding[keyDigit].id;
+        path.length === 0 ||
+        !selectedTokenIndexes ||
+        selectedTokenIndexes.length === 0
+      )
+        return;
+
+      console.log("path", path);
+
+      const ontologyItem = findOntologyItem(
+        { children: entity_ontology },
+        path
+      );
+
+      if (ontologyItem) {
+        const extraDatasetItemIds = Object.keys(texts);
+        const applyAll = !disable_propagation && shiftKey;
 
         const payload = {
           project_id: projectId,
@@ -55,9 +83,9 @@ export const Table = ({ state, dispatch, demo = false }) => {
           annotation_type: "entity",
           suggested: false,
           content: {
-            ontology_item_id: ontologyItemId,
-            start: selectedTokenIndexes.slice(0)[0],
-            end: selectedTokenIndexes.slice(-1)[0],
+            ontology_item_id: ontologyItem.id,
+            start: selectedTokenIndexes[0],
+            end: selectedTokenIndexes[selectedTokenIndexes.length - 1],
             surface_form: texts[selectedTextId].tokens
               .filter((t) => selectedTokenIndexes.includes(t.index))
               .map((t) => t.value)
@@ -70,12 +98,46 @@ export const Table = ({ state, dispatch, demo = false }) => {
           params: { apply_all: applyAll },
         });
       }
-    }
-  };
 
-  const [selectedWords, setSelectedWords] = useState([]);
-  const [activeTextIndex, setActiveTextIndex] = useState(null);
-  const [isSelecting, setIsSelecting] = useState(false);
+      // Clear the queue after processing
+      setKeyQueue([]);
+    },
+    [findOntologyItem, handleApply]
+  );
+
+  const handleMarkupKeyDownEvent = useCallback(
+    (e) => {
+      if (state.entityAnnotationMode && /^\d$/.test(e.key)) {
+        const keyDigit = parseInt(e.key) - 1;
+        setKeyQueue((prevQueue) => {
+          const newQueue = [...prevQueue, keyDigit];
+
+          // Clear any existing timeout
+          if (keyQueueTimeoutRef.current) {
+            clearTimeout(keyQueueTimeoutRef.current);
+          }
+
+          // Set a new timeout
+          keyQueueTimeoutRef.current = setTimeout(() => {
+            processKeyPath(newQueue, state, e.shiftKey);
+          }, 500);
+
+          return newQueue;
+        });
+      }
+    },
+    [state, processKeyPath]
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleMarkupKeyDownEvent);
+    return () => {
+      window.removeEventListener("keydown", handleMarkupKeyDownEvent);
+      if (keyQueueTimeoutRef.current) {
+        clearTimeout(keyQueueTimeoutRef.current);
+      }
+    };
+  }, [handleMarkupKeyDownEvent]);
 
   const onMouseDown = (index, textIndex) => {
     dispatch({
@@ -127,9 +189,15 @@ export const Table = ({ state, dispatch, demo = false }) => {
 
   return (
     <Grid
+      data-component="table-component"
       item
       xs={12}
-      onKeyDown={(e) => !demo && handleMarkupKeyDownEvent(e)}
+      onKeyDown={(e) => {
+        if (!demo) {
+          handleMarkupKeyDownEvent(e);
+          e.stopPropagation();
+        }
+      }}
       tabIndex="-1"
       sx={{ outline: "none" }}
       p={2}
