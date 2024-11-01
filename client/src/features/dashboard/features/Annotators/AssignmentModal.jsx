@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useMemo } from "react";
 import {
   Button,
   Typography,
@@ -9,28 +9,34 @@ import {
   Paper,
   Chip,
   Divider,
+  Alert,
 } from "@mui/material";
 import { DashboardContext } from "../../../../shared/context/dashboard-context";
-import { style as modalStyle } from "../../../../shared/styles/modal";
 import { DataGrid } from "@mui/x-data-grid";
 import moment from "moment";
 import LoadingButton from "@mui/lab/LoadingButton";
+import GroupIcon from "@mui/icons-material/Group";
 
 const style = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 800,
+  width: 1200,
   bgcolor: "background.paper",
   borderRadius: 4,
   boxShadow: 24,
+  maxHeight: "90vh",
+  overflow: "auto",
 };
 
 function areArraysEqual(arr1, arr2) {
+  if (!arr1 || !arr2) return false;
+  const sorted1 = [...arr1].sort();
+  const sorted2 = [...arr2].sort();
   return (
     arr1.length === arr2.length &&
-    arr1.sort().every((elem, index) => elem === arr2.sort()[index])
+    sorted1.every((elem, index) => elem === sorted2[index])
   );
 }
 
@@ -40,22 +46,49 @@ const AssignmentModal = ({ open, handleClose, username }) => {
     state.annotators.filter((a) => a.username === username)[0]?.scope || []
   );
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const currentAnnotator = useMemo(
+    () => state.annotators.find((a) => a.username === username),
+    [state.annotators, username]
+  );
+
+  const otherAnnotatorsAssignments = useMemo(() => {
+    const assignments = {};
+    state.annotators.forEach((annotator) => {
+      if (annotator.username !== username && annotator.scope) {
+        annotator.scope.forEach((itemId) => {
+          if (!assignments[itemId]) {
+            assignments[itemId] = [];
+          }
+          assignments[itemId].push(annotator.username);
+        });
+      }
+    });
+    return assignments;
+  }, [state.annotators, username]);
 
   useEffect(() => {
-    const annotator = state.annotators.find((a) => a.username === username);
-    const rowSelectionModel = annotator?.scope || [];
-    setRowSelectionModel(rowSelectionModel);
-  }, [username, state.annotators, state.dataset_items, handleClose]);
+    if (currentAnnotator?.scope) {
+      setRowSelectionModel(currentAnnotator.scope);
+    }
+  }, [currentAnnotator, open]);
 
   const handleUpdate = async () => {
-    setSubmitting(true);
-    await handleUpdateAssignment({
-      projectId: state.projectId,
-      datasetItemIds: rowSelectionModel,
-      username: username,
-    });
-    handleClose();
-    setSubmitting(false);
+    try {
+      setSubmitting(true);
+      setError(null);
+      await handleUpdateAssignment({
+        projectId: state.projectId,
+        datasetItemIds: rowSelectionModel,
+        username: username,
+      });
+      handleClose();
+    } catch (err) {
+      setError(err.message || "Failed to update assignments");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const columns = [
@@ -85,29 +118,81 @@ const AssignmentModal = ({ open, handleClose, username }) => {
       ),
     },
     {
+      field: "cluster_id",
+      headerName: "Cluster",
+      width: 100,
+      align: "center",
+      headerAlign: "center",
+      renderCell: (params) => (
+        <Chip
+          label={`#${params.row.cluster_id}`}
+          size="small"
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      field: "keywords",
+      headerName: "Keywords",
+      flex: 1,
+      renderCell: (params) => (
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          {params.row.cluster_keywords.map((keyword, idx) => (
+            <Chip
+              key={idx}
+              label={keyword}
+              size="small"
+              variant="outlined"
+              color="primary"
+            />
+          ))}
+        </Box>
+      ),
+    },
+    {
+      field: "other_annotators",
+      headerName: "Other Assignees",
+      width: 150,
+      renderCell: (params) => {
+        const others = otherAnnotatorsAssignments[params.row.id] || [];
+        if (others.length === 0) return null;
+        return (
+          <Tooltip title={others.join(", ")} arrow>
+            <Chip
+              icon={<GroupIcon />}
+              label={others.length}
+              size="small"
+              color="info"
+            />
+          </Tooltip>
+        );
+      },
+    },
+    {
       field: "created_at",
       headerName: "Added",
-      flex: 1,
-      maxWidth: 120,
-      valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
+      width: 120,
+      valueGetter: (params) => {
+        if (!params.row?.created_at) return "";
+        return moment.utc(params.row.created_at).fromNow();
+      },
       align: "center",
       headerAlign: "center",
     },
-    // NOTE: This field will be the count and names of assignees e.g. "(2): tyler-research, dummy-user-1". This will help the PM assign documents efficiently.
-    // {
-    //   field: "assignees",
-    //   headerName: "Others Assigned",
-    //   flex: 1,
-    //   maxWidth: 140,
-    //   align: "center",
-    //   headerAlign: "center",
-    // },
   ];
 
-  const rows = state.dataset_items?.map((di) => ({
-    ...di,
-    id: di._id,
-  }));
+  const rows = useMemo(
+    () =>
+      state.dataset_items?.map((di) => ({
+        ...di,
+        id: di._id,
+      })) || [],
+    [state.dataset_items]
+  );
+
+  if (!state.dataset_items) {
+    return null;
+  }
 
   return (
     <Modal open={open} onClose={handleClose}>
@@ -127,14 +212,15 @@ const AssignmentModal = ({ open, handleClose, username }) => {
                 <Typography id="modal-modal-title" variant="h6" component="h2">
                   Dataset Item Assignment
                 </Typography>
-                <Typography
-                  id="modal-modal-description"
-                  sx={{ mt: 2 }}
-                  gutterBottom
-                >
-                  Click on item checkboxes to assign them to{" "}
-                  <strong>{username}</strong>
-                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Assigning to:
+                  </Typography>
+                  <Chip label={username} color="primary" size="small" />
+                  <Typography variant="body2" color="text.secondary">
+                    ({rowSelectionModel.length} items selected)
+                  </Typography>
+                </Stack>
               </Stack>
               <Chip
                 label="esc"
@@ -146,28 +232,57 @@ const AssignmentModal = ({ open, handleClose, username }) => {
               />
             </Stack>
           </Box>
-          <Box>
-            <Divider flexItem />
-          </Box>
+
+          <Divider />
+
+          {error && (
+            <Box p={2}>
+              <Alert severity="error">{error}</Alert>
+            </Box>
+          )}
+
           <Box sx={{ maxHeight: 600 }} p="1rem 2rem">
             <DataGrid
-              autoHeight
               columns={columns}
               rows={rows}
               density="compact"
-              pageSize={10}
-              rowsPerPageOptions={[10]}
-              checkboxSelection
-              onSelectionModelChange={(newRowSelectionModel) => {
-                setRowSelectionModel(newRowSelectionModel);
+              pagination
+              initialState={{
+                pagination: { paginationModel: { pageSize: 10 } },
               }}
-              selectionModel={rowSelectionModel}
+              pageSizeOptions={[10, 25, 50]}
+              checkboxSelection
+              disableRowSelectionOnClick
+              rowSelectionModel={rowSelectionModel}
+              onRowSelectionModelChange={setRowSelectionModel}
+              // selectionModel={rowSelectionModel}
+              slots={{
+                noRowsOverlay: () => (
+                  <Stack
+                    height="100%"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    No items available
+                  </Stack>
+                ),
+              }}
             />
           </Box>
-          <Box>
-            <Divider flexItem />
-          </Box>
-          <Box sx={{ display: "flex", justifyContent: "right" }} p="1rem 2rem">
+
+          <Divider />
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+            p="1rem 2rem"
+          >
+            <Typography variant="body2" color="text.secondary">
+              {currentAnnotator?.scope_size || 0} items currently assigned
+            </Typography>
             <Stack direction="row" spacing={2}>
               <Button variant="outlined" onClick={handleClose}>
                 Close
@@ -177,14 +292,13 @@ const AssignmentModal = ({ open, handleClose, username }) => {
                 variant="contained"
                 disabled={areArraysEqual(
                   rowSelectionModel,
-                  state.annotators.filter((a) => a.username === username)[0]
-                    ?.scope || []
+                  currentAnnotator?.scope
                 )}
                 onClick={handleUpdate}
               >
                 {rowSelectionModel.length === 0
                   ? "Unassign All Items"
-                  : "Update Assignment"}
+                  : `Assign ${rowSelectionModel.length} Items`}
               </LoadingButton>
             </Stack>
           </Box>
