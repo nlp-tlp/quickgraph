@@ -1,31 +1,28 @@
 """Markup router."""
 
-import pymongo
+import logging
+
 from bson import ObjectId
-from fastapi import APIRouter, Body, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, Field
 
-from ..dependencies import get_db, get_user
-from ..examples import get_examples
-from ..project.schemas import (
-    CreateFlag,
-    Flag,
-    FlagState,
-    OntologyItem,
-    ProjectOntology,
-)
+from ..dependencies import get_active_project_user, get_db, get_user
+from ..project.schemas import CreateFlag, Flag, FlagState, OntologyItem, ProjectOntology
 from ..users.schemas import UserDocumentModel
 from ..utils.misc import flatten_hierarchical_ontology
 from .schemas import (
     CreateMarkupApply,
     EntityMarkup,
     InMarkupApply,
+    MarkupEditBody,
+    OutMarkupAccept,
     OutMarkupApply,
     OutMarkupDelete,
 )
 from .services import accept_annotation, apply_annotation, delete_annotation
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/markup", tags=["Markup"])
 
@@ -35,30 +32,31 @@ router = APIRouter(prefix="/markup", tags=["Markup"])
     response_description="Apply markup to one or more data items",
     # response_model=OutMarkupApply,    # TODO: review
 )
-async def create_markup(
+async def create_markup_endpoint(
     markup: CreateMarkupApply,
-    # = Body(
-    #     examples=get_examples(example_type="create_markup")
-    # ),
     apply_all: bool = False,
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    try:
-        return await apply_annotation(
-            db=db,
-            markup=markup,
-            apply_all=apply_all,
-            username=user.username,
+    """Apply markup to one or more data items."""
+    annotations = await apply_annotation(
+        db=db,
+        markup=markup,
+        apply_all=apply_all,
+        username=user.username,
+    )
+    if annotations is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to apply markup",
         )
-    except Exception as e:
-        print(e)
+    return annotations.model_dump(by_alias=False)
 
 
 @router.patch(
     "/{markup_id}",
     response_description="Accept one or more markup",
-    # response_model=OutMarkupApply,    # TODO: review suitability...
+    response_model=OutMarkupAccept,
 )
 async def update_markup(
     markup_id: str,
@@ -66,15 +64,19 @@ async def update_markup(
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    try:
-        return await accept_annotation(
-            db=db,
-            markup_id=ObjectId(markup_id),
-            username=user.username,
-            apply_all=apply_all,
+    annotations = await accept_annotation(
+        db=db,
+        markup_id=ObjectId(markup_id),
+        username=user.username,
+        apply_all=apply_all,
+    )
+    logger.info(f"annotations: {annotations}")
+    if annotations is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to accept markup",
         )
-    except Exception as e:
-        print(e)
+    return annotations
 
 
 @router.delete(
@@ -96,115 +98,90 @@ async def delete_markup(
     )
 
 
-class MarkupEditBody(BaseModel):
-    ontology_item_id: str = Field(
-        description="The ID that will be assigned to the markup"
-    )
-
-
 @router.patch("/edit/{markup_id}")
 async def edit_existing_markup(
     markup_id: str,
     body: MarkupEditBody,
-    user: UserDocumentModel = Depends(get_user),
+    current_user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Modifies the label of an existing entity markup"""
-    print("markup_id", markup_id, "ontology_item_id", body.ontology_item_id)
+    """Edit the label of an existing entity markup"""
 
     markup_id = ObjectId(markup_id)
-
-    markup = await db["markup"].find_one({"_id": markup_id})
+    markup = await db.markup.find_one({"_id": markup_id})
 
     if markup is None:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"detail": "Markup not found"},
+            detail="Markup not found",
         )
 
-    print("Markup found")
-
     # Check that no markup with the same span and new label exists
-    existing_markup = await db["markup"].find_one(
+    existing_markup = await db.markup.find_one(
         {
             "project_id": markup["project_id"],
             "dataset_item_id": markup["dataset_item_id"],
             "start": markup["start"],
             "end": markup["end"],
             "ontology_item_id": body.ontology_item_id,
-            "created_by": user.username,
+            "created_by": current_user.username,
         }
     )
-    print("existing_markup", existing_markup)
-
     if existing_markup:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            content={"detail": "Markup already exists"},
+            detail="Markup already exists",
         )
 
-    project = await db["projects"].find_one(
-        {"_id": markup["project_id"]}, {"ontology.entity": 1}
+    project = await db.projects.find_one(
+        {"_id": markup["project_id"]}, {"entity_ontology_id": 1}
+    )
+
+    entity_ontology = await db.resources.find_one(
+        {"_id": project["entity_ontology_id"]}
     )
 
     # Check `ontology_item_id` exists
     flat_ontology = flatten_hierarchical_ontology(
-        [OntologyItem.parse_obj(i) for i in project["ontology"]["entity"]]
+        [OntologyItem(**i) for i in entity_ontology["content"]]
     )
 
     ontology_item = [i for i in flat_ontology if i.id == body.ontology_item_id]
 
     if len(ontology_item) == 0:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"detail": "Ontology item not found"},
+            detail="Ontology item not found",
         )
 
-    print("ontology item id is valid")
+    result = await db["markup"].update_one(
+        {"_id": markup_id}, {"$set": {"ontology_item_id": body.ontology_item_id}}
+    )
 
-    try:
-        result = await db["markup"].update_one(
-            {"_id": markup_id}, {"$set": {"ontology_item_id": body.ontology_item_id}}
-        )
+    if result.modified_count == 1:
+        ontology_item_details = ontology_item[0]
+        # logger.info("ontology_item_details", ontology_item_details)
 
-        if result.modified_count == 1:
-            ontology_item_details = ontology_item[0]
-            # print("ontology_item_details", ontology_item_details)
-
-            updated_markup = {
-                "annotation_type": "entity",
-                "apply_all": False,
-                "count": 1,
-                "entities": [
-                    {
-                        "id": str(markup_id),
-                        "ontology_item_id": body.ontology_item_id,
-                        "name": ontology_item_details.name,
-                        "fullname": ontology_item_details.fullname,
-                        "color": ontology_item_details.color,
-                    }
-                ],
-                "label_name": ontology_item_details.name,
-            }
-            return updated_markup
-        else:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"detail": "Unable to update markup"},
-            )
-
-    except pymongo.errors.WriteError as e:
-        print(f"Write Error: {e}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"detail": "Unable to update markup"},
-        )
-    except Exception as e:
-        print(f"Error: {e}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"detail": "Unable to update markup"},
-        )
+        updated_markup = {
+            "annotation_type": "entity",
+            "apply_all": False,
+            "count": 1,
+            "entities": [
+                {
+                    "id": str(markup_id),
+                    "ontology_item_id": body.ontology_item_id,
+                    "name": ontology_item_details.name,
+                    "fullname": ontology_item_details.fullname,
+                    "color": ontology_item_details.color,
+                }
+            ],
+            "label_name": ontology_item_details.name,
+        }
+        return updated_markup
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Unable to update markup",
+    )
 
 
 # Flags

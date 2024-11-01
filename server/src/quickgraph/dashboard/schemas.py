@@ -1,7 +1,7 @@
 """Dashboard schemas."""
 
 from datetime import datetime
-from typing import List
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -9,10 +9,11 @@ from ..project.schemas import (
     AnnotatorRoles,
     AnnotatorStates,
     Guidelines,
-    ProjectOntology,
+    ProjectOntologySimple,
     Settings,
     Tasks,
 )
+from ..utils.schemas import PydanticObjectIdAnnotated
 
 
 class Annotator(BaseModel):
@@ -35,6 +36,18 @@ class DashboardInformation(BaseModel):
     created_at: datetime
     updated_at: datetime
     settings: Settings
-    dataset_id: str
-    ontology: ProjectOntology
+    dataset_id: PydanticObjectIdAnnotated
+    entity_ontology: ProjectOntologySimple
+    relation_ontology: Optional[ProjectOntologySimple]
     guidelines: Guidelines
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class DashboardPlot(BaseModel):
+    title: str
+    name: str
+    caption: str
+    no_data_title: str
+    dataset: Union[List, Dict]
+    meta: Dict[str, Any] = Field(default_factory=dict)

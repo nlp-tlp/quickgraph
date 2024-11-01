@@ -198,7 +198,12 @@ class CreateProject(BaseProject):
 
 class Project(BaseProject):
     id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId, alias="_id")
-    ontology: ProjectOntology = Field(description="Task ontologies assigned to project")
+    entity_ontology_id: PydanticObjectIdAnnotated = Field(
+        ..., description="Entity ontology assigned to project"
+    )
+    relation_ontology_id: Optional[PydanticObjectIdAnnotated] = Field(
+        default=None, description="Relation ontology assigned to project"
+    )
     annotators: List[Annotator] = Field(
         description="Set of invited annotation collaborators"
     )
@@ -214,6 +219,9 @@ class Project(BaseProject):
     updated_at: datetime = Field(
         description="Date/Time project was last updated",
     )
+    created_at: datetime = Field(
+        description="Date/Time project was created",
+    )
     guidelines: Guidelines = Field(description="Annotation guidelines for project")
     relation_counts: Optional[Dict[str, int]] = Field(
         default=None, description="Relation frequencies applied by the current user."
@@ -225,12 +233,9 @@ class Project(BaseProject):
 
 
 class ProjectWithMetrics(BaseModel):
-    """
-    Base model for listing projects
-    """
+    """Base model for listing projects."""
 
     id: PydanticObjectIdAnnotated = Field(..., alias="_id")
-    # active_annotators: int = Field(description="Count of active project annotators")
     active_annotators: List[dict] = Field(
         description="The set of active annotators on this project"
     )
@@ -251,8 +256,22 @@ class ProjectWithMetrics(BaseModel):
     # user_role: str = Field(description="The role of the current user")
     created_by: str = Field(description="The creator of the project")
 
-    model_config = ConfigDict(
-        use_enum_values=True, populate_by_name=True, arbitrary_types_allowed=True
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+
+
+class ProjectOntologySimple(BaseModel):
+    id: PydanticObjectIdAnnotated = Field(..., alias="_id")
+    content: list[OntologyItem]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
+
+
+class ProjectWithOntologies(Project):
+    entity_ontology: ProjectOntologySimple = Field(
+        description="Entity ontology assigned to project"
+    )
+    relation_ontology: Optional[ProjectOntologySimple] = Field(
+        default=None, description="Relation ontology assigned to project"
     )
 
 
@@ -283,10 +302,7 @@ class Summary(BaseModel):
     summary: List[SummaryItem]
     activity: List[SummaryActivityItem]
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ProjectDataset(BaseModel):
@@ -350,7 +366,7 @@ class ProjectProgress(BaseModel):
     value: float
 
 
-class Settings(BaseModel):
+class SettingsUpdate(BaseModel):
     disable_propagation: bool
     disable_discussion: bool
     annotators_per_item: int
@@ -359,7 +375,7 @@ class Settings(BaseModel):
 class ProjectUpdateBody(BaseModel):
     name: str
     description: str
-    settings: Settings
+    settings: SettingsUpdate
 
 
 class InvitedUser(BaseModel):

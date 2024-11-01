@@ -21,6 +21,7 @@ from .schemas import (
     CreateResourceModel,
     OntologyItem,
     ResourceModel,
+    ResourceModelOut,
     UpdateResourceModel,
 )
 
@@ -195,42 +196,50 @@ async def find_one_resource(
     return result, read_only
 
 
-async def find_many_resources(db: AsyncIOMotorDatabase, aggregate: bool, username: str):
-    """
-    Args
-        aggregate : whether to aggregate resources by their classification
-    """
-    print("find_many_resources")
-
+async def find_many_resources(
+    db: AsyncIOMotorDatabase, username: str, include_system: bool = False
+) -> Optional[List[ResourceModelOut]]:
+    """Find many resources with optional system resources."""
     resources = await db[COLLECTION_NAME].find({"created_by": username}).to_list(None)
+    # Find resources created by system and user
+    try:
+        usernames = [username]
+        if include_system:
+            usernames.append(settings.api.system_username)
 
-    print(f"Resources found: {len(resources)}")
+        resources = (
+            await db[COLLECTION_NAME]
+            .find({"created_by": {"$in": usernames}})
+            .to_list(None)
+        )
+        resources = [ResourceModel(**r) for r in resources]
 
-    if len(resources) == 0:
-        print("User has no resources")
-        return []
+        if len(resources) == 0:
+            logger.info("No resources found")
+            return []
 
-    if aggregate:
-        aggregate_resources = {}
+        aggregated_resources = []
         for resource in resources:
-            clf = resource["classification"]
-            sub_clf = resource["sub_classification"]
-
-            if clf in aggregate_resources.keys():
-                if sub_clf in aggregate_resources[clf].keys():
-                    aggregate_resources[clf][sub_clf].append(resource)
-                else:
-                    aggregate_resources[clf][sub_clf] = [resource]
-            else:
-                aggregate_resources[clf] = {sub_clf: [resource]}
-
-        # print(f"Aggregated resources:\n{aggregate_resources}")
-
-        return aggregate_resources
-
-    # print("resources", resources)
-
-    return [ResourceModel(**r) for r in resources]
+            if resource.classification == "ontology":
+                flat_ontology = flatten_hierarchical_ontology(ontology=resource.content)
+            resource = ResourceModelOut(
+                **resource.model_dump(),
+                size=(
+                    len(flat_ontology)
+                    if resource.classification == "ontology"
+                    else len(resource.content)
+                ),
+                instances=(
+                    [i.fullname for i in flat_ontology]
+                    if resource.classification == "ontology"
+                    else None
+                ),
+            )
+            aggregated_resources.append(resource)
+        return aggregated_resources
+    except Exception as e:
+        logger.error(f"Failed to aggregate resources:\n{e}")
+        return []
 
 
 async def delete_one_resource(
@@ -242,7 +251,10 @@ async def delete_one_resource(
 
 
 async def update_one_resource(
-    db: AsyncIOMotorDatabase, resource: UpdateResourceModel, username: str
+    db: AsyncIOMotorDatabase,
+    resource_id: ObjectId,
+    body: UpdateResourceModel,
+    username: str,
 ) -> Optional[List[OntologyItem]]:
     """Update one resource.
 
@@ -259,101 +271,37 @@ async def update_one_resource(
     -----
     - "Fullnames" are added and/or updated to the ontology here - not on the front end
     """
-    logger.info(f'Updating resource "{resource.id}"')
+    logger.info(f"Updating resource: {resource_id} body: {body}")
 
-    # Convert Pydantic object to dict
-    resource = resource.model_dump()
-    logger.info(f"resource\n{resource}")
+    resource = await db.resources.find_one({"_id": resource_id, "created_by": username})
 
-    # Ensure that new resources ontology has correct metadata
-    updated_resource = initialize_ontology(data=resource["content"])
-    logger.info(f"updated_resource\n{updated_resource}")
+    if resource is None:
+        logger.info("Resource not found")
+        return None
 
-    if resource["id"]:
-        # Update blueprint resource
-        await db["resources"].update_one(
-            {"_id": ObjectId(resource["id"]), "created_by": username},
-            {
-                "$set": {
-                    "content": updated_resource,
-                    "updated_at": datetime.utcnow(),
-                }
-            },
-        )
-        # db_updated_resource = await db[COLLECTION_NAME].find_one(
-        #     {"_id": ObjectId(resource["id"])}
-        # )
-        return [OntologyItem(**item) for item in updated_resource]
-    elif resource["project_id"]:
-        # Update project resource
-        await db["projects"].update_one(
-            {"_id": ObjectId(resource["project_id"]), "created_by": username},
-            {"$set": {f"ontology.{resource['sub_classification']}": updated_resource}},
-        )
-        return [OntologyItem(**item) for item in updated_resource]
-    return
-
-
-async def aggregate_system_and_user_resources(db: AsyncIOMotorDatabase, username: str):
-    """Services for aggregating resources available by the system and those created by the user together. This is used primarly for project creation to show available resources such as ontologies, preannotation sets, etc."""
-
-    print("aggregate_system_and_user_resources")
-    # Find resources created by system and user
-    # TODO: create output datamodel to serialize dates, etc.
-    try:
-        resources = (
-            await db[COLLECTION_NAME]
-            .find({"created_by": {"$in": [username, settings.api.system_username]}})
-            .to_list(None)
+    if resource["classification"] != "ontology":
+        logger.info("Incorrect resource classification provided.")
+        raise ValueError(
+            "Only 'ontology' resources are currently supported for updates.",
         )
 
-        # print("resources", resources)
+    body = body.model_dump(exclude_none=True)
+    body["updated_at"] = datetime.utcnow()
 
-        resources = [ResourceModel(**r) for r in resources]
+    if "content" in body:
+        logger.info("Updating ontology content")
+        logger.info(f"input content: {body['content']}")
+        updated_content = initialize_ontology(data=body["content"])
+        logger.info(f"output content: {updated_content}")
+        body["content"] = updated_content
 
-        # print("resources", resources)
+    result = await db.resources.update_one({"_id": resource_id}, {"$set": body})
 
-        if len(resources) == 0:
-            print("User has no resources")
-            return []
-
-        aggregated_resources = []
-
-        for resource in resources:
-            # print(resource)
-            clf = resource.classification
-            sub_clf = resource.sub_classification
-            username = resource.created_by
-
-            if resource.classification == "ontology":
-                flat_ontology = flatten_hierarchical_ontology(ontology=resource.content)
-                # print("flat_ontology", flat_ontology)
-
-            resource = {
-                "id": str(resource.id),
-                "name": resource.name,
-                "created_by": resource.created_by,
-                "created_at": str(resource.created_at),
-                "updated_at": str(resource.updated_at),
-                "classification": clf,
-                "sub_classification": sub_clf,
-                "size": (
-                    len(flat_ontology)
-                    if resource.classification == "ontology"
-                    else len(resource.content)
-                ),
-                **(
-                    {"instances": [i.fullname for i in flat_ontology]}
-                    if resource.classification == "ontology"
-                    else {}
-                ),
-            }
-
-            aggregated_resources.append(resource)
-
-        return aggregated_resources
-    except Exception as e:
-        print(e)
+    if result.modified_count == 0:
+        logger.info("Resource not updated")
+        return None
+    updated_resource = await db.resources.find_one({"_id": resource_id})
+    return ResourceModel(**updated_resource)
 
 
 async def create_system_resources(db: AsyncIOMotorDatabase):

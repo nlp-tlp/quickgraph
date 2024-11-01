@@ -2,9 +2,10 @@
 
 import itertools
 import logging
+import traceback
 from collections import Counter
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from bson import ObjectId
 from fastapi import HTTPException, status
@@ -37,6 +38,7 @@ from .schemas import (
     ProjectProgress,
     ProjectSocial,
     ProjectWithMetrics,
+    ProjectWithOntologies,
     SaveResponse,
     Summary,
     Tasks,
@@ -120,30 +122,22 @@ async def copy_dataset_blueprint(
     blueprint_dataset_id: ObjectId,
     project_id: ObjectId,
     username: str,
-):
-    """Creates a copy of a dataset and its dataset items and assigns it a project.
-    s
-        Returns:
-            ObjectId of the project dataset
-    """
-
+) -> Optional[Tuple[ObjectId, Dict[ObjectId, ObjectId]]]:
+    """Creates a copy of a dataset and its dataset items and assigns it a project."""
     dataset = await db["datasets"].find_one(
         {"_id": blueprint_dataset_id, "is_blueprint": True}
     )
-    logger.info("blueprint dataset", dataset)
-
-    if not dataset:
-        raise Exception("Blueprint dataset not found")
+    if dataset is None:
+        return
 
     dataset_items = (
         await db["data"]
         .find({"dataset_id": dataset["_id"], "is_blueprint": True})
         .to_list(None)
     )
-    logger.info("blueprint dataset_items", dataset_items)
 
-    if not dataset_items:
-        raise Exception("Blueprint dataset items not found")
+    if dataset_items is None or len(dataset_items) == 0:
+        return None
 
     dataset["is_blueprint"] = False
     dataset["project_id"] = project_id
@@ -151,9 +145,8 @@ async def copy_dataset_blueprint(
     dataset.pop("_id", None)
 
     project_dataset = await db["datasets"].insert_one(dataset)
-    logger.info("Copied dataset")
+    logger.info("Copied blueprint dataset")
 
-    dataset_item_copies = []
     dataset_item_id_map_bp2project = {}
     for di in dataset_items:
         di["is_blueprint"] = False
@@ -169,20 +162,16 @@ async def copy_dataset_blueprint(
 
         # dataset_item_copies.append(di)    # TODO: refactor back into bulk "insert_many"; using single to capture ids; this needs to be preserved.
 
-    # await db["data"].insert_many(dataset_item_copies)
-    logger.info("Copied dataset items")
-
     # Update project with new dataset_id
     await db["projects"].update_one(
         {"_id": project_id}, {"$set": {"dataset_id": project_dataset.inserted_id}}
     )
-
     return project_dataset.inserted_id, dataset_item_id_map_bp2project
 
 
 async def prepare_project_resources(
     db: AsyncIOMotorDatabase, resource_ids: List[str]
-) -> dict:
+) -> Optional[dict]:
     """Prepares project resource(s) by finding them via their UUID and associates to the project.
     NOTE:
         - resource_ids can be any classification/sub_classification e.g. ontologies or pre-annotations.
@@ -190,64 +179,71 @@ async def prepare_project_resources(
     resources = (
         await db["resources"]
         .find({"_id": {"$in": [ObjectId(id) for id in resource_ids]}})
-        .to_list(len(Tasks.__fields__))
+        .to_list(None)
     )
 
     if len(resources) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to create project - resource(s) unavailable.",
-        )
-
+        return
     return resources
 
 
 async def add_project_annotators(
     db: AsyncIOMotorDatabase,
     project_id: ObjectId,
+    project_name: str,
     dataset_id: ObjectId,
     annotators: List[str],
     project_manager: str,
-) -> List[Annotator]:
+) -> Optional[List[Annotator]]:
     """Assigns annotator(s) to a project including sending invititation notifications."""
-    if len(annotators) > 0:
-        await create_many_project_invitations(
-            db=db,
-            project_id=project_id,
-            recipients=annotators,
-            username=project_manager,
+    try:
+        logger.info("Adding project annotators")
+        if len(annotators) > 0:
+            await create_many_project_invitations(
+                db=db,
+                project_id=project_id,
+                project_name=project_name,
+                recipients=annotators,
+                username=project_manager,
+            )
+
+        # Get dataset item ids for scope assignment - default scope is all dataset items
+        dataset_item_ids = (
+            await db["data"].find({"dataset_id": dataset_id}).to_list(None)
+        )
+        dataset_item_ids = [di["_id"] for di in dataset_item_ids]
+
+        annotators = [
+            Annotator(
+                username=username,
+                role=AnnotatorRoles.annotator,
+                state=AnnotatorStates.invited,
+                scope=[],  # This is assigned after the project is created at the moment.
+            )
+            for username in annotators
+        ]
+
+        annotators = annotators + [
+            Annotator(
+                username=project_manager,
+                role=AnnotatorRoles.project_manager,
+                state=AnnotatorStates.accepted,
+                scope=[
+                    {"dataset_item_id": di, "visible": True} for di in dataset_item_ids
+                ],
+            )
+        ]
+
+        # Add annotators to project
+        await db["projects"].update_one(
+            {"_id": project_id},
+            {"$set": {"annotators": [a.dict() for a in annotators]}},
         )
 
-    # # -- Get dataset item ids for scope assignment - default scope is all dataset items
-    dataset_item_ids = await db["data"].find({"dataset_id": dataset_id}).to_list(None)
-    dataset_item_ids = [di["_id"] for di in dataset_item_ids]
-
-    annotators = [
-        Annotator(
-            username=username,
-            role=AnnotatorRoles.annotator,
-            state=AnnotatorStates.invited,
-            scope=[],  # This is assigned after the project is created at the moment.
-        )
-        for username in annotators
-    ]
-
-    annotators = annotators + [
-        Annotator(
-            username=project_manager,
-            role=AnnotatorRoles.project_manager,
-            state=AnnotatorStates.accepted,
-            scope=[{"dataset_item_id": di, "visible": True} for di in dataset_item_ids],
-        )
-    ]
-
-    # Add annotators to project
-    await db["projects"].update_one(
-        {"_id": project_id},
-        {"$set": {"annotators": [a.dict() for a in annotators]}},
-    )
-
-    return annotators
+        return annotators
+    except Exception as e:
+        logger.info(f"Error: {e}")
+        return None
 
 
 def annotate_single_label(
@@ -434,21 +430,26 @@ async def assign_bp_markup(
     dataset_item_id_map_bp2project: Dict[ObjectId, ObjectId],
     suggested_preannotations: bool,
     username: str,
-):
-    """
-    Assigns markup to a user.
+) -> None:
+    """Assigns markup to a user.
 
-    Args
-        db
-        bp_dataset_id (ObjectId) : The UUID of the blueprint (bp) dataset.
-        project_id (ObjectId) : The UUID of the project.
-        dataset_item_id_map_bp2project (Dict[ObjectId, ObjectId]) : A mapping between the UUID of blueprint dataset items and their project equivalents.
-        suggested_preannotations (bool) : Flag indicating whether to set annotations as suggested
-        username (str) : The name of the user to assign markup to.
+    Parameters
+    ----------
+    db :
 
+    bp_dataset_id :
+        The UUID of the blueprint (bp) dataset.
+    project_id :
+        The UUID of the project.
+    dataset_item_id_map_bp2project :
+        A mapping between the UUID of blueprint dataset items and their project equivalents.
+    suggested_preannotations :
+        Flag indicating whether to set annotations as suggested
+    username :
+        The name of the user to assign markup to.
     """
     # Copy datasets blueprint annotations across all project annotators
-    logger.info("BLUEPRINT DATASET HAS ANNOTATIONS")
+    logger.info("Blueprint dataset has annotations. Copying to project.")
 
     # Get dataset item ids associated with bp dataset
     bp_dataset_items = (
@@ -521,78 +522,104 @@ async def assign_bp_markup(
 
 async def create_project(
     db: AsyncIOMotorDatabase, project: CreateProject, username: str
-) -> Project:
-    """Creates a project. Optional preannotation will preannotate markup set as suggested."""
+) -> Optional[Project]:
+    """Creates a project.
+
+    Optional preannotation will preannotate markup set as suggested.
+    """
     logger.info("Creating new project.")
-
-    project = project.dict()
-
+    project = project.model_dump()
     # Prepare project resource(s)
     resource_ids = project.pop("blueprint_resource_ids")
     resources = await prepare_project_resources(db=db, resource_ids=resource_ids)
-
-    # TODO: refactor two operations below to be output of `prepare_project_resources`
-    # Transform ontology resources into sub_classification:ontology format
-    ontology_resources = {
-        r["sub_classification"]: r["content"]
-        for r in resources
-        if r["classification"] == "ontology"
-    }
-    logger.info(f"ontology_resources {ontology_resources}")
-
-    # Transform preannotation resources into sub_classification:preannotation format
-    preannotation_resources = {
-        r["sub_classification"]: r
-        for r in resources
-        if r["classification"] == "preannotation"
-    }
-    logger.info(f"preannotation_resources {preannotation_resources}")
+    if resources is None:
+        return
 
     # Create base project
-    new_project = await db["projects"].insert_one(
+    new_project = await db.projects.insert_one(
         {
             **project,
-            "guidelines": Guidelines().dict(),
-            "annotators": [],  # Placeholder; `add_project_annotators` will populate this field.
+            "guidelines": Guidelines().model_dump(),
+            "annotators": [],  # Placeholder - `add_project_annotators` will populate this field.
             "created_by": username,
-            "ontology": ontology_resources,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "blueprint_resource_ids": resource_ids,
         }
     )
+    logger.info(f"Created base project: {new_project.inserted_id}")
+
+    preannotation_resources = {
+        r["sub_classification"]: r
+        for r in resources
+        if r["classification"] == "preannotation"
+    }
+
+    _ontology_resources = {
+        r["sub_classification"]: r
+        for r in resources
+        if r["classification"] == "ontology"
+    }
+
+    # Create project resources
+    _ontology_ids = {"entity_ontology_id": None, "relation_ontology_id": None}
+    for _clf, _resource in _ontology_resources.items():
+        # Copy blueprint ontology to project
+        logger.info(f'Creating project resource for "{_clf}": {_resource}')
+
+        # Remove _id from blueprint
+        del _resource["_id"]
+
+        _inserted_resource = await db.resources.insert_one(
+            {
+                **_resource,
+                "is_blueprint": False,
+                "project_id": new_project.inserted_id,
+                "created_by": username,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+            }
+        )
+        logger.info(
+            f'Created project resource for "{_clf}": {_inserted_resource.inserted_id}'
+        )
+        _ontology_ids[f"{_clf}_ontology_id"] = _inserted_resource.inserted_id
+
+    await db.projects.find_one_and_update(
+        {"_id": new_project.inserted_id}, {"$set": _ontology_ids}
+    )
+    logger.info("Created project resources")
 
     try:
-        logger.info("CREATED BASE PROJECT")
-
         # Create new project; use resource ids to find and assign ontologies to the project under the `ontology` key.
-        created_project = await db["projects"].find_one(
-            {"_id": new_project.inserted_id}
-        )
+        created_project = await db.projects.find_one({"_id": new_project.inserted_id})
+        logger.info(f'Created project "{created_project}"')
 
         # Create project dataset by cloning blueprint
-        (
-            project_dataset_id,
-            dataset_item_id_map_bp2project,
-        ) = await copy_dataset_blueprint(
+        bp_dataset_result = await copy_dataset_blueprint(
             db=db,
             blueprint_dataset_id=ObjectId(project["blueprint_dataset_id"]),
             project_id=new_project.inserted_id,
             username=username,
         )
 
-        logger.info("CREATED PROJECT DATASET")
-        logger.info("dataset_item_id_map_bp2project", dataset_item_id_map_bp2project)
+        if bp_dataset_result is None:
+            return
+        project_dataset_id, dataset_item_id_map_bp2project = bp_dataset_result
+        logger.info("Created project dataset")
 
         # Create annotators and send invitations to the project
         annotators = await add_project_annotators(
             db=db,
             project_id=created_project["_id"],
+            project_name=created_project["name"],
             dataset_id=project_dataset_id,
             annotators=project["annotators"],
             project_manager=username,
         )
-        logger.info("ADDED PROJECT ANNOTATORS")
+        if annotators is None:
+            return
+        logger.info("Added project annotators")
 
         bp_dataset_id = ObjectId(project["blueprint_dataset_id"])
         bp_dataset = await db["datasets"].find_one({"_id": bp_dataset_id})
@@ -640,33 +667,95 @@ async def create_project(
         return Project(**created_project)
     except Exception as e:
         logger.info(f"Error occurred creating project ({e}): Destroying...")
+        traceback.print_exc()
+
         await delete_one_project(
             db=db, project_id=new_project.inserted_id, username=username
         )
+        return
 
 
 async def find_one_project(
     db: AsyncIOMotorDatabase, project_id: ObjectId, username: str
-) -> Optional[Project]:
+) -> Optional[ProjectWithOntologies]:
     """Finds a single project and computes project progress information"""
-    project = await db["projects"].find_one(
+    pipeline = [
         {
-            "_id": project_id,
-            "$or": [
-                {"created_by": username},
-                {
-                    "annotators": {
-                        "$elemMatch": {
-                            "username": username,
-                            "disabled": False,
-                            "state": "accepted",
+            "$match": {
+                "_id": project_id,
+                "$or": [
+                    {"created_by": username},
+                    {
+                        "annotators": {
+                            "$elemMatch": {
+                                "username": username,
+                                "disabled": False,
+                                "state": "accepted",
+                            },
                         },
                     },
-                },
-            ],
+                ],
+            }
         },
-    )
-    logger.info("find_one_project")
+        {
+            "$lookup": {
+                "from": "resources",
+                "localField": "entity_ontology_id",
+                "foreignField": "_id",
+                "as": "entity_ontology_all",
+            }
+        },
+        {"$unwind": "$entity_ontology_all"},
+        {
+            "$addFields": {
+                "entity_ontology": {
+                    "_id": "$entity_ontology_all._id",
+                    "content": "$entity_ontology_all.content",
+                }
+            }
+        },
+        {"$project": {"entity_ontology_all": 0}},
+        {
+            "$lookup": {
+                "from": "resources",
+                "localField": "relation_ontology_id",
+                "foreignField": "_id",
+                "as": "relation_ontology_all",
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$relation_ontology_all",
+                "preserveNullAndEmptyArrays": True,
+            }
+        },
+        {
+            "$addFields": {
+                "relation_ontology": {
+                    "_id": "$relation_ontology_all._id",
+                    "content": "$relation_ontology_all.content",
+                }
+            }
+        },
+        {
+            "$addFields": {
+                "relation_ontology": {
+                    "$cond": {
+                        "if": {"$eq": [{}, "$relation_ontology"]},
+                        "then": None,
+                        "else": "$relation_ontology",
+                    }
+                }
+            }
+        },
+        {"$project": {"relation_ontology_all": 0}},
+    ]
+
+    project = await db.projects.aggregate(pipeline).to_list(None)
+
+    if len(project) == 0:
+        return None
+    project = project[0]
 
     # Get relation counts (TODO: make this more elegant)
     relation_counts = (
@@ -682,95 +771,87 @@ async def find_one_project(
     )
     relation_counts = Counter([r["ontology_item_id"] for r in relation_counts])
     # logger.info(f"relation_counts :: {dict(relation_counts)}")
-
-    if project:
-        return Project(**project, relation_counts=dict(relation_counts))
-    return None
+    return ProjectWithOntologies(**project, relation_counts=dict(relation_counts))
 
 
-async def find_many_projects(db: AsyncIOMotorDatabase, username: str):
+async def find_many_projects(
+    db: AsyncIOMotorDatabase, username: str
+) -> List[ProjectWithMetrics]:
     """Finds many projects and computes project progress information"""
-
-    try:
-        pipeline = [
-            {
-                "$match": {
-                    "$or": [
-                        {"created_by": username},
-                        {
-                            "annotators": {
-                                "$elemMatch": {
-                                    "username": username,
-                                    "disabled": False,
-                                    "state": "accepted",
-                                },
+    pipeline = [
+        {
+            "$match": {
+                "$or": [
+                    {"created_by": username},
+                    {
+                        "annotators": {
+                            "$elemMatch": {
+                                "username": username,
+                                "disabled": False,
+                                "state": "accepted",
                             },
                         },
-                    ],
-                },
-            },
-            {
-                "$lookup": {
-                    "from": "data",
-                    "localField": "_id",
-                    "foreignField": "project_id",
-                    "as": "dataset_items",
-                }
-            },
-            {
-                "$addFields": {
-                    "total_items": {"$size": "$dataset_items"},
-                    "saved_items": {
-                        "$size": {
-                            "$filter": {
-                                "input": "$dataset_items.save_states",
-                                "cond": {
-                                    "$gte": [
-                                        {"$size": "$$this.created_by"},
-                                        "$settings.annotators_per_item",
-                                    ]
-                                },
-                            }
-                        }
                     },
-                    "active_annotators": {
+                ],
+            },
+        },
+        {
+            "$lookup": {
+                "from": "data",
+                "localField": "_id",
+                "foreignField": "project_id",
+                "as": "dataset_items",
+            }
+        },
+        {
+            "$addFields": {
+                "total_items": {"$size": "$dataset_items"},
+                "saved_items": {
+                    "$size": {
                         "$filter": {
-                            "input": "$annotators",
-                            "cond": {"$eq": ["$$this.state", "accepted"]},
+                            "input": "$dataset_items.save_states",
+                            "cond": {
+                                "$gte": [
+                                    {"$size": "$$this.created_by"},
+                                    "$settings.annotators_per_item",
+                                ]
+                            },
                         }
-                    },
-                    "user_is_pm": {"$eq": ["$created_by", username]},
-                }
-            },
-            {
-                "$project": {
-                    "tasks": 1,
-                    "name": 1,
-                    "description": 1,
-                    "active_annotators.username": 1,
-                    "created_at": 1,
-                    "updated_at": 1,
-                    "created_by": 1,
-                    "user_is_pm": 1,
-                    "saved_items": 1,
-                    "total_items": 1,
-                    "created_by": 1,
-                }
-            },
-        ]
+                    }
+                },
+                "active_annotators": {
+                    "$filter": {
+                        "input": "$annotators",
+                        "cond": {"$eq": ["$$this.state", "accepted"]},
+                    }
+                },
+                "user_is_pm": {"$eq": ["$created_by", username]},
+            }
+        },
+        {
+            "$project": {
+                "tasks": 1,
+                "name": 1,
+                "description": 1,
+                "active_annotators.username": 1,
+                "created_at": 1,
+                "updated_at": 1,
+                "created_by": 1,
+                "user_is_pm": 1,
+                "saved_items": 1,
+                "total_items": 1,
+                "created_by": 1,
+            }
+        },
+    ]
 
-        projects = await db["projects"].aggregate(pipeline).to_list(None)
+    projects = await db.projects.aggregate(pipeline).to_list(None)
 
-        if len(projects) == 0:
-            return []
+    logger.info(f"projects: {projects}")
 
-        return [ProjectWithMetrics.parse_obj(p) for p in projects]
-    except Exception as e:
-        logger.info(f"Error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to fetch projects",
-        )
+    if len(projects) == 0:
+        return []
+    return [ProjectWithMetrics(**p) for p in projects]
 
 
 async def delete_one_project(
@@ -870,8 +951,7 @@ async def save_many_dataset_items(
     username: str,
 ) -> SaveResponse:
     """Saves many dataset items for a user"""
-
-    new_save_state = BaseSaveState(created_by=username).dict()
+    new_save_state = BaseSaveState(created_by=username).model_dump()
 
     markup_pipeline = [
         {"$match": {"_id": {"$in": [ObjectId(oid) for oid in dataset_item_ids]}}},
@@ -972,119 +1052,141 @@ async def save_many_dataset_items(
         return SaveResponse(count=result.modified_count)
     else:
         # Update save state of user on dataset item
-        result = await db["data"].update_one(
-            {"_id": dataset_item_ids[0]},
-            [
-                {
-                    "$set": {
-                        "save_states": {
-                            "$cond": {
-                                "if": {
-                                    "$in": [
-                                        username,
-                                        {"$ifNull": ["$save_states.created_by", []]},
-                                    ]
-                                },
-                                "then": {
-                                    "$filter": {
-                                        "input": {"$ifNull": ["$save_states", []]},
-                                        "as": "state",
-                                        "cond": {
-                                            "$ne": ["$$state.created_by", username]
-                                        },
-                                    },
-                                },
-                                "else": {
-                                    "$concatArrays": [
-                                        {"$ifNull": ["$save_states", []]},
-                                        [new_save_state],
-                                    ],
-                                },
-                            },
-                        }
-                    }
-                }
-            ],
-            upsert=False,
-        )
-
-        try:
-            dataset_item = await db["data"].aggregate(markup_pipeline).to_list(None)
-            dataset_item = dataset_item[0]
-
-            saved_users = [ss["created_by"] for ss in dataset_item["save_states"]]
-            entity_markup = [
-                e for e in dataset_item["markup"] if e["classification"] == "entity"
-            ]
-            relation_markup = [
-                r for r in dataset_item["markup"] if r["classification"] == "relation"
-            ]
-
-            agreement_calculator = AgreementCalculator(
-                entity_data=[
-                    {
-                        "start": m["start"],
-                        "end": m["end"],
-                        "label": m["ontology_item_id"],
-                        "username": m["created_by"],
-                        "doc_id": str(dataset_item["_id"]),
-                    }
-                    for m in entity_markup
-                    if m["created_by"] in saved_users
-                ],
-                relation_data=[
-                    {
-                        "label": m["ontology_item_id"],
-                        "username": m["created_by"],
-                        "source": {
-                            "start": m["source"]["start"],
-                            "end": m["source"]["end"],
-                            "label": m["source"]["ontology_item_id"],
-                        },
-                        "target": {
-                            "start": m["target"]["start"],
-                            "end": m["target"]["end"],
-                            "label": m["target"]["ontology_item_id"],
-                        },
-                        "doc_id": str(dataset_item["_id"]),
-                    }
-                    for m in relation_markup
-                    if m["created_by"] in saved_users
-                ],
-            )
-
-            entity_overall_agreement_score = agreement_calculator.overall_agreement()
-            # logger.info("entity_overall_agreement_score", entity_overall_agreement_score)
-
-            relation_overall_agreement_score = agreement_calculator.overall_agreement(
-                "relation"
-            )
-
-            overall_agreement_score = agreement_calculator.overall_average_agreement()
-            # logger.info('overall_agreement_score', overall_agreement_score)
-
-            # Update IAA of dataset item
-            await db["data"].update_one(
+        di = await db.data.find_one({"_id": dataset_item_ids[0]})
+        di_save_states = di.get("save_states", [])
+        if username not in [ss["created_by"] for ss in di_save_states]:
+            di_save_states.append(new_save_state)
+            await db.data.update_one(
                 {"_id": dataset_item_ids[0]},
-                [
-                    {
-                        "$set": {
-                            "iaa": {
-                                "overall": overall_agreement_score,
-                                "entity": entity_overall_agreement_score,
-                                "relation": relation_overall_agreement_score,
-                                "last_updated": datetime.utcnow(),
-                            }
-                        }
-                    }
-                ],
+                {"$set": {"save_states": di_save_states}},
                 upsert=False,
             )
+            return SaveResponse(count=1)
+        else:
+            # remove save state
+            di_save_states = [
+                ss for ss in di_save_states if ss["created_by"] != username
+            ]
+            await db.data.update_one(
+                {"_id": dataset_item_ids[0]},
+                {"$set": {"save_states": di_save_states}},
+                upsert=False,
+            )
+            return SaveResponse(count=1)
 
-        except Exception as e:
-            logger.info(f"Error occurred calculating IAA: {e}")
+        # result = await db["data"].update_one(
+        #     {"_id": dataset_item_ids[0]},
+        #     [
+        #         {
+        #             "$set": {
+        #                 "save_states": {
+        #                     "$cond": {
+        #                         "if": {
+        #                             "$in": [
+        #                                 username,
+        #                                 {"$ifNull": ["$save_states.created_by", []]},
+        #                             ]
+        #                         },
+        #                         "then": {
+        #                             "$filter": {
+        #                                 "input": {"$ifNull": ["$save_states", []]},
+        #                                 "as": "state",
+        #                                 "cond": {
+        #                                     "$ne": ["$$state.created_by", username]
+        #                                 },
+        #                             },
+        #                         },
+        #                         "else": {
+        #                             "$concatArrays": [
+        #                                 {"$ifNull": ["$save_states", []]},
+        #                                 [new_save_state],
+        #                             ],
+        #                         },
+        #                     },
+        #                 }
+        #             }
+        #         }
+        #     ],
+        #     upsert=False,
+        # )
 
-        return SaveResponse(count=result.modified_count)
+        # try:
+        #     dataset_item = await db["data"].aggregate(markup_pipeline).to_list(None)
+        #     dataset_item = dataset_item[0]
+
+        #     saved_users = [ss["created_by"] for ss in dataset_item["save_states"]]
+        #     entity_markup = [
+        #         e for e in dataset_item["markup"] if e["classification"] == "entity"
+        #     ]
+        #     relation_markup = [
+        #         r for r in dataset_item["markup"] if r["classification"] == "relation"
+        #     ]
+
+        #     agreement_calculator = AgreementCalculator(
+        #         entity_data=[
+        #             {
+        #                 "start": m["start"],
+        #                 "end": m["end"],
+        #                 "label": m["ontology_item_id"],
+        #                 "username": m["created_by"],
+        #                 "doc_id": str(dataset_item["_id"]),
+        #             }
+        #             for m in entity_markup
+        #             if m["created_by"] in saved_users
+        #         ],
+        #         relation_data=[
+        #             {
+        #                 "label": m["ontology_item_id"],
+        #                 "username": m["created_by"],
+        #                 "source": {
+        #                     "start": m["source"]["start"],
+        #                     "end": m["source"]["end"],
+        #                     "label": m["source"]["ontology_item_id"],
+        #                 },
+        #                 "target": {
+        #                     "start": m["target"]["start"],
+        #                     "end": m["target"]["end"],
+        #                     "label": m["target"]["ontology_item_id"],
+        #                 },
+        #                 "doc_id": str(dataset_item["_id"]),
+        #             }
+        #             for m in relation_markup
+        #             if m["created_by"] in saved_users
+        #         ],
+        #     )
+
+        #     entity_overall_agreement_score = agreement_calculator.overall_agreement()
+        #     # logger.info("entity_overall_agreement_score", entity_overall_agreement_score)
+
+        #     relation_overall_agreement_score = agreement_calculator.overall_agreement(
+        #         "relation"
+        #     )
+
+        #     overall_agreement_score = agreement_calculator.overall_average_agreement()
+        #     # logger.info('overall_agreement_score', overall_agreement_score)
+
+        #     # Update IAA of dataset item
+        #     await db["data"].update_one(
+        #         {"_id": dataset_item_ids[0]},
+        #         [
+        #             {
+        #                 "$set": {
+        #                     "iaa": {
+        #                         "overall": overall_agreement_score,
+        #                         "entity": entity_overall_agreement_score,
+        #                         "relation": relation_overall_agreement_score,
+        #                         "last_updated": datetime.utcnow(),
+        #                     }
+        #                 }
+        #             }
+        #         ],
+        #         upsert=False,
+        #     )
+
+        # except Exception as e:
+        #     logger.info(f"Error occurred calculating IAA: {e}")
+
+        # return SaveResponse(count=result.modified_count)
 
 
 async def get_project_annotator(

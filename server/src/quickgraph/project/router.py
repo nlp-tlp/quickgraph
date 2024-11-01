@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+from collections import defaultdict
 from typing import List
 
 from bson import ObjectId
@@ -14,6 +15,7 @@ from ..dependencies import (
     get_active_project_user,
     get_db,
     get_user,
+    valid_project,
     valid_project_manager,
 )
 from ..users.schemas import UserDocumentModel
@@ -23,6 +25,7 @@ from .schemas import (
     ProjectProgress,
     ProjectUpdateBody,
     ProjectWithMetrics,
+    ProjectWithOntologies,
     SaveDatasetItemsBody,
     SaveResponse,
     Summary,
@@ -51,7 +54,7 @@ router = APIRouter(prefix="/project", tags=["Project"])
 
 
 @router.post("", response_description="Create project", response_model=Project)
-async def create_new_project(
+async def create_new_project_endpoint(
     project: CreateProject,
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -63,7 +66,6 @@ async def create_new_project(
     - Adapt for datasets that are preannotated and/or have external ids.
     """
     project = await create_project(db=db, username=user.username, project=project)
-
     if project is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -77,7 +79,7 @@ async def create_new_project(
     response_description="List all projects",
     response_model=List[ProjectWithMetrics],
 )
-async def list_projects(
+async def list_projects_endpoint(
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
@@ -92,26 +94,30 @@ async def list_projects(
 
 
 @router.patch("/save", response_model=SaveResponse)
-async def save_project_dataset_items(
+async def save_project_dataset_items_endpoint(
     body: SaveDatasetItemsBody,
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Save one or many dataset items associated with a project"""
-
-    saved_items = await save_many_dataset_items(
+    result = await save_many_dataset_items(
         db=db,
         project_id=ObjectId(body.project_id),
         dataset_item_ids=[ObjectId(di) for di in body.dataset_item_ids],
         username=user.username,
     )
-    return saved_items
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to save dataset items",
+        )
+    return result
 
 
 @router.patch(
     "/{project_id}", response_description="Update project", response_model=Project
 )
-async def update_project(
+async def update_project_endpoint(
     project_id: str,
     body: ProjectUpdateBody,
     user: UserDocumentModel = Depends(valid_project_manager),
@@ -139,7 +145,7 @@ async def update_project(
 
 
 @router.patch("/{project_id}/guidelines", response_model=Project)
-async def update_project_guidelines(
+async def update_project_guidelines_endpoint(
     project_id: str,
     body: UpdateGuidlines,
     user: UserDocumentModel = Depends(valid_project_manager),
@@ -178,7 +184,7 @@ async def get_projects_summary_endpoint(
 
 
 @router.patch("/{project_id}/annotators/assignment")
-async def update_annotator_assignments(
+async def update_annotator_assignments_endpoint(
     project_id: str,
     body: dict,
     user: UserDocumentModel = Depends(valid_project_manager),
@@ -387,7 +393,7 @@ async def update_annotator_assignments(
 
 
 @router.get("/{project_id}/annotators")
-async def get_project_annotators(
+async def get_project_annotators_endpoint(
     project_id: str,
     user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -467,7 +473,11 @@ async def get_project_annotators(
     }
 
 
-@router.get("/{project_id}", response_description="Get project", response_model=Project)
+@router.get(
+    "/{project_id}",
+    response_description="Get project",
+    response_model=ProjectWithOntologies,
+)
 async def get_project_endpoint(
     project_id: str,
     user: UserDocumentModel = Depends(get_active_project_user),
@@ -570,7 +580,7 @@ async def download_project_endpoint(
 
 
 @router.get("/suggested-entities/{project_id}/{surface_form}")
-async def find_many_suggested_entities(
+async def find_many_suggested_entities_endpoint(
     project_id: str,
     surface_form: str,
     user: UserDocumentModel = Depends(get_active_project_user),
@@ -582,4 +592,35 @@ async def find_many_suggested_entities(
         project_id=ObjectId(project_id),
         surface_form=surface_form,
         username=user.username,
+    )
+
+
+@router.get("/{project_id}/clusters")
+async def get_project_dataset_clusters_endpoint(
+    project_id: str,
+    current_user: UserDocumentModel = Depends(get_active_project_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """Get clusters for a projects dataset."""
+
+    project = await db.projects.find_one({"_id": ObjectId(project_id)})
+
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    dataset_id = ObjectId(project["dataset_id"])
+
+    items = await db.data.find({"dataset_id": ObjectId(dataset_id)}).to_list(None)
+
+    clusters = defaultdict()
+    for item in items:
+        if item["cluster_id"] not in clusters:
+            clusters[item["cluster_id"]] = item["cluster_keywords"]
+
+    return sorted(
+        [{"value": k, "keywords": v} for k, v in clusters.items()],
+        key=lambda x: x["value"],
     )

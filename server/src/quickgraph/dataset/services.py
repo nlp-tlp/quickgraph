@@ -1,21 +1,19 @@
 """Dataset services."""
 
-# from nltk.tokenize import word_tokenize
-# import nltk
-import itertools
 import json
 import logging
 import math
 import re
-import time
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import hdbscan
+import numpy as np
 from bson import ObjectId
-from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from ..markup.schemas import RichCreateEntity, RichCreateRelation
 from ..project.schemas import FlagState, OntologyItem
@@ -31,6 +29,7 @@ from .schemas import (
     DatasetFilters,
     DatasetItem,
     DatasetType,
+    DeleteDatasetItemsBody,
     EnrichedItem,
     FilteredDataset,
     FlagFilter,
@@ -44,29 +43,10 @@ from .schemas import (
     TokenizerEnum,
 )
 
-# import os
-
-# from nltk import downloader as nltk_downloader
-# from pathlib import Path
-
 logger = logging.getLogger(__name__)
 
 DATASETS_COLLECTION = "datasets"
 DATA_COLLECTION = "data"
-
-
-# # Set NLTK_DATA environment variable to the current directory
-# os.environ["NLTK_DATA"] = str(Path(os.getcwd()) / "nltk_data")
-
-# try:
-#     # Try to load the 'punkt' module
-#     punkt_path = str(Path(os.environ["NLTK_DATA"]) / "punkt")
-#     print("punkt_path", punkt_path)
-#     nltk.data.find(punkt_path)
-# except LookupError:
-#     # If the module is not found, download it using the download_shell() function
-#     print("Downloading 'punkt' module...")
-#     nltk_downloader.download("punkt", download_dir=os.environ["NLTK_DATA"])
 
 
 def push_keys_to_extra_fields(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -261,9 +241,9 @@ async def list_datasets(
                 dataset["relation_ontology_resource_id"]
             )
 
-        if not dataset["is_blueprint"]:
-            # Project dataset
-            dataset["project"] = dataset["projects"][0]
+        # if not dataset["is_blueprint"]:
+        #     # Project dataset
+        #     dataset["project"] = dataset["projects"][0]
 
         _datasets.append(dataset)
 
@@ -274,15 +254,15 @@ async def list_datasets(
 
 async def check_dataset_exists(
     db: AsyncIOMotorDatabase, dataset_id: ObjectId, username: str
-) -> Dict:
+) -> Optional[Dict]:
     """Verify dataset exists and isn't deleted."""
     dataset = await db.datasets.find_one({"_id": dataset_id, "created_by": username})
 
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset not found")
+        return None
 
     if dataset.get("is_deleted", False):
-        raise HTTPException(status_code=404, detail="Dataset has been deleted")
+        return None
 
     return dataset
 
@@ -328,15 +308,15 @@ async def find_one_dataset(
 
     Returns:
         Dataset object or None if not found
-
-    Raises:
-        HTTPException: For 404 errors
     """
     try:
         logger.info(f"Finding dataset: {dataset_id}")
         dataset = await check_dataset_exists(
             db=db, dataset_id=dataset_id, username=username
         )
+
+        if dataset is None:
+            return None
 
         if include_dataset_size and not include_dataset_items:
             # Only get the count of dataset items linked to the dataset
@@ -376,22 +356,22 @@ async def find_one_dataset(
 
             # Flatten ontologies
             if check_key_in_nested_dict(dataset, "project.ontology.entity"):
-                dataset["project"]["ontology"]["entity"] = (
-                    flatten_hierarchical_ontology(
-                        ontology=[
-                            OntologyItem(**item)
-                            for item in dataset["project"]["ontology"]["entity"]
-                        ]
-                    )
+                dataset["project"]["ontology"][
+                    "entity"
+                ] = flatten_hierarchical_ontology(
+                    ontology=[
+                        OntologyItem(**item)
+                        for item in dataset["project"]["ontology"]["entity"]
+                    ]
                 )
             if check_key_in_nested_dict(dataset, "project.ontology.relation"):
-                dataset["project"]["ontology"]["relation"] = (
-                    flatten_hierarchical_ontology(
-                        ontology=[
-                            OntologyItem(**item)
-                            for item in dataset["project"]["ontology"]["relation"]
-                        ]
-                    )
+                dataset["project"]["ontology"][
+                    "relation"
+                ] = flatten_hierarchical_ontology(
+                    ontology=[
+                        OntologyItem(**item)
+                        for item in dataset["project"]["ontology"]["relation"]
+                    ]
                 )
 
             if "entity_ontology_resource_id" in dataset:
@@ -666,6 +646,48 @@ async def find_one_dataset(
         # return None
     except Exception as e:
         logger.error(f"error: {e}")
+        return None
+
+
+def embed_and_cluster_texts(
+    texts: List[str],
+) -> Tuple[np.ndarray, Dict[int, List[str]]]:
+    """Embed and cluster texts."""
+    # Load embedding model
+    model = SentenceTransformer("all-distilroberta-v1")
+
+    # Embed dataset item with sentence embedding
+    embeddings = model.encode(texts)
+
+    # Cluster items based on their embeddings
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=1, metric="euclidean")
+    clusters = clusterer.fit_predict(embeddings)
+
+    logger.info(f"Clusters: {clusters}")
+    if all(cluster_id == -1 for cluster_id in clusters):
+        logger.warning("No valid clusters were found; all points were marked as noise.")
+
+    # If you have the original texts stored in a list called `texts`
+    cluster_texts = defaultdict(list)
+
+    for text, cluster_id in zip(texts, clusters):
+        cluster_texts[cluster_id].append(text)
+
+    # Now create a simple TF-IDF vectorizer to extract common words from each cluster
+    vectorizer = TfidfVectorizer(stop_words="english")
+    cluster_keywords = {}
+
+    for cluster_id, texts in cluster_texts.items():
+        if cluster_id == -1:  # Skip noise cluster
+            continue
+        tfidf_matrix = vectorizer.fit_transform(texts)
+        indices = np.argsort(vectorizer.idf_)[::-1]
+        top_n = 5  # Top N keywords
+        features = vectorizer.get_feature_names_out()
+        top_keywords = [features[i] for i in indices[:top_n]]
+        cluster_keywords[cluster_id] = top_keywords
+
+    return clusters, cluster_keywords
 
 
 def create_standard_dataset_items(
@@ -674,23 +696,14 @@ def create_standard_dataset_items(
     is_blueprint: bool,
     dataset_id: ObjectId,
     project_id: ObjectId = None,
-):
-    """
-    Create standard (new line separated) dataset items.
+) -> List[EnrichedItem]:
+    """Create standard (new line separated) dataset items.
 
     This function preprocesses, tokenizes and assigns a "dataset_id" to dataset items in a standard dataset.
-
-    Params
-    -----
-
-    Returns
-    -------
-
-    Notes
-    -----
-
-
     """
+
+    clusters, cluster_keywords = embed_and_cluster_texts(texts=dataset_items)
+
     return [
         EnrichedItem(
             original=di_text,
@@ -701,8 +714,10 @@ def create_standard_dataset_items(
             ),
             is_blueprint=is_blueprint,
             project_id=project_id,
+            cluster_id=clusters[idx],
+            cluster_keywords=cluster_keywords.get(clusters[idx], []),
         )
-        for di_text in dataset_items
+        for idx, di_text in enumerate(dataset_items)
     ]
 
 
@@ -712,22 +727,15 @@ def create_rich_dataset_items(
     dataset_id: ObjectId,
     project_id: ObjectId = None,
 ):
-    """
-    Create rich dataset items.
+    """Create rich dataset items.
 
     This function assigns a "dataset_id" to rich dataset items. Rich datasets can have additional fields in contrast to standard "text" datasets.
-
-    Params
-    ------
-
-    Returns
-    -------
-
-    Notes
-    -----
-
-
     """
+
+    clusters, cluster_keywords = embed_and_cluster_texts(
+        texts=[d.original for d in dataset_items]
+    )
+
     return [
         EnrichedItem(
             original=di["original"],
@@ -738,8 +746,10 @@ def create_rich_dataset_items(
             is_blueprint=is_blueprint,
             extra_fields=di.get("extra_fields"),
             project_id=project_id,
+            cluster_id=clusters[idx],
+            cluster_keywords=cluster_keywords.get(clusters[idx], []),
         )
-        for di in dataset_items
+        for idx, di in enumerate(dataset_items)
     ]
 
 
@@ -933,97 +943,91 @@ async def process_dataset_items(
 
 async def create_dataset(
     db: AsyncIOMotorDatabase, dataset: CreateDatasetBody, username: str
-) -> Dataset:
-    """Creates a new dataset including preprocessing operations"""
+) -> Optional[Dataset]:
+    """Create a new dataset.
 
-    # print("dataset", dataset)
+    Creation includes preprocessing operations.
+    """
+    try:
+        logger.info(f"dataset: {dataset}")
 
-    # Create the base dataset
-    dataset = dataset.dict()
-    dataset_items = dataset.pop("items")
+        # Create the base dataset
+        dataset = dataset.model_dump()
+        dataset_items = dataset.pop("items")
 
-    dataset["entity_ontology_resource_id"] = (
-        ObjectId(dataset["entity_ontology_resource_id"])
-        if dataset.get("entity_ontology_resource_id")
-        else None
-    )
+        dataset["entity_ontology_resource_id"] = (
+            ObjectId(dataset["entity_ontology_resource_id"])
+            if dataset.get("entity_ontology_resource_id")
+            else None
+        )
 
-    dataset["relation_ontology_resource_id"] = (
-        ObjectId(dataset["relation_ontology_resource_id"])
-        if dataset.get("relation_ontology_resource_id")
-        else None
-    )
+        dataset["relation_ontology_resource_id"] = (
+            ObjectId(dataset["relation_ontology_resource_id"])
+            if dataset.get("relation_ontology_resource_id")
+            else None
+        )
 
-    created_dataset = await db[DATASETS_COLLECTION].insert_one(
-        {
-            **dataset,
-            "created_by": username,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-        }
-    )
+        created_dataset = await db[DATASETS_COLLECTION].insert_one(
+            {
+                **dataset,
+                "created_by": username,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+            }
+        )
 
-    print("dataset items", dataset_items)
+        # Create dataset items - this is dependent on the supplied data_type (either txt or json)
+        if dataset["data_type"] == "text":
+            try:
+                logger.info("Creating dataset items")
+                enriched_items = create_standard_dataset_items(
+                    dataset_items=dataset_items,
+                    preprocessing=Preprocessing(**dataset["preprocessing"]),
+                    is_blueprint=dataset["is_blueprint"],
+                    dataset_id=created_dataset.inserted_id,
+                )
 
-    # Create dataset items - this is dependent on the supplied data_type (either txt or json)
-    if dataset["data_type"] == "text":
-        try:
-            print("Creating dataset items")
-            enriched_items = create_standard_dataset_items(
-                dataset_items=dataset_items,
-                preprocessing=Preprocessing(**dataset["preprocessing"]),
-                is_blueprint=dataset["is_blueprint"],
-                dataset_id=created_dataset.inserted_id,
-            )
+                # Create dataset items
+                logger.info("Inserting dataset items")
+                await db[DATA_COLLECTION].insert_many(
+                    [ei.model_dump() for ei in enriched_items]
+                )
 
-            # Create dataset items
-            print("Inserting dataset items")
-            await db[DATA_COLLECTION].insert_many([ei.dict() for ei in enriched_items])
+            except Exception as e:
+                logger.info(f'Error creating "text" dataset: {e}')
+                return None
 
-        except Exception as e:
-            print(f'Error creating "text" dataset: {e}')
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail='Unable to create "text" dataset',
-            )
+        if dataset["data_type"] == "json":
+            try:
+                await process_dataset_items(
+                    db,
+                    dataset_items,
+                    dataset,
+                    dataset_id=created_dataset.inserted_id,
+                    username=username,
+                )
+            except Exception as e:
+                logger.info(f'Error creating "JSON" dataset: {e}')
+                return None
 
-    if dataset["data_type"] == "json":
-        try:
-            await process_dataset_items(
-                db,
-                dataset_items,
-                dataset,
-                dataset_id=created_dataset.inserted_id,
-                username=username,
-            )
-        except Exception as e:
-            print(f'Error creating "JSON" dataset: {e}')
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail='Unable to create "JSON" dataset',
-            )
+        # Find new dataset and return
+        new_dataset = await find_one_dataset(
+            db=db, dataset_id=created_dataset.inserted_id, username=username
+        )
 
-    # Find new dataset and return
-    new_dataset = await find_one_dataset(
-        db=db, dataset_id=created_dataset.inserted_id, username=username
-    )
-
-    return new_dataset
+        return new_dataset
+    except Exception as e:
+        logger.info(f"Error creating dataset: {e}")
+        return None
 
 
 async def delete_one_dataset(
     db: AsyncIOMotorDatabase, dataset_id: ObjectId, username: str
-):
-    result = await soft_delete_document(
+) -> bool:
+    document_deleted = await soft_delete_document(
         db=db, collection_name=DATASETS_COLLECTION, doc_id=dataset_id, username=username
     )
-
-    if result:
-        return {"message": f"Dataset has been deleted"}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Could not find dataset"
-        )
+    return document_deleted
 
 
 # async def update_one_dataset(db, dataset_id: ObjectId, username: str):
@@ -1086,12 +1090,44 @@ async def find_many_dataset_items(
 #     pass
 
 
+def create_search_regex(search_terms: str) -> re.Pattern:
+    """
+    Create a regular expression pattern that matches all of the given search terms.
+
+    Args:
+        search_terms (str): A comma-separated string of search terms to match.
+
+    Returns:
+        re.Pattern: A compiled regular expression pattern that matches all of the search terms, or a
+        regex pattern that matches anything if the input string is empty.
+
+    Example:
+        >>> create_search_regex("apple, banana, cherry")
+        re.compile('(?=.*\\bapple\\b)(?=.*\\bbanana\\b)(?=.*\\bcherry\\b)', re.IGNORECASE)
+    """
+
+    if search_terms == None:
+        # Defaults to match anything regular expression
+        return re.compile(".*")
+
+    search_terms_list = search_terms.split(",")
+    search_term_regex_list = []
+    for term in search_terms_list:
+        search_term_regex_list.append(rf"(?=.*\b{re.escape(term.strip())}\b)")
+    search_term_regex = "".join(search_term_regex_list)
+    return (
+        re.compile(search_term_regex, re.IGNORECASE)
+        if search_terms
+        else re.compile(".*")
+    )
+
+
 async def filter_dataset(
     db: AsyncIOMotorDatabase,
     filters: DatasetFilters,
     username: str,
 ):
-    """
+    """Filter a dataset.
 
     TODO:
         - add check for whether user is disabled or hasn't accepted yet...
@@ -1100,9 +1136,15 @@ async def filter_dataset(
 
     project = await db["projects"].find_one(
         {"_id": project_id},
-        {"ontology": 1, "dataset_id": 1, "annotators": 1, "settings": 1},
+        {
+            "entity_ontology_id": 1,
+            "relation_ontology_id": 1,
+            "dataset_id": 1,
+            "annotators": 1,
+            "settings": 1,
+        },
     )
-    print("Loaded project...")
+    logger.info("Loaded project...")
 
     scope = [
         di["dataset_item_id"]
@@ -1111,7 +1153,6 @@ async def filter_dataset(
         ]
         if di["visible"]
     ]
-    # print("SCOPE:", scope[:5])
 
     if filters.dataset_item_ids:
         logging.info(f"filters.dataset_item_ids :: {filters.dataset_item_ids}")
@@ -1119,12 +1160,22 @@ async def filter_dataset(
         # Limit scope to dataset item(s)
         scope = [di_id for di_id in di_ids if di_id in scope]
 
-        print("scope", len(scope))
+    # Fetch ontologies
+    ontologies = await db.resources.find(
+        {
+            "_id": {
+                "$in": [project["entity_ontology_id"], project["relation_ontology_id"]]
+            },
+            "classification": "ontology",
+        },
+        {"sub_classification": 1, "content": 1},
+    ).to_list(None)
 
-    # print("SCOPE v2 ::", scope[:5])
+    # logger.info(f"ontologies: {ontologies}")
 
-    ontology = project["ontology"]
-    # print("Loaded ontology...")
+    ontology = {
+        ontology["sub_classification"]: ontology["content"] for ontology in ontologies
+    }
 
     # Convert ontologies to ontology_item_id:detail key:value pairs
     ontology = {
@@ -1142,49 +1193,14 @@ async def filter_dataset(
         for ontology_type, ontology_items in ontology.items()
     }
 
-    def create_search_regex(search_terms: str) -> re.Pattern:
-        """
-        Create a regular expression pattern that matches all of the given search terms.
-
-        Args:
-            search_terms (str): A comma-separated string of search terms to match.
-
-        Returns:
-            re.Pattern: A compiled regular expression pattern that matches all of the search terms, or a
-            regex pattern that matches anything if the input string is empty.
-
-        Example:
-            >>> create_search_regex("apple, banana, cherry")
-            re.compile('(?=.*\\bapple\\b)(?=.*\\bbanana\\b)(?=.*\\bcherry\\b)', re.IGNORECASE)
-        """
-
-        if search_terms == None:
-            # Defaults to match anything regular expression
-            return re.compile(".*")
-
-        search_terms_list = search_terms.split(",")
-        search_term_regex_list = []
-        for term in search_terms_list:
-            search_term_regex_list.append(rf"(?=.*\b{re.escape(term.strip())}\b)")
-        search_term_regex = "".join(search_term_regex_list)
-        return (
-            re.compile(search_term_regex, re.IGNORECASE)
-            if search_terms
-            else re.compile(".*")
-        )
-
     try:
         search_term_regx = create_search_regex(search_terms=filters.search_term)
         # print("search_term_regx", search_term_regx)
     except Exception as e:
-        print(f"Error with search term reg: {e}")
+        logger.info(f"Error with search term reg: {e}")
 
     if filters.saved != SaveStateFilter.everything.value:
-        # print("Handling save state on filter: ", filters.saved)
-
-        # unsaved = 0
-        # saved = 1
-        # everything = 2
+        # unsaved = 0, saved = 1, everything = 2
 
         if filters.saved == 0:
             save_states_filter = {
@@ -1247,17 +1263,9 @@ async def filter_dataset(
             },
         ]
 
-        print("relation pipeline segment", relations_filter)
-
-    # print("flag - ", filters.flag, FlagFilter.everything.value)
-
     if filters.flag != FlagFilter.everything.value:
-        print('Handing annotation "flag" filter')
-
         # TODO: make handling flags less problematic;
         _flag_map = {idx + 1: state.value for idx, state in enumerate(FlagState)}
-        # print("_flag_map", _flag_map)
-
         if filters.flag in [1, 2, 3]:
             flag_filter = {
                 "$match": {
@@ -1280,14 +1288,16 @@ async def filter_dataset(
                 }
             }
 
-    # print("FLAG FILTER", filters.flag)
-
     match_filter = {
         "$match": {
             "_id": {"$in": scope},
             "text": {"$regex": search_term_regx},
         }
     }
+
+    if filters.cluster_id is not None:
+        logger.info(f"Handling cluster_id filter: {filters.cluster_id}")
+        match_filter["$match"]["cluster_id"] = filters.cluster_id
 
     filter_pipeline = (
         [
@@ -1329,13 +1339,10 @@ async def filter_dataset(
     if "flag_filter" in locals():
         match_filter = {"$match": {**match_filter["$match"], **flag_filter["$match"]}}
 
-        # filter_pipeline.insert(1, flag_filter)
-
     if "save_states_filter" in locals():
         match_filter = {
             "$match": {**match_filter["$match"], **save_states_filter["$match"]}
         }
-        # filter_pipeline.insert(1, save_states_filter)
 
     pipeline = (
         [match_filter]
@@ -1345,14 +1352,8 @@ async def filter_dataset(
     dataset_items = await db["data"].aggregate(pipeline).to_list(None)
     dataset_item_ids = [di["_id"] for di in dataset_items]
 
-    # print(f'dataset_items :: {dataset_items}')
-    # print(
-    #     f"Dataset Filter Pipeline:\n {json.dumps(pipeline, indent=2, default=str)}"
-    # )
-
     if len(dataset_items) == 0:
-        # TODO: make this return 204 No Content response
-        return FilteredDataset()
+        return None
 
     # Get total count of dataset items (do not skip/limit)
     count_pipeline = [match_filter] + filter_pipeline + [{"$count": "count"}]
@@ -1378,6 +1379,8 @@ async def filter_dataset(
             "flags": [
                 item for item in di.get("flags", []) if item["created_by"] == username
             ],
+            "cluster_id": di.get("cluster_id"),
+            "cluster_keywords": di.get("cluster_keywords"),
         }
         for di in dataset_items
     }
@@ -1517,3 +1520,47 @@ async def create_system_datasets(db: AsyncIOMotorDatabase):
             await create_dataset(
                 db=db, dataset=dataset, username=settings.api.system_username
             )
+
+
+async def delete_dataset_items(
+    db: AsyncIOMotorDatabase, username: str, body: DeleteDatasetItemsBody
+) -> Optional[Dict[str, List[str]]]:
+    """Delete many item ids associated with a dataset.
+
+    This function permanently deletes dataset items from a dataset. It also removes the items from the scope of annotators if the dataset is a "project dataset".
+
+    TODO
+        - Update with soft delete logic
+
+    Notes
+        - This route must come before `/dataset/{dataset_id}` otherwise it won't be matched.
+        - Handle case where not all items are succesfully deleted.
+    """
+
+    dataset_id = ObjectId(body.dataset_id)
+    dataset_item_ids = [ObjectId(i) for i in body.dataset_item_ids]
+
+    # assert current user is the creator of the dataset
+    dataset = await db["datasets"].find_one({"_id": dataset_id, "created_by": username})
+
+    if dataset is None:
+        return
+
+    # Delete dataset items
+    response = await db["data"].delete_many({"_id": {"$in": dataset_item_ids}})
+    if response.deleted_count > 0:
+        is_project_dataset = dataset["project_id"]
+        if is_project_dataset:
+            # Remove assignments for annotators (if they exist)
+            await db["projects"].update_many(
+                {"_id": ObjectId(dataset["project_id"])},
+                {
+                    "$pull": {
+                        "annotators.$[].scope": {
+                            "dataset_item_id": {"$in": dataset_item_ids}
+                        }
+                    }
+                },
+            )
+        return {"dataset_item_ids": body.dataset_item_ids, "deleted": True}
+    return {"dataset_item_ids": body.dataset_item_ids, "deleted": False}

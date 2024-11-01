@@ -1,19 +1,21 @@
 """Dashboard router."""
 
+import logging
 from collections import defaultdict
 from typing import Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..dataset.schemas import QualityFilter, SaveStateFilter
-from ..dependencies import get_db, get_active_project_user
+from ..dependencies import get_active_project_user, get_db
 from ..project.schemas import FlagState, OntologyItem
 from ..users.schemas import UserDocumentModel
 from ..utils.agreement import AgreementCalculator
 from ..utils.misc import flatten_hierarchical_ontology
 from ..utils.services import create_search_regex
+from .schemas import DashboardInformation
 from .services import (
     calculate_project_progress,
     create_overview_plot_data,
@@ -22,19 +24,27 @@ from .services import (
     group_data_by_key,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
-@router.get("/{project_id}")
+@router.get("/{project_id}", response_model=DashboardInformation)
 async def get_dashboard_info_endpoint(
     project_id: str,
     user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Fetches a high-level project information"""
-    return await get_dashboard_information(
+    """Fetches a project dashboard information."""
+    result = await get_dashboard_information(
         db=db, project_id=ObjectId(project_id), username=user.username
     )
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+    return result
 
 
 @router.get("/overview/{project_id}")
@@ -74,7 +84,7 @@ async def get_overview(
     project_id = ObjectId(project_id)
 
     # Fetch project details
-    project = await db["projects"].find_one({"_id": project_id})
+    project = await db.projects.find_one({"_id": project_id})
     is_relation_project = project["tasks"]["relation"]
 
     # Create overview plot data
@@ -739,14 +749,14 @@ async def get_effort(
 
 
 @router.get("/download/{project_id}")
-async def get_download(
+async def get_download_endpoint(
     project_id: str,
     # saved: int = Query(default=SaveStateFilter.everything),
     # quality: int = Query(default=QualityFilter.everything),
     flags: list = Query(default=None),
     usernames: str = Query(default=None),
     # min_agreement: int = Query(default=0, ge=0, le=100),
-    user: UserDocumentModel = Depends(get_active_project_user),
+    current_user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Fetches annotations for download
@@ -760,7 +770,10 @@ async def get_download(
     """
     print('"get_download"')
 
-    usernames = usernames.split(",")
+    if usernames is None:
+        usernames = [current_user.username]
+    else:
+        usernames = usernames.split(",")
 
     project_id = ObjectId(project_id)
 
@@ -768,17 +781,30 @@ async def get_download(
 
     # Convert ontology_item_ids into their fullnames for human readability
     project = await db["projects"].find_one(
-        {"_id": project_id}, {"ontology": 1, "tasks": 1}
+        {"_id": project_id},
+        {"tasks": 1, "entity_ontology_id": 1, "relation_ontology_id": 1},
     )
-    # print("project ontology", project)
+    print("project", project)
 
-    ontology = project["ontology"]["entity"]
-    print("created ontology")
-
+    if project["tasks"]["entity"]:
+        # Get entity id from project
+        entity_ontology_id = project["entity_ontology_id"]
+        # Fetch entity ontology from resources collection
+        entity_ontology = await db.resources.find_one({"_id": entity_ontology_id})
     if project["tasks"]["relation"]:
-        ontology += project["ontology"]["relation"]
+        # Get relation id from project
+        relation_ontology_id = project["relation_ontology_id"]
+        # Fetch relation ontology from resources collection
+        relation_ontology = await db.resources.find_one({"_id": relation_ontology_id})
 
-    ontology = [OntologyItem.parse_obj(item) for item in ontology]
+    # Combine entity and relation ontology 'content' items
+    ontology = []
+    if project["tasks"]["entity"]:
+        for item in entity_ontology["content"]:
+            ontology.append(OntologyItem(**item))
+    if project["tasks"]["relation"]:
+        for item in relation_ontology["content"]:
+            ontology.append(OntologyItem(**item))
 
     flat_ontology = flatten_hierarchical_ontology(ontology=ontology)
 
@@ -788,26 +814,22 @@ async def get_download(
 
     # print("ontology_id2fullname", ontology_id2fullname)
 
-    dataset_items = (
-        await db["data"]
-        .find(
-            {"project_id": project_id},
-            {
-                "tokens": 1,
-                "original": 1,
-                "text": 1,
-                "extra_fields": 1,
-                "external_id": 1,
-                "save_states": 1,
-                "flags": 1,
-            },
-        )
-        .to_list(None)
-    )
-    print(f"loaded {len(dataset_items)} dataset items")
+    dataset_items = await db.data.find(
+        {"project_id": project_id},
+        {
+            "tokens": 1,
+            "original": 1,
+            "text": 1,
+            "extra_fields": 1,
+            "external_id": 1,
+            "save_states": 1,
+            "flags": 1,
+        },
+    ).to_list(None)
+    logger.info(f"loaded {len(dataset_items)} dataset items")
 
     markup = await db["markup"].find({"project_id": project_id}).to_list(None)
-    print(f"Loaded {len(markup)} markup")
+    logger.info(f"Loaded {len(markup)} markup")
 
     _map = defaultdict(list)
     for m in markup:
@@ -954,7 +976,7 @@ async def get_download(
         for username, dataset_items in output.items()
     }
 
-    # return await filter_annotations(
+    # return await dashboard_services.filter_annotations(
     #     db=db,
     #     project_id=ObjectId(project_id),
     #     saved=saved,

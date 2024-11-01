@@ -10,6 +10,8 @@ from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .database import get_client
+from .dataset.schemas import Dataset
+from .project.schemas import Project
 from .settings import Settings, get_settings
 from .users.schemas import UserDocumentModel
 
@@ -129,5 +131,100 @@ async def valid_project_manager(
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Access denied. Only the project manager can perform this action.",
+            detail="Access denied. Only the project manager can perform this action.",
         )
+
+
+async def valid_user_for_dataset(
+    dataset_id: str,
+    user: UserDocumentModel = Depends(get_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> UserDocumentModel:
+    """Validates if the user has access to the dataset and returns the user."""
+    dataset = await db.datasets.find_one({"_id": ObjectId(dataset_id)})
+    if not dataset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found.",
+        )
+
+    # Check if the user is the creator of the dataset
+    if dataset["created_by"] == user.username:
+        return user
+
+    # Check if the user is an annotator of the dataset
+    project = await db.projects.find_one({"_id": ObjectId(dataset["project_id"])})
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    # Check if user is active annotator
+    is_active_annotator = any(
+        a["username"] == user.username
+        and a["state"] == "accepted"
+        and not a["disabled"]
+        for a in project["annotators"]
+    )
+
+    if not is_active_annotator:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User is not authorized for this dataset.",
+        )
+
+    return user
+
+
+async def valid_dataset(
+    dataset_id: str,
+    user: UserDocumentModel = Depends(valid_user_for_dataset),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> Dataset:
+    """Returns the dataset if it exists and the user has access to it."""
+    dataset = await db.datasets.find_one({"_id": ObjectId(dataset_id)})
+    if dataset is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found.",
+        )
+    return Dataset(**dataset)
+
+
+async def valid_user_for_resource(
+    resource_id: str,
+    user: UserDocumentModel = Depends(get_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> UserDocumentModel:
+    """Validates if the user has access to the resource and returns the user."""
+    resource = await db.resources.find_one({"_id": ObjectId(resource_id)})
+    if not resource:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resource not found.",
+        )
+
+    # Check if the user is the creator of the resource
+    if resource["created_by"] == user.username:
+        return user
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User is not authorized for this resource.",
+        )
+
+
+async def valid_project(
+    project_id: str,
+    user: UserDocumentModel = Depends(get_active_project_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> Dataset:
+    """Returns the project if it exists and the user has access to it."""
+    project = await db.projects.find_one({"_id": ObjectId(project_id)})
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+    return Project(**project)

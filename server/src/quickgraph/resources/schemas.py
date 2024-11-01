@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
@@ -52,9 +52,9 @@ class OntologyItem(BaseModel):
     example_terms: Optional[List[str]] = Field(
         default=[], description="List of example terms classified by the ontology item."
     )
-    color: Optional[str] = (
-        "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
-    )
+    color: Optional[
+        str
+    ] = "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
     active: bool = Field(
         default=True, description="Flag indicating if the ontology item is active"
     )
@@ -194,8 +194,12 @@ class UpdateResourceModel(BaseModel):
         description="The sub classification of the resource"
     )
     content: List[OntologyItem] = Field(description="The content of the resource")
-
     model_config = ConfigDict(use_enum_values=True)
+
+
+class ResourceModelOut(ResourceModel):
+    size: int
+    instances: Optional[List[str]] = Field(default=None)
 
 
 class ResourceModelWithReadStatus(ResourceModel):

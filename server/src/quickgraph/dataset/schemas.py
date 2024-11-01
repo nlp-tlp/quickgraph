@@ -79,6 +79,10 @@ class EnrichedItem(BaseItem):
     relations: Optional[list] = Field(
         default=[], description="List of relations associated with this dataset item."
     )
+    cluster_id: int = Field(default=-1, description="The cluster id of the item")
+    cluster_keywords: List[str] = Field(
+        default=[], description="Top keywords describing the cluster"
+    )
 
     dataset_id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -272,14 +276,15 @@ class FlagFilter(int, Enum):
 
 class DatasetFilters(BaseModel):
     project_id: str = Field()
-    search_term: Union[None, str] = Field(default=None)
+    search_term: Optional[str] = Field(default=None)
     saved: SaveStateFilter = Field(default=SaveStateFilter.everything)
     quality: QualityFilter = Field(default=QualityFilter.everything)
     relations: RelationsFilter = Field(default=RelationsFilter.everything)
     flag: FlagFilter = Field(default=FlagFilter.everything)
     skip: int = Field(default=1, ge=0)
     limit: int = Field(default=10, ge=1, le=20)
-    dataset_item_ids: Union[None, str] = Field(default=None)
+    dataset_item_ids: Optional[str] = Field(default=None)
+    cluster_id: Optional[int] = Field(default=None, ge=-1)
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -290,7 +295,7 @@ class FilteredDataset(BaseModel):
     entities: Dict[str, List[dict]] = Field(default={})
     total_dataset_items: int = Field(default=0, ge=0)
     total_pages: int = Field(default=0, ge=0)
-    social: Dict[str, Union[list, List[Comment]]] = Field(default={})
+    social: Dict[str, List[Comment]] = Field(default={})
     # flags: Dict[str, Union[list, List[Flag]]] = Field(default={})
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
@@ -299,3 +304,9 @@ class FilteredDataset(BaseModel):
 class DeleteDatasetItemsBody(BaseModel):
     dataset_id: str
     dataset_item_ids: List[str]
+
+
+class DeleteDatasetItemsResponse(BaseModel):
+    dataset_id: str
+    dataset_item_ids: List[str]
+    deleted: bool

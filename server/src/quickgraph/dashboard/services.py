@@ -2,75 +2,81 @@
 
 import datetime
 import itertools
+import logging
 from collections import Counter, defaultdict
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from ..dashboard.schemas import Annotator, DashboardInformation
 from ..markup.schemas import Classifications as MarkupClassifications
-from ..project.schemas import OntologyItem, ProjectOntology
+from ..project.schemas import OntologyItem
+from ..project.services import find_one_project
 from ..utils.misc import flatten_hierarchical_ontology
+from .schemas import Annotator, DashboardInformation, DashboardPlot
 
 DATE_FORMAT = "%d/%m/%Y"
 
+logger = logging.getLogger(__name__)
 
-async def get_dashboard_information(db, project_id: ObjectId, username: str):
+
+async def get_dashboard_information(
+    db: AsyncIOMotorDatabase, project_id: ObjectId, username: str
+) -> Optional[DashboardInformation]:
     """Fetches project dashboard information"""
+    project = await find_one_project(db, project_id, username)
 
-    project = await db["projects"].find_one({"_id": project_id})
+    if project is None:
+        return None
 
-    info = DashboardInformation(
-        user_is_pm=project["created_by"] == username,
-        name=project["name"],
-        description=project["description"],
-        tasks=project["tasks"],
-        settings=project["settings"],
-        created_at=project["created_at"],
-        updated_at=project["updated_at"],
-        dataset_id=str(project["dataset_id"]),
+    logger.info(f"Project settings: {project.settings}")
+
+    return DashboardInformation(
+        user_is_pm=project.created_by == username,
+        name=project.name,
+        description=project.description,
+        tasks=project.tasks,
+        settings=project.settings,
+        created_at=project.created_at,
+        updated_at=project.updated_at,
+        dataset_id=project.dataset_id,
         annotators=[
             Annotator(
-                username=a["username"],
-                state=a["state"],
-                role=a["role"],
-                scope_size=len(a["scope"]),
+                username=a.username,
+                state=a.state,
+                role=a.role,
+                scope_size=len(a.scope),
             )
-            for a in project["annotators"]
+            for a in project.annotators
         ],
-        ontology=ProjectOntology.parse_obj(project["ontology"]),
-        guidelines=project["guidelines"],
+        entity_ontology=project.entity_ontology,
+        relation_ontology=project.relation_ontology,
+        guidelines=project.guidelines,
     )
-
-    return info
 
 
 # async def prepare_dashboard_summary(db, project_id: ObjectId, username: str):
 
 
-async def create_progress_plot_data(db, project_id: ObjectId) -> Dict:
+async def create_progress_plot_data(
+    db: AsyncIOMotorDatabase, project_id: ObjectId
+) -> DashboardPlot:
     """Creates progress plot.
 
     This function creates the data required for the dashboard overview progress plot (saved documents per annotator over time)
 
     Notes
-        - Times are in UTC datetime
-
+    -----
+    - Times are in UTC datetime
     """
-
     # Filter dataset items for those that have been saved by at least one project annotator
-    dataset_items = (
-        await db["data"]
-        .find(
-            {
-                "project_id": project_id,
-                "save_states": {"$exists": True, "$not": {"$size": 0}},
-            },
-            {"save_states": 1},
-        )
-        .to_list(None)
-    )
+    dataset_items = await db.data.find(
+        {
+            "project_id": project_id,
+            "save_states": {"$exists": True, "$not": {"$size": 0}},
+        },
+        {"save_states": 1},
+    ).to_list(None)
 
     if len(dataset_items) == 0:
         data = []
@@ -103,29 +109,29 @@ async def create_progress_plot_data(db, project_id: ObjectId) -> Dict:
             data, key=lambda d: datetime.datetime.strptime(d["x"], "%d/%m/%Y")
         )
 
-    try:
-        output = {
-            "title": "Overall project progress to date",
-            "name": "Project Progress",
-            "caption": "Overall Progress Made by Annotators",
-            "dataset": data,
-            "no_data_title": "No dataset items have been saved by project annotators yet",
-        }
-
-    except Exception as e:
-        print(f"Error fetching progress plot data: {e}")
-
-    return output
+    return DashboardPlot(
+        title="Overall project progress to date",
+        name="Project Progress",
+        caption="Overall Progress Made by Annotators",
+        no_data_title="No dataset items have been saved by project annotators yet",
+        dataset=data,
+    )
 
 
 async def create_markup_plot_data(
     db: AsyncIOMotorDatabase,
     project_id: ObjectId,
     classification: MarkupClassifications,
-):
-    """Creates data required for dashboard overview plot of either entities or relations. The x-axis will have the names of the labeled entities or relations in the resource that have at least one annotation. The y-axis will have the names of the annotators. The cells will have the count of accepted entities or relations.
+) -> DashboardPlot:
+    """Creates data required for dashboard overview plot.
 
-    Data format:
+    Plot is either entities or relations. The x-axis will have the names
+    of the labeled entities or relations in the resource that have at
+    least one annotation. The y-axis will have the names of the annotators.
+    The cells will have the count of accepted entities or relations.
+
+    Format
+    ------
     {
       x: "label_A",
       y: "user_1",
@@ -136,30 +142,24 @@ async def create_markup_plot_data(
       y: "user_2",
       value: 235,
     }
-
-
-    Notes
-        -
-
-    TODO
-        - Refactor code
     """
 
     # Get markup
-    markup = (
-        await db["markup"]
-        .find({"project_id": project_id, "classification": classification})
-        .to_list(None)
+    markup = await db.markup.find(
+        {"project_id": project_id, "classification": classification}
+    ).to_list(None)
+
+    # Get ontology
+    ontology = await db.resources.find_one(
+        {
+            "project_id": project_id,
+            "classification": "ontology",
+            "sub_classification": classification,
+        },
+        {"content": 1},
     )
-
-    # Convert markup `ontology_item_ids` to a human readable format:
-    project = await db["projects"].find_one({"_id": project_id}, {"ontology": 1})
-    ontology = [
-        OntologyItem.parse_obj(item) for item in project["ontology"][classification]
-    ]
-
+    ontology = [OntologyItem(**item) for item in ontology["content"]]
     flat_ontology = flatten_hierarchical_ontology(ontology=ontology)
-
     ontology_id2fullname = {item.id: item.fullname for item in flat_ontology}
 
     # Get counts
@@ -181,24 +181,20 @@ async def create_markup_plot_data(
         reverse=True,
     )
 
-    return {
-        "dataset": dataset,
-        "title": f"Number of accepted {classification.replace('y','ie')}s applied by all annotators",
-        "name": f"{classification.replace('y', 'ie').capitalize()}s",
-        "caption": f"Distribution of Applied {classification.replace('y','ie').capitalize()}s",
-        "no_data_title": f"No {classification.replace('y', 'ie')}s have been applied by project annotators yet",
-        "meta": {"label_colors": {item.fullname: item.color for item in flat_ontology}},
-    }
+    return DashboardPlot(
+        dataset=dataset,
+        title=f"Number of accepted {classification.replace('y','ie')}s applied by all annotators",
+        name=f"{classification.replace('y', 'ie').capitalize()}s",
+        caption=f"Distribution of Applied {classification.replace('y','ie').capitalize()}s",
+        no_data_title=f"No {classification.replace('y', 'ie')}s have been applied by project annotators yet",
+        meta={"label_colors": {item.fullname: item.color for item in flat_ontology}},
+    )
 
 
-async def create_triple_plot_data():
-    """Creates data required for dashboard overview triple plot"""
-    pass
-
-
-async def create_flag_plot(db: AsyncIOMotorDatabase, project_id: ObjectId) -> Dict:
+async def create_flag_plot(
+    db: AsyncIOMotorDatabase, project_id: ObjectId
+) -> DashboardPlot:
     """Creates plot of applied flags on dataset item"""
-
     pipeline = [
         {"$match": {"project_id": project_id}},
         {"$unwind": "$flags"},
@@ -219,7 +215,7 @@ async def create_flag_plot(db: AsyncIOMotorDatabase, project_id: ObjectId) -> Di
         {"$replaceRoot": {"newRoot": "$states"}},
     ]
 
-    flags = await db["data"].aggregate(pipeline).to_list(None)
+    flags = await db.data.aggregate(pipeline).to_list(None)
     flags = [
         {**f, "x": str(f["x"])} for f in flags
     ]  # Convert 'x' objectid to string for serialization.
@@ -231,19 +227,19 @@ async def create_flag_plot(db: AsyncIOMotorDatabase, project_id: ObjectId) -> Di
         reverse=True,
     )
 
-    return {
-        "dataset": flags,
-        "title": "Distribution of applied flags on dataset items",
-        "name": "Flags",
-        "caption": "Distribution of Dataset Item Flags",
-        "no_data_title": "No flags have been applied by project annotators yet",
-        "meta": {},
-    }
+    return DashboardPlot(
+        title="Distribution of applied flags on dataset items",
+        name="Flags",
+        caption="Distribution of Dataset Item Flags",
+        no_data_title="No flags have been applied by project annotators yet",
+        dataset=flags,
+    )
 
 
-async def create_social_plot(db: AsyncIOMotorDatabase, project_id: ObjectId) -> Dict:
+async def create_social_plot(
+    db: AsyncIOMotorDatabase, project_id: ObjectId
+) -> DashboardPlot:
     """Creates plot of dataset item discussions."""
-
     pipeline = [
         {"$match": {"project_id": project_id}},
         {"$project": {"_id": 1}},
@@ -268,44 +264,42 @@ async def create_social_plot(db: AsyncIOMotorDatabase, project_id: ObjectId) -> 
     # Sort by count
     socials = sorted(socials, key=lambda s: s["count"], reverse=True)
 
-    return {
-        "dataset": socials,
-        "title": "Distribution of discussions on dataset items",
-        "name": "Social",
-        "caption": "Distribution of Dataset Item Discussions",
-        "no_data_title": "No discussions have been made by project annotators yet",
-        "meta": {},
-    }
+    return DashboardPlot(
+        title="Distribution of discussions on dataset items",
+        name="Social",
+        caption="Distribution of Dataset Item Discussions",
+        no_data_title="No discussions have been made by project annotators yet",
+        dataset=socials,
+    )
 
 
 async def create_overview_plot_data(
     db: AsyncIOMotorDatabase,
     project_id: ObjectId,
     is_relation_project: bool,
-) -> List[dict]:
+) -> List[Dict[str, Any]]:
     """Creates plot data for project overview"""
-
     plots = []
 
     progress_data = await create_progress_plot_data(db=db, project_id=project_id)
-    plots.append({"index": 0, **progress_data})
+    plots.append({"index": 0, **progress_data.model_dump()})
 
     entity_data = await create_markup_plot_data(
         db=db, project_id=project_id, classification="entity"
     )
-    plots.append({"index": 1, **entity_data})
+    plots.append({"index": 1, **entity_data.model_dump()})
 
     if is_relation_project:
         relation_data = await create_markup_plot_data(
             db=db, project_id=project_id, classification="relation"
         )
-        plots.append({"index": 2, **relation_data})
+        plots.append({"index": 2, **relation_data.model_dump()})
 
     flag_data = await create_flag_plot(db=db, project_id=project_id)
-    plots.append({"index": 3, **flag_data})
+    plots.append({"index": 3, **flag_data.model_dump()})
 
     social_data = await create_social_plot(db=db, project_id=project_id)
-    plots.append({"index": 4, **social_data})
+    plots.append({"index": 4, **social_data.model_dump()})
 
     return plots
 
