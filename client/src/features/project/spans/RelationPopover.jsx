@@ -15,7 +15,6 @@ import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import { teal, red, orange } from "@mui/material/colors";
 import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import CloseIcon from "@mui/icons-material/Close";
 import { useContext, useState, useEffect } from "react";
 import { ProjectContext } from "../../../shared/context/ProjectContext";
 
@@ -120,16 +119,16 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
       action: ({ ontologyItemId, relationId }) =>
         handleAcceptAction({ applyAll: false, relationId: relationId }),
     },
-    // {
-    //   name: "apply-all",
-    //   icon: <ContentPasteIcon fontSize="inherit" />,
-    //   suggested: false,
-    //   color: teal[500],
-    //   title: `Apply relation across entire project`,
-    //   action: ({ ontologyItemId, relationId }) =>
-    //     handleApplyAction({ applyAll: true, ontologyItemId: ontologyItemId }),
-    //   disabled: state.settings.disable_propagation,
-    // },
+    {
+      name: "apply-all",
+      icon: <ContentPasteIcon fontSize="inherit" />,
+      suggested: false,
+      color: teal[500],
+      title: `Apply relation across entire project`,
+      action: ({ ontologyItemId, relationId }) =>
+        handleApplyAction({ applyAll: true, ontologyItemId: ontologyItemId }),
+      disabled: state.settings.disable_propagation,
+    },
     {
       name: "apply-one",
       icon: <CheckCircleOutlineIcon fontSize="inherit" />,
@@ -179,8 +178,6 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
     },
   ];
 
-  // console.log("state.relations", state.relations);
-
   return (
     <>
       <Box p={2}>
@@ -211,7 +208,7 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
       <Stack
         direction="column"
         spacing={1}
-        sx={{ maxHeight: 200, overflowY: "auto" }}
+        sx={{ maxHeight: 200, overflowY: "auto", width: 400, pb: 1 }}
       >
         {flatRelationOntology.map((relation) => {
           // console.log("relation", relation);
