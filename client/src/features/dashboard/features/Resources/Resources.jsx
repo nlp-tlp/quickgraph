@@ -19,11 +19,13 @@ import SchemaTreeViewWithControls from "../../../../shared/components/SchemaTree
 
 const Resources = () => {
   const { state } = useContext(DashboardContext);
-
   const [view, setView] = useState({
     classification: "ontology",
     sub_classification: "entity",
   });
+  const isRelationProject = state.tasks.relation;
+
+  console.log(state);
 
   return (
     <Grid item xs={12} container>
@@ -32,6 +34,11 @@ const Resources = () => {
           <Typography fontWeight={500}>Resource Information</Typography>
         </Box>
         <Divider />
+        <Box p="1rem 1rem 0rem 1rem">
+          <Typography fontWeight={500}>
+            Ontolog{isRelationProject ? "ies" : "y"}
+          </Typography>
+        </Box>
         <List dense>
           {Object.entries(state.ontology)
             .filter(([key, value]) => value !== null)
@@ -108,16 +115,18 @@ const Resources = () => {
         ></Box>
       </Grid>
       <Grid item xs={9} pl={2}>
-        <OntologyComponent
-          classification={view.classification}
-          subClassification={view.sub_classification}
-        />
+        {
+          {
+            ontology: <OntologyComponent {...view} />,
+            constraint: <ConstraintsComponent {...view} />,
+          }[view.classification]
+        }
       </Grid>
     </Grid>
   );
 };
 
-const OntologyComponent = ({ classification, subClassification }) => {
+const OntologyComponent = ({ classification, sub_classification }) => {
   const { projectId } = useParams();
   const { state } = useContext(DashboardContext);
   const [editableResource, setEditableResource] = useState();
@@ -127,21 +136,27 @@ const OntologyComponent = ({ classification, subClassification }) => {
   useEffect(() => {
     setLoading(true);
     setEditableResource(null);
-  }, [subClassification]);
+  }, [sub_classification]);
 
   useEffect(() => {
-    if (loading && !editableResource && state.ontology[subClassification]) {
-      setEditableResource([...state.ontology[subClassification]]);
+    if (loading && !editableResource && state.ontology[sub_classification]) {
+      setEditableResource([...state.ontology[sub_classification]]);
       setLoading(false);
     }
-  }, [loading, subClassification]);
+  }, [loading, sub_classification]);
 
   const handleUpdate = (updatedData) => {
     return updateResource({
-      project_id: projectId,
-      classification: classification,
-      sub_classification: subClassification,
-      content: updatedData,
+      resourceId:
+        sub_classification === "entity"
+          ? state.entity_ontology_id
+          : state.relation_ontology_id,
+      body: {
+        project_id: projectId,
+        classification: classification,
+        sub_classification: sub_classification,
+        content: updatedData,
+      },
     });
   };
 
@@ -161,6 +176,15 @@ const OntologyComponent = ({ classification, subClassification }) => {
         )}
       </Grid>
     </Grid>
+  );
+};
+
+const ConstraintsComponent = () => {
+  return (
+    <div>
+      Constraints
+      {/* <TransferList /> */}
+    </div>
   );
 };
 
