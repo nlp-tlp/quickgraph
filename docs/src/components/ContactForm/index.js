@@ -31,9 +31,6 @@ const Form = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Send the form data to your server or API here
-    console.log(name, email, subject, message);
   };
 
   return (
