@@ -24,6 +24,7 @@ const ProjectLayout = () => {
   const relations = searchParams.get("relations") || 2;
   const quality = searchParams.get("quality") || 2;
   const flag = searchParams.get("flag") || 4;
+  const cluster_id = searchParams.get("cluster_id") || null;
 
   // TODO: handle case where project does not exist; this should redirect the user to a unauthorized route...
 
@@ -43,6 +44,7 @@ const ProjectLayout = () => {
         flag: flag,
         skip: page - 1,
         limit: limit,
+        cluster_id: cluster_id,
       });
     }
   }, [searchParams, projectId, state.projectLoading]);

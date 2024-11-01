@@ -210,6 +210,17 @@ const ActionTray = ({ textId, textIndex }) => {
             </Stack>
           </Tooltip>
         )}
+        <Divider flexItem orientation="vertical" />
+        <Tooltip
+          title={`Cluster id (keywords: ${state.texts[textId].cluster_keywords})`}
+          arrow
+          placement="top"
+        >
+          <Typography fontSize="inherit" sx={{ cursor: "help" }}>
+            {state.texts[textId].cluster_id}
+          </Typography>
+        </Tooltip>
+        <Divider flexItem orientation="vertical" />
         <Tooltip
           title={
             `External ID: ${state.texts[textId].external_id}` ??

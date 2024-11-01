@@ -49,7 +49,6 @@ const useProject = ({ state, dispatch }) => {
       }
     };
     applyAction = (payload) => {
-      console.log("demo apply payload", payload);
       let label;
 
       if (payload.annotationType === "entity") {
@@ -125,7 +124,6 @@ const useProject = ({ state, dispatch }) => {
     };
     acceptAction = (payload) => {
       console.log("demo accept payload", payload);
-
       // dispatch({ type: "ACCEPT_ANNOTATION", payload: "" });
     };
 
@@ -208,11 +206,7 @@ const useProject = ({ state, dispatch }) => {
       );
 
       if (res.status === 200) {
-        console.log(res.data);
-
         const updatedFlags = [...state.texts[datasetItemId].flags, res.data];
-        console.log("updatedFlags", updatedFlags);
-
         const updatedTexts = {
           ...state.texts,
           [datasetItemId]: {
@@ -328,6 +322,26 @@ const useProject = ({ state, dispatch }) => {
     }
   };
 
+  const fetchProjectDatasetClusters = async (projectId) => {
+    try {
+      const res = await axiosInstance.get(`/project/${projectId}/clusters`);
+      if (res.status === 200) {
+        return res.data;
+      } else {
+        throw new Error("Unable to fetch project dataset clusters");
+      }
+    } catch (error) {
+      setError(true);
+      snackbarDispatch({
+        type: "UPDATE_SNACKBAR",
+        payload: {
+          message: "Unable to retrieve project dataset clusters",
+          severity: "error",
+        },
+      });
+    }
+  };
+
   return {
     loading,
     error,
@@ -342,6 +356,7 @@ const useProject = ({ state, dispatch }) => {
     applyFlag,
     deleteFlag,
     fetchInsights,
+    fetchProjectDatasetClusters,
   };
 };
 

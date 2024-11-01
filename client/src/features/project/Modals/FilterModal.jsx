@@ -28,6 +28,7 @@ import {
 } from "../../../shared/constants/api";
 import HelpIcon from "@mui/icons-material/Help";
 import { alpha } from "@mui/material";
+import useProject from "../../../shared/hooks/api/project";
 
 const style = {
   position: "absolute",
@@ -47,6 +48,7 @@ const defaultFilters = {
   relations: RelationsFilter.everything,
   flag: FlagFilter.everything,
   datasetItemIds: "",
+  clusterId: "",
 };
 
 const FilterModal = () => {
@@ -55,6 +57,23 @@ const FilterModal = () => {
   let [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState(getInitialFilters());
   const [filtersChanged, setFiltersChanged] = useState(false);
+  const { fetchProjectDatasetClusters } = useProject({ state, dispatch });
+  const [loading, setLoading] = useState(true);
+  const [clusters, setClusters] = useState([]);
+
+  // Fetch cluster information
+  useEffect(() => {
+    if (state.projectId) {
+      fetchProjectDatasetClusters(state.projectId)
+        .then((res) => {
+          setClusters(res);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching clusters", error);
+        });
+    }
+  }, [state.projectId]);
 
   function getInitialFilters() {
     return {
@@ -65,6 +84,7 @@ const FilterModal = () => {
       quality: searchParams.get("quality") || defaultFilters.quality,
       relations: searchParams.get("relations") || defaultFilters.relations,
       flag: searchParams.get("flag") || defaultFilters.flag,
+      clusterId: searchParams.get("cluster_id") || defaultFilters.clusterId,
     };
   }
 
@@ -90,7 +110,8 @@ const FilterModal = () => {
         parseInt(filters.saved) !== parseInt(defaultFilters.saved) ||
         parseInt(filters.quality) !== parseInt(defaultFilters.quality) ||
         parseInt(filters.relations) !== parseInt(defaultFilters.relations) ||
-        parseInt(filters.flag) !== parseInt(defaultFilters.flag)
+        parseInt(filters.flag) !== parseInt(defaultFilters.flag) ||
+        filters.clusterId !== defaultFilters.clusterId
     );
   }, [filters]);
 
@@ -101,6 +122,7 @@ const FilterModal = () => {
     searchParams.set("dataset_item_ids", filters.datasetItemIds);
     searchParams.set("relations", filters.relations);
     searchParams.set("flag", filters.flag);
+    searchParams.set("cluster_id", filters.clusterId);
     searchParams.set("page", 1);
     setSearchParams(searchParams);
     navigate({
@@ -119,6 +141,7 @@ const FilterModal = () => {
       quality: searchParams.get("quality") || QualityFilter.everything,
       relations: searchParams.get("relations") || RelationsFilter.everything,
       flag: searchParams.get("flag") || FlagFilter.everything,
+      clusterId: searchParams.get("cluster_id") || "",
     });
     dispatch({ type: "SET_VALUE", payload: { showFilterModal: false } });
   };
@@ -408,6 +431,59 @@ const FilterModal = () => {
               />
             </Grid>
           </Grid>
+          <Grid item xs={12} container alignItems="center" spacing={2}>
+            <Grid item xs={4}>
+              <Stack direction="column">
+                <Stack direction="row" alignItems="center">
+                  <Typography fontSize={16} fontWeight={500}>
+                    Cluster Id
+                  </Typography>
+                  <Tooltip title="Filter for specific clusters of dataset items by selecting a cluster ids.">
+                    <HelpIcon
+                      sx={{ fontSize: 16, ml: 1, cursor: "help" }}
+                      color="neutral"
+                    />
+                  </Tooltip>
+                </Stack>
+                <Typography variant="caption">
+                  Search for specific dataset items using their cluster id.
+                </Typography>
+              </Stack>
+            </Grid>
+            <Grid item xs={8} xl={8}>
+              <TextField
+                required
+                id="annotation-filter-cluster-id-textfield"
+                type="text"
+                margin="normal"
+                fullWidth
+                select
+                disabled={loading}
+                value={filters.clusterId}
+                displayEmpty
+                onChange={(e) =>
+                  setFilters((prevState) => ({
+                    ...prevState,
+                    clusterId: e.target.value,
+                  }))
+                }
+                sx={{ textTransform: "capitalize" }}
+              >
+                <MenuItem value="" key={"default-cluster-id-everything"}>
+                  Everything
+                </MenuItem>
+                {clusters &&
+                  clusters.map((option, index) => (
+                    <MenuItem
+                      key={`cluster-id-menu-option-${index}`}
+                      value={option.value}
+                    >
+                      {option.keywords.join(",")}
+                    </MenuItem>
+                  ))}
+              </TextField>
+            </Grid>
+          </Grid>
           {/* <Grid item xs={12} container alignItems="center" spacing={2}>
             <Grid item>
               <Typography fontWeight={900}>Sort By</Typography>
@@ -445,7 +521,7 @@ const FilterModal = () => {
               }}
               disableElevation
             >
-              Discard
+              Close
             </Button>
             <Button
               variant="contained"
