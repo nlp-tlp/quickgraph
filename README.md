@@ -5,15 +5,14 @@
 
 ### A Rapid Annotation Tool for Knowledge Graph Extraction from Technical Text
 
-
 [![Live Demo](https://img.shields.io/badge/-Live%20Demo-brightgreen?style=flat&logo=firefoxbrowser&logoColor=white)](https://quickgraph.tech)
 [![Video Demo](https://img.shields.io/badge/-Video%20Demo-red?style=flat&logo=youtube&logoColor=white)](https://youtu.be/DTWrR67-nCU)
 [![Documentation](https://img.shields.io/badge/-Documentation-blue?style=flat&logo=github&logoColor=white)](https://docs.quickgraph.tech)
 
 
 > [!IMPORTANT]
-> QuickGraph v2 is currently being released publicly 🚧
-> We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only. Please check back for updates. Feel free to checkout `v2` branch to checkout the new release, however please expect there to be issues until its merged into `main`.
+> QuickGraph v2 is currently being rolled out 🚧
+> We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only.
 
 <div>
   <img src="./client/public/static/annotation_interface_light.png">
@@ -27,8 +26,6 @@
   - [Installation](#installation)
 - [Architecture](#-architecture)
 - [Usage](#-usage)
-- [Roadmap](#-roadmap)
-- [Known Issues](#-known-issues)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Contact](#-contact)
@@ -42,7 +39,7 @@ QuickGraph is a collaborative annotation tool for rapid multi-task information e
 - Entity and relation propagation
 - Text clustering for annotation consistency
 - Multi-user collaboration support
-- Real-time annotation tracking
+- Real-time knowledge graph creation from annotations
 - Interactive visualization
 - Comprehensive analytics dashboard
 
@@ -67,9 +64,6 @@ git clone https://github.com/nlp-tlp/quickgraph.git
 cd quickgraph
 ```
 
-<!-- 2. Get the documentation static information...
-This might take a few minutes, as there is 600mb of static files... -->
-
 2. Build and run using Docker Compose:
 ```bash
 docker compose up --build
@@ -78,7 +72,7 @@ docker compose up --build
 The services will be available at:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
-<!-- - Documentation: http://localhost:4000 -->
+- Documentation: http://localhost:4000
 - MongoDB: localhost:27018
 
 ### Development Installation
@@ -116,36 +110,8 @@ QuickGraph consists of four main components:
 
 ## 🎯 Usage
 
-...
+Once the docker containers have been set up, simply run `docker compose up` then navigate to `http://localhost:3000` in your browser to use QuickGraph.
 
-## 🗺 Roadmap
-
-### Q4 2024
-- [ ] Release of QuickGraph v2
-- [ ] Dynamic ontology modification
-- [ ] Improved graph performance
-- [ ] Enhanced relation suggestion system
-
-### Q1 2025
-- [ ] Open relation annotation for multi-user environments
-- [ ] Advanced document distribution methods
-- [ ] Project initialization from QuickGraph artifacts
-- [ ] Enhanced dashboard analytics
-- [ ] Relation propagation for open relation annotation
-
-### Q2 2025
-- [ ] Advanced filtering capabilities
-- [ ] Real-time collaboration features
-- [ ] API improvements
-- [ ] Performance optimization for large datasets
-
-## 🐛 Known Issues
-
-- Download summary inconsistencies in multi-user environment
-- Inter-annotator agreement aggregation issues
-- Graph performance with large datasets
-- Token selection performance on large documents
-- Relation badge visual inconsistencies
 
 ## 🤝 Contributing
 
