@@ -74,17 +74,20 @@ class EnrichedItem(BaseItem):
         description="An object of extra fields supplied with the dataset item.",
     )
     entities: Optional[list] = Field(
-        default=[], description="List of entities associated with this dataset item."
+        default_factory=list,
+        description="List of entities associated with this dataset item.",
     )
     relations: Optional[list] = Field(
-        default=[], description="List of relations associated with this dataset item."
+        default_factory=list,
+        description="List of relations associated with this dataset item.",
     )
     cluster_id: int = Field(default=-1, description="The cluster id of the item")
     cluster_keywords: List[str] = Field(
-        default=[], description="Top keywords describing the cluster"
+        default_factory=list, description="Top keywords describing the cluster"
     )
     flags: List[str] = Field(
-        default=[], description="List of flags associated with this dataset item"
+        default_factory=list,
+        description="List of flags associated with this dataset item",
     )
 
     dataset_id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId)
@@ -215,7 +218,7 @@ class Dataset(BaseDataset):
     )
     size: Union[None, int] = Field(default=None, description="Size of items in dataset")
     projects: List[DatasetProject] = Field(
-        default=[], description="Set of projects using dataset"
+        default_factory=list, description="Set of projects using dataset"
     )
     project: Optional[DatasetProject] = Field(
         default=None, description='Details of linked project if "project dataset"'

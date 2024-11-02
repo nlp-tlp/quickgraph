@@ -15,7 +15,6 @@ from ..dependencies import (
     get_active_project_user,
     get_db,
     get_user,
-    valid_project,
     valid_project_manager,
 )
 from ..users.schemas import UserDocumentModel

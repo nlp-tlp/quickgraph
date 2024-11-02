@@ -173,17 +173,15 @@ async def prepare_project_resources(
     db: AsyncIOMotorDatabase, resource_ids: List[str]
 ) -> Optional[dict]:
     """Prepares project resource(s) by finding them via their UUID and associates to the project.
+
     NOTE:
         - resource_ids can be any classification/sub_classification e.g. ontologies or pre-annotations.
     """
-    resources = (
-        await db["resources"]
-        .find({"_id": {"$in": [ObjectId(id) for id in resource_ids]}})
-        .to_list(None)
-    )
-
+    resources = await db.resources.find(
+        {"_id": {"$in": [ObjectId(id) for id in resource_ids]}}
+    ).to_list(None)
     if len(resources) == 0:
-        return
+        return None
     return resources
 
 
@@ -533,7 +531,7 @@ async def create_project(
     resource_ids = project.pop("blueprint_resource_ids")
     resources = await prepare_project_resources(db=db, resource_ids=resource_ids)
     if resources is None:
-        return
+        return None
 
     # Create base project
     new_project = await db.projects.insert_one(

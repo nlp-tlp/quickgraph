@@ -268,6 +268,8 @@ async def update_one_resource(
 
     body = body.model_dump(exclude_none=True)
     body["updated_at"] = datetime.utcnow()
+    if "project_id" in body:
+        body["project_id"] = ObjectId(body["project_id"])
 
     if "content" in body:
         logger.info("Updating ontology content")

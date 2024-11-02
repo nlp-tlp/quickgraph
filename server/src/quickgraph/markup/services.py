@@ -3,9 +3,9 @@
 import itertools
 import logging
 import re
+import traceback
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-import traceback
 
 from bson import ObjectId
 from fastapi import HTTPException, status
@@ -817,6 +817,9 @@ async def get_project(db: AsyncIOMotorDatabase, project_id: str, username: str):
 async def get_ontology(
     db: AsyncIOMotorDatabase, project_id: ObjectId, annotation_type: str
 ) -> List[OntologyItem]:
+    logger.debug(
+        f"Fetching ontology for project_id: {project_id}, annotation_type: {annotation_type}"
+    )
     ontology_data = await db.resources.find_one(
         {
             "project_id": project_id,
@@ -825,8 +828,13 @@ async def get_ontology(
         },
         {"content": 1},
     )
-    logger.info(f"ontology_data: {ontology_data}")
-    return [OntologyItem.parse_obj(o) for o in ontology_data["content"]]
+    if ontology_data is None:
+        logger.warning(
+            f"No ontology data found for project_id: {project_id}, annotation_type: {annotation_type}"
+        )
+        return []
+    ontology_items = [OntologyItem(**o) for o in ontology_data["content"]]
+    return ontology_items
 
 
 async def apply_annotation(
@@ -1256,9 +1264,6 @@ async def accept_annotation(
             entity_ids, relation_ids = await accept_single_relation_annotation(
                 db=db, markup_id=markup_id, username=username
             )
-
-            logger.info("entity_ids, relation_ids", entity_ids, relation_ids)
-
             if entity_ids and relation_ids:
                 return OutMarkupAccept(
                     count=1,
