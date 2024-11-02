@@ -1,4 +1,4 @@
-import { Grid, Typography, Tooltip } from "@mui/material";
+import { Grid, Typography, Tooltip, Chip } from "@mui/material";
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import moment from "moment";
@@ -42,46 +42,40 @@ export const Dataset = ({
       field: "name",
       headerName: "Name",
       flex: 1,
+      maxWidth: 240,
       align: "center",
       headerAlign: "center",
-      // renderCell: (params) =>
-      //   params.row.created_by !== "system" ? (
-      //     <Link
-      //       to={`/dataset-management/${params.row.id}`}
-      //       key={`dataset-${params.row.id}`}
-      //       target="_blank"
-      //       rel="noopener noreferrer"
-      //       style={{
-      //         color: [values.dataset.id].includes(params.id) && "white",
-      //       }}
-      //     >
-      //       {params.row.name}
-      //     </Link>
-      //   ) : (
-      //     params.row.name
-      //   ),
+      renderCell: (params) => (
+        <Link
+          to={`/dataset-management/${params.row.id}`}
+          key={`dataset-${params.row.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {params.row.name}
+        </Link>
+      ),
     },
     {
       field: "description",
       headerName: "Description",
       flex: 1,
-      maxWidth: 360,
-      align: "center",
       headerAlign: "center",
-      // renderCell: (params) => (
-      //   <Tooltip title={params.row.description} arrow>
-      //     <div
-      //       style={{
-      //         whiteSpace: "nowrap",
-      //         overflow: "hidden",
-      //         textOverflow: "ellipsis",
-      //         cursor: "help",
-      //       }}
-      //     >
-      //       {params.row.description}
-      //     </div>
-      //   </Tooltip>
-      // ),
+      align: "left",
+      renderCell: (params) => (
+        <Tooltip title={params.row.description} arrow>
+          <div
+            style={{
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              cursor: "help",
+            }}
+          >
+            {params.row.description}
+          </div>
+        </Tooltip>
+      ),
     },
     {
       field: "size",
@@ -89,6 +83,14 @@ export const Dataset = ({
       maxWidth: 100,
       align: "center",
       headerAlign: "center",
+      renderCell: (params) => (
+        <Chip
+          label={params.row.size}
+          variant="outlined"
+          size="small"
+          color="primary"
+        />
+      ),
     },
     {
       field: "is_annotated",
@@ -96,23 +98,19 @@ export const Dataset = ({
       maxWidth: 100,
       align: "center",
       headerAlign: "center",
-      // renderCell: (params) => (
-      //   <Tooltip
-      //     title="Selecting this dataset will automatically load its associated annotations"
-      //     arrow
-      //   >
-      //     <div
-      //       style={{
-      //         whiteSpace: "nowrap",
-      //         overflow: "hidden",
-      //         textOverflow: "ellipsis",
-      //         cursor: "help",
-      //       }}
-      //     >
-      //       {params.row.is_annotated ? "True" : "False"}
-      //     </div>
-      //   </Tooltip>
-      // ),
+      renderCell: (params) => (
+        <Tooltip
+          title="Selecting this dataset will automatically load its associated annotations"
+          arrow
+        >
+          <Chip
+            label={params.row.is_annotated ? "True" : "False"}
+            color="primary"
+            variant="outlined"
+            size="small"
+          />
+        </Tooltip>
+      ),
     },
     {
       field: "created_by",
@@ -121,6 +119,14 @@ export const Dataset = ({
       maxWidth: 120,
       align: "center",
       headerAlign: "center",
+      renderCell: (params) => (
+        <Chip
+          label={params.row.created_by}
+          variant="outlined"
+          size="small"
+          color="primary"
+        />
+      ),
     },
     // {
     //   field: "preprocessing",
@@ -140,14 +146,14 @@ export const Dataset = ({
       align: "center",
       headerAlign: "center",
       maxWidth: 100,
-      // valueGetter: (params) => `${params.row.projects.length}`,
+      valueGetter: (value) => value.length || 0,
     },
     {
       field: "updated_at",
       headerName: "Last Updated",
       flex: 1,
       maxWidth: 160,
-      // valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
+      valueGetter: (value) => moment.utc(value).fromNow(),
       align: "center",
       headerAlign: "center",
     },
@@ -163,12 +169,9 @@ export const Dataset = ({
           label="Toggle dataset"
           title="Assign this dataset to the project"
           onClick={() => handleSelection(params.row)}
-          // color={
-          //   [values.dataset.id].includes(params.id) ? "primary" : "default"
-          // }
           sx={{
             color: [values.dataset.id].includes(params.id)
-              ? "white"
+              ? theme.palette.primary.main
               : theme.palette.neutral.main,
           }}
         />,
@@ -176,7 +179,7 @@ export const Dataset = ({
     },
   ];
 
-  const rows = datasets?.map((d) => ({ ...d, id: d._id }));
+  const rows = datasets?.map((d) => ({ ...d, id: d._id })) || [];
 
   const handleRowStyle = (row) => {
     if (values.dataset.id === null) {
@@ -213,6 +216,7 @@ export const Dataset = ({
             disableMultipleSelection={true}
             disableSelectionOnClick
             getRowClassName={(params) => handleRowStyle(params.row)}
+            columnVisibilityModel={{ id: false }}
           />
         </div>
       )}

@@ -1,5 +1,5 @@
 import "./grid-table.css";
-import { Grid, Typography, Tooltip } from "@mui/material";
+import { Grid, Typography, Tooltip, Chip } from "@mui/material";
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import moment from "moment";
@@ -58,30 +58,35 @@ export const Ontologies = ({
       field: "sub_classification",
       headerName: "Type",
       flex: 1,
-      maxWidth: 120,
+      maxWidth: 80,
       align: "center",
       headerAlign: "center",
+      renderCell: (params) => (
+        <Chip
+          label={params.row.sub_classification}
+          color="primary"
+          size="small"
+          variant="outlined"
+        />
+      ),
     },
     {
       field: "name",
       headerName: "Name",
       flex: 1,
       maxWidth: 140,
-      align: "center",
+      align: "left",
       headerAlign: "center",
-      // renderCell: (params) =>
-      //   params.row.created_by !== "system" ? (
-      //     <Link
-      //       to={`/resource-management/${params.row.id}`}
-      //       key={`resource-${params.row.id}`}
-      //       target="_blank"
-      //       rel="noopener noreferrer"
-      //     >
-      //       {params.row.name}
-      //     </Link>
-      //   ) : (
-      //     params.row.name
-      //   ),
+      renderCell: (params) => (
+        <Link
+          to={`/resource-management/${params.row.id}`}
+          key={`resource-${params.row.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {params.row.name}
+        </Link>
+      ),
     },
     {
       field: "size",
@@ -90,6 +95,14 @@ export const Ontologies = ({
       maxWidth: 140,
       align: "center",
       headerAlign: "center",
+      renderCell: (params) => (
+        <Chip
+          label={params.row.size}
+          variant="outlined"
+          size="small"
+          color="primary"
+        />
+      ),
     },
     {
       field: "created_by",
@@ -98,6 +111,14 @@ export const Ontologies = ({
       flex: 1,
       align: "center",
       headerAlign: "center",
+      renderCell: (params) => (
+        <Chip
+          label={params.row.created_by}
+          variant="outlined"
+          size="small"
+          color="primary"
+        />
+      ),
     },
     // {
     //   field: "created_at",
@@ -145,7 +166,7 @@ export const Ontologies = ({
       field: "updated_at",
       headerName: "Last Updated",
       maxWidth: 120,
-      // valueGetter: (params) => moment.utc(params.row.updated_at).fromNow(),
+      valueGetter: (value) => moment.utc(value).fromNow(),
       flex: 1,
       align: "center",
       headerAlign: "center",
@@ -167,7 +188,7 @@ export const Ontologies = ({
               values.resources.ontology.entity.id,
               values.resources.ontology.relation.id,
             ].includes(params.id)
-              ? "white"
+              ? theme.palette.primary.main
               : theme.palette.neutral.main,
           }}
           disabled={
@@ -187,9 +208,10 @@ export const Ontologies = ({
     },
   ];
 
-  const rows = resources
-    .filter((r) => r.classification === "ontology")
-    .map((r) => ({ ...r, id: r._id }));
+  const rows =
+    resources
+      .filter((r) => r.classification === "ontology")
+      .map((r) => ({ ...r, id: r._id })) || [];
 
   const handleRowStyle = (row) => {
     if (row.sub_classification === "relation") {
@@ -251,6 +273,7 @@ export const Ontologies = ({
             disableMultipleSelection={true}
             disableSelectionOnClick
             getRowClassName={(params) => handleRowStyle(params.row)}
+            columnVisibilityModel={{ id: false }}
           />
         </div>
       )}

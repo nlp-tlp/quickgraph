@@ -17,16 +17,13 @@ import {
   IconButton,
   CircularProgress,
 } from "@mui/material";
-import LoadingButton from "@mui/lab/LoadingButton";
 import useDataset from "../../shared/hooks/api/dataset";
 import DeleteIcon from "@mui/icons-material/Delete";
 import moment from "moment";
 import { useParams, Link } from "react-router-dom";
 import RichTable from "../../shared/components/RichTable";
 import ErrorAlert from "../../shared/components/ErrorAlert";
-import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import DownloadIcon from "@mui/icons-material/Download";
-import ShareIcon from "@mui/icons-material/Share";
 import MainContainer from "../../shared/components/Layout/MainContainer";
 import UploadModal from "./UploadModal";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
@@ -81,14 +78,9 @@ const Dataset = () => {
     uploadDatasetItems,
   } = useDataset();
 
-  // Check if the dataset is a project dataset
   const isProjectDataset =
     !loading && !dataset.is_blueprint && dataset.hasOwnProperty("project");
   const project = isProjectDataset && dataset.project;
-
-  // Check if the dataset should be disabled based on its creator
-  const isSystemDataset = dataset.created_by === "system";
-  const disableDatasetActions = dataset.created_by ? isSystemDataset : true;
 
   useEffect(() => {
     if (loading) {
@@ -136,21 +128,24 @@ const Dataset = () => {
       flex: 1,
       headerName: "Text",
       headerAlign: "center",
-      align: "center",
-      // renderCell: (params) => (
-      //   <Tooltip title={params.row.text}>
-      //     <div
-      //       style={{
-      //         whiteSpace: "nowrap",
-      //         overflow: "hidden",
-      //         textOverflow: "ellipsis",
-      //         cursor: "help",
-      //       }}
-      //     >
-      //       {params.row.text}
-      //     </div>
-      //   </Tooltip>
-      // ),
+      align: "left",
+      renderCell: (params) => {
+        if (!params?.value) return "";
+        return (
+          <Tooltip title={params.value}>
+            <div
+              style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                cursor: "help",
+              }}
+            >
+              {params.value}
+            </div>
+          </Tooltip>
+        );
+      },
     },
     {
       field: "tokens",
@@ -159,72 +154,73 @@ const Dataset = () => {
       headerAlign: "center",
       align: "center",
       maxWidth: 100,
-      // valueGetter: (params) => `${params.row.tokens.length}`,
+      valueGetter: (value) => value?.length ?? 0,
     },
-    // {
-    //   field: "external_id",
-    //   headerName: "External ID",
-    //   flex: 1,
-    //   headerAlign: "center",
-    //   align: "center",
-    //   maxWidth: 120,
-    //   // valueGetter: (params) => params.row.external_id ?? "Not assigned",
-    // },
-    // {
-    //   field: "extra_fields",
-    //   headerName: "Extra Fields",
-    //   flex: 1,
-    //   headerAlign: "center",
-    //   align: "center",
-    //   maxWidth: 180,
-    //   // renderCell: (params) => (
-    //   //   <Tooltip
-    //   //     title={
-    //   //       params.row.extra_fields
-    //   //         ? JSON.stringify(params.row.extra_fields)
-    //   //         : "Not assigned"
-    //   //     }
-    //   //   >
-    //   //     <div
-    //   //       style={{
-    //   //         whiteSpace: "nowrap",
-    //   //         overflow: "hidden",
-    //   //         textOverflow: "ellipsis",
-    //   //         cursor: "help",
-    //   //       }}
-    //   //     >
-    //   //       {params.row.extra_fields
-    //   //         ? `Fields: ${
-    //   //             Object.keys(params.row.extra_fields).length
-    //   //           } (hover to reveal)`
-    //   //         : "Not assigned"}
-    //   //     </div>
-    //   //   </Tooltip>
-    //   // ),
-    // },
-    // {
-    //   field: "is_annotated",
-    //   headerName: "Annotations",
-    //   headerAlign: "center",
-    //   align: "center",
-    //   flex: 1,
-    //   // valueGetter: (params) =>
-    //   //   `E: ${params.row.entities.length} | R: ${params.row.relations.length}`,
-    //   maxWidth: 160,
-    //   minWidth: 100,
-    //   hide: !dataset.is_annotated,
-    // },
+    {
+      field: "external_id",
+      headerName: "External ID",
+      flex: 1,
+      headerAlign: "center",
+      align: "center",
+      maxWidth: 120,
+      valueGetter: (value) => value ?? "Not assigned",
+    },
+    {
+      field: "extra_fields",
+      headerName: "Extra Fields",
+      flex: 1,
+      headerAlign: "center",
+      align: "center",
+      maxWidth: 180,
+      renderCell: (params) => {
+        if (!params?.row?.extra_fields) return "Not assigned";
+        return (
+          <Tooltip title={JSON.stringify(params.row.extra_fields)}>
+            <div
+              style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                cursor: "help",
+              }}
+            >
+              {`Fields: ${
+                Object.keys(params.row.extra_fields).length
+              } (hover to reveal)`}
+            </div>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      field: "is_annotated",
+      headerName: "Annotations",
+      headerAlign: "center",
+      align: "center",
+      flex: 1,
+      renderCell: (params) => {
+        if (!params?.row) return "E: 0 | R: 0";
+        const entities = params.row.entities?.length || 0;
+        const relations = params.row.relations?.length || 0;
+        return `E: ${entities} | R: ${relations}`;
+      },
+      maxWidth: 160,
+      minWidth: 100,
+      hide: !dataset?.is_annotated,
+    },
     {
       field: "created_at",
       headerName: "Created",
       headerAlign: "center",
       align: "center",
-      // valueGetter: (params) => shortestFromNow(params.row.updated_at),
+      valueGetter: (value) => shortestFromNow(value),
       minWidth: 120,
     },
   ];
 
-  const rows = dataset.items?.map((i) => ({ ...i, id: i._id }));
+  const rows = dataset?.items?.map((i) => ({ ...i, id: i._id })) || [];
+
+  console.log("rows", rows);
 
   return (
     <>
@@ -446,7 +442,7 @@ const Dataset = () => {
                       </Box>
                     )}
 
-                    {!disableDatasetActions && !isProjectDataset && (
+                    {!dataset.read_only && !isProjectDataset && (
                       <>
                         <Divider />
                         <Box p={2} sx={{ textAlign: "left" }}>
@@ -549,7 +545,7 @@ const Dataset = () => {
                       >
                         Download
                       </Button>
-                      {!disableDatasetActions && (
+                      {!dataset.read_only && (
                         <>
                           <Button
                             title="Click to upload additional items to this dataset"
@@ -580,7 +576,7 @@ const Dataset = () => {
                       </Button> */}
                         </>
                       )}
-                      {!disableDatasetActions && (
+                      {!dataset.read_only && (
                         <>
                           <Divider orientation="vertical" />
                           <Button
@@ -646,7 +642,7 @@ const Dataset = () => {
                       cols={columns}
                       rows={rows}
                       noRowsMessageName="No data set items exist"
-                      checkboxSelection={!disableDatasetActions}
+                      checkboxSelection={!dataset.read_only}
                       selectionModel={selectedItemIds}
                       setSelectionModel={setSelectedItemIds}
                       pageSize={10}
