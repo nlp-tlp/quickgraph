@@ -61,7 +61,7 @@ const Contexts = {
     type: "external",
   },
   "/dashboard/knowledge-graph": {
-    text: "To learn more about knowledge graphs in QuickGraph - ",
+    text: "If your graph doesn't show, try to zoom out. To learn more about knowledge graphs in QuickGraph - ",
     anchorText: "click here.",
     link: DocsLinks.dashboard["knowledge-graph"],
     type: "external",
