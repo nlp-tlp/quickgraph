@@ -3,7 +3,7 @@ import "./App.css";
 import { Helmet } from "react-helmet";
 import { Route, BrowserRouter, Routes, Navigate } from "react-router-dom";
 import CssBaseline from "@mui/material/CssBaseline";
-import { useMediaQuery, CircularProgress } from "@mui/material";
+import { useMediaQuery, CircularProgress, Box } from "@mui/material";
 import { theme } from "./theme";
 
 // Routes
@@ -76,7 +76,21 @@ function App() {
 
     return (
       <ErrorBoundary>
-        <Suspense fallback={<CircularProgress />}>
+        <Suspense
+          fallback={
+            <Box
+              sx={{
+                height: "100vh",
+                width: "100vw",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          }
+        >
           <Helmet>
             <title>{route.title} | QuickGraph</title>
           </Helmet>
