@@ -1,4 +1,4 @@
-import React, { forwardRef, useMemo } from "react";
+import React, { forwardRef, useMemo, useEffect } from "react";
 import { getDescendantIds } from "../../../../../shared/utils/treeView";
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 import { TreeItem2 } from "@mui/x-tree-view/TreeItem2";
@@ -9,6 +9,7 @@ import CircleIcon from "@mui/icons-material/Circle";
 const StyledTreeItem2 = styled(TreeItem2)(({ theme }) => ({
   "& .MuiTreeItem-content": {
     border: "1px solid transparent",
+    backgroundColor: "transparent",
     borderRadius: 0,
     marginBottom: 2,
     color: theme.palette.text.primary,
@@ -44,7 +45,7 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
 
   const handleIconContainerClick = (event) => {
     interactions.handleExpansion(event);
-    event.stopPropagation(); // Prevents the content click handler from being triggered
+    event.stopPropagation();
   };
 
   const contentWithColorIcon = (
@@ -71,7 +72,7 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
       label={contentWithColorIcon}
       slotProps={{
         content: {
-          onClick: handleContentClick,
+          // onClick: handleContentClick,
           sx: {
             "&:hover": {
               backgroundColor: `${itemColor}20`,
@@ -96,45 +97,66 @@ const findItem = (id, items) => {
   return null;
 };
 
+const getAllItemIds = (items) => {
+  let allIds = [];
+  items.forEach((item) => {
+    allIds.push(item.id);
+    if (item.children) {
+      allIds = [...allIds, ...getAllItemIds(item.children)];
+    }
+  });
+  return allIds;
+};
+
 export const FilterSelectHierarchy = ({ ontology, filters, setFilters }) => {
   const getItemLabel = (item) => item.name;
   const getItemId = (item) => item.id;
 
-  const handleSelectedItemsChange = (event, nodeId) => {
-    // Toggles item to be excluded from selection - this includes descendants
-    const items = [...filters.exclude_ontology_item_ids];
-    // Get descendants
-    const descendantIds = getDescendantIds(ontology, nodeId);
-    const index = items.indexOf(nodeId);
-
-    if (index === -1) {
-      // Item is not excluded, so add it and its descendants
-      const newItems = [...new Set([...items, ...[nodeId, ...descendantIds]])];
-      setFilters({ exclude_ontology_item_ids: newItems });
-    } else {
-      // Item is already excluded, add it back in
+  // Initialize with no items excluded
+  useEffect(() => {
+    if (!filters.exclude_ontology_item_ids) {
       setFilters({
-        exclude_ontology_item_ids: items.filter(
-          (i) => ![nodeId, ...descendantIds].includes(i)
-        ),
+        ...filters,
+        exclude_ontology_item_ids: [],
+      });
+    }
+  }, [ontology]);
+
+  const handleSelectedItemToggle = (event, nodeId) => {
+    // Get descendants of the clicked item
+    const descendantIds = getDescendantIds(ontology, nodeId);
+    const currentExcluded = filters.exclude_ontology_item_ids || [];
+
+    // Check if the item is currently excluded
+    const isExcluded = currentExcluded.includes(nodeId);
+
+    if (!isExcluded) {
+      // Add the clicked item and its descendants to excluded list
+      const itemsToExclude = [nodeId, ...descendantIds];
+      const newExcludedItems = [...currentExcluded, ...itemsToExclude];
+
+      setFilters({
+        ...filters,
+        exclude_ontology_item_ids: [...new Set(newExcludedItems)],
+      });
+    } else {
+      // Remove the clicked item and its descendants from excluded list
+      const itemsToInclude = [nodeId, ...descendantIds];
+      const newExcludedItems = currentExcluded.filter(
+        (id) => !itemsToInclude.includes(id)
+      );
+
+      setFilters({
+        ...filters,
+        exclude_ontology_item_ids: newExcludedItems,
       });
     }
   };
 
-  const getAllItemIds = (items) => {
-    let allIds = [];
-    items.forEach((item) => {
-      allIds.push(item.id);
-      if (item.children) {
-        allIds = [...allIds, ...getAllItemIds(item.children)];
-      }
-    });
-    return allIds;
-  };
-
+  // Get all item IDs and filter out the excluded ones to get selected items
   const allItemIds = getAllItemIds(ontology);
   const selectedItems = allItemIds.filter(
-    (id) => !filters.exclude_ontology_item_ids.includes(id)
+    (id) => !filters.exclude_ontology_item_ids?.includes(id)
   );
 
   return (
@@ -153,7 +175,7 @@ export const FilterSelectHierarchy = ({ ontology, filters, setFilters }) => {
           fullname: findItem(item.itemId, ontology)?.fullname,
         }),
       }}
-      onSelectedItemsChange={handleSelectedItemsChange}
+      onItemSelectionToggle={handleSelectedItemToggle}
       selectedItems={selectedItems}
       multiSelect
       checkboxSelection
