@@ -1,6 +1,6 @@
 <div style="display:flex;align-items:center;flex-direction:row;justify-content:center">
-<h1>QuickGraph</h1>
 <img src="quickgraph_logo.png" width="32" height="32">
+<h1>QuickGraph</h1>
 </div>
 
 ### A Rapid Annotation Tool for Knowledge Graph Extraction from Technical Text

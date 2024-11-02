@@ -24,7 +24,7 @@ services:
       - "3000:3000"
     depends_on:
       - server
-      # - docs
+      - docs
     networks:
       - app-network
     environment:
@@ -43,14 +43,32 @@ services:
     networks:
       - app-network
 
-  # docs:
-  #   build:
-  #     context: ./docs
-  #   ports:
-  #     - "4000:4000"
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    volumes:
+      - static_img:/app/static/img
+    networks:
+      - app-network
+
+  init-static-img:
+    image: curlimages/curl:latest
+    volumes:
+      - static_img:/static_img
+    command: >
+      sh -c '
+      cd /static_img &&
+      curl -L https://nlp-tlp.s3.ap-southeast-2.amazonaws.com/static-img.tar.gz | tar xz --strip-components=3
+      '
+    depends_on:
+      - docs
 
 volumes:
   mongodb_data:
+  static_img:
 
 networks:
   app-network:
