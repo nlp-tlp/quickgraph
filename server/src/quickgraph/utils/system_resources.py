@@ -1,11 +1,14 @@
+"""System resources."""
+
 import random
 
-from .dataset.schemas import BaseItem, CreateDataset, Preprocessing, TokenizerEnum
-from .resources.schemas import (
-    BaseResourceModel,
+from ..dataset.schemas import BaseItem, CreateDataset, Preprocessing, TokenizerEnum
+from ..resources.schemas import (
+    BaseOntologyItem,
     EntityPreannotation,
-    OntologyItem,
+    BaseOntologyItem,
     ResourceClassifications,
+    CreateResourceModel,
 )
 
 # All but two MUI colors sampled from 500 on this palette: https://www.muicss.com/docs/v1/getting-started/colors
@@ -38,629 +41,695 @@ def get_random_color():
 
 # TODO: Add constraints and descriptions (esp. for ConceptNet5)
 resources = [
-    BaseResourceModel(
+    CreateResourceModel(
         name="CoNLL03",
         classification=ResourceClassifications.ontology,
         sub_classification="entity",
         content=[
-            OntologyItem(name="Organisation", color=get_random_color()),
-            OntologyItem(name="Person", color=get_random_color()),
-            OntologyItem(name="Location", color=get_random_color()),
-            OntologyItem(name="Miscellaneous", color=get_random_color()),
+            BaseOntologyItem(name="Organisation", color=get_random_color()),
+            BaseOntologyItem(name="Person", color=get_random_color()),
+            BaseOntologyItem(name="Location", color=get_random_color()),
+            BaseOntologyItem(name="Miscellaneous", color=get_random_color()),
         ],
+        is_blueprint=True,
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="SemEval07Task4",
         classification=ResourceClassifications.ontology,
         sub_classification="entity",
         content=[
-            OntologyItem(name="cause", color=get_random_color()),
-            OntologyItem(name="effect", color=get_random_color()),
-            OntologyItem(name="content", color=get_random_color()),
-            OntologyItem(name="container", color=get_random_color()),
-            OntologyItem(name="instrument", color=get_random_color()),
-            OntologyItem(name="agency", color=get_random_color()),
-            OntologyItem(name="origin", color=get_random_color()),
-            OntologyItem(name="entity", color=get_random_color()),
-            OntologyItem(name="part", color=get_random_color()),
-            OntologyItem(name="whole", color=get_random_color()),
-            OntologyItem(name="product", color=get_random_color()),
-            OntologyItem(name="producer", color=get_random_color()),
-            OntologyItem(name="theme", color=get_random_color()),
-            OntologyItem(name="tool", color=get_random_color()),
+            BaseOntologyItem(name="cause", color=get_random_color()),
+            BaseOntologyItem(name="effect", color=get_random_color()),
+            BaseOntologyItem(name="content", color=get_random_color()),
+            BaseOntologyItem(name="container", color=get_random_color()),
+            BaseOntologyItem(name="instrument", color=get_random_color()),
+            BaseOntologyItem(name="agency", color=get_random_color()),
+            BaseOntologyItem(name="origin", color=get_random_color()),
+            BaseOntologyItem(name="entity", color=get_random_color()),
+            BaseOntologyItem(name="part", color=get_random_color()),
+            BaseOntologyItem(name="whole", color=get_random_color()),
+            BaseOntologyItem(name="product", color=get_random_color()),
+            BaseOntologyItem(name="producer", color=get_random_color()),
+            BaseOntologyItem(name="theme", color=get_random_color()),
+            BaseOntologyItem(name="tool", color=get_random_color()),
         ],
+        is_blueprint=True,
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="SemEval10Task8",
         classification=ResourceClassifications.ontology,
         sub_classification="entity",
         content=[
-            OntologyItem(name="cause", color=get_random_color()),
-            OntologyItem(name="effect", color=get_random_color()),
-            OntologyItem(name="content", color=get_random_color()),
-            OntologyItem(name="container", color=get_random_color()),
-            OntologyItem(name="instrument", color=get_random_color()),
-            OntologyItem(name="agency", color=get_random_color()),
-            OntologyItem(name="origin", color=get_random_color()),
-            OntologyItem(name="entity", color=get_random_color()),
-            OntologyItem(name="destination", color=get_random_color()),
-            OntologyItem(name="component", color=get_random_color()),
-            OntologyItem(name="whole", color=get_random_color()),
-            OntologyItem(name="product", color=get_random_color()),
-            OntologyItem(name="producer", color=get_random_color()),
-            OntologyItem(name="member", color=get_random_color()),
-            OntologyItem(name="collection", color=get_random_color()),
-            OntologyItem(name="message", color=get_random_color()),
-            OntologyItem(name="topic", color=get_random_color()),
+            BaseOntologyItem(name="cause", color=get_random_color()),
+            BaseOntologyItem(name="effect", color=get_random_color()),
+            BaseOntologyItem(name="content", color=get_random_color()),
+            BaseOntologyItem(name="container", color=get_random_color()),
+            BaseOntologyItem(name="instrument", color=get_random_color()),
+            BaseOntologyItem(name="agency", color=get_random_color()),
+            BaseOntologyItem(name="origin", color=get_random_color()),
+            BaseOntologyItem(name="entity", color=get_random_color()),
+            BaseOntologyItem(name="destination", color=get_random_color()),
+            BaseOntologyItem(name="component", color=get_random_color()),
+            BaseOntologyItem(name="whole", color=get_random_color()),
+            BaseOntologyItem(name="product", color=get_random_color()),
+            BaseOntologyItem(name="producer", color=get_random_color()),
+            BaseOntologyItem(name="member", color=get_random_color()),
+            BaseOntologyItem(name="collection", color=get_random_color()),
+            BaseOntologyItem(name="message", color=get_random_color()),
+            BaseOntologyItem(name="topic", color=get_random_color()),
         ],
+        is_blueprint=True,
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="OntoNotes",
         classification=ResourceClassifications.ontology,
         sub_classification="entity",
         content=[
-            OntologyItem(
+            BaseOntologyItem(
                 name="person",
                 color=MUI_COLOR_PALETTEE_500[0],
                 children=[
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="artist",
                         color=MUI_COLOR_PALETTEE_500[0],
                         children=[
-                            OntologyItem(name="actor", color=MUI_COLOR_PALETTEE_500[0]),
-                            OntologyItem(
+                            BaseOntologyItem(
+                                name="actor", color=MUI_COLOR_PALETTEE_500[0]
+                            ),
+                            BaseOntologyItem(
                                 name="author", color=MUI_COLOR_PALETTEE_500[0]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="director", color=MUI_COLOR_PALETTEE_500[0]
                             ),
-                            OntologyItem(name="music", color=MUI_COLOR_PALETTEE_500[0]),
+                            BaseOntologyItem(
+                                name="music", color=MUI_COLOR_PALETTEE_500[0]
+                            ),
                         ],
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="education",
                         color=MUI_COLOR_PALETTEE_500[0],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="studente", color=MUI_COLOR_PALETTEE_500[0]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="teacher", color=MUI_COLOR_PALETTEE_500[0]
                             ),
                         ],
                     ),
-                    OntologyItem(name="athlete", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="business", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="coach", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="doctor", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="legal", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="military", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(
+                    BaseOntologyItem(name="athlete", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="business", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="coach", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="doctor", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="legal", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="military", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(
                         name="political_figure", color=MUI_COLOR_PALETTEE_500[0]
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="religious_figure", color=MUI_COLOR_PALETTEE_500[0]
                     ),
-                    OntologyItem(name="title", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="title", color=MUI_COLOR_PALETTEE_500[0]),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="location",
                 color=MUI_COLOR_PALETTEE_500[1],
                 children=[
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="structure",
                         color=MUI_COLOR_PALETTEE_500[1],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="airport", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="government", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="hospital", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(name="hotel", color=MUI_COLOR_PALETTEE_500[1]),
-                            OntologyItem(
+                            BaseOntologyItem(
+                                name="hotel", color=MUI_COLOR_PALETTEE_500[1]
+                            ),
+                            BaseOntologyItem(
                                 name="restaurant", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="sports_facility", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="theatre", color=MUI_COLOR_PALETTEE_500[1]
                             ),
                         ],
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="geography",
                         color=MUI_COLOR_PALETTEE_500[1],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="body_of_water", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="island", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="mountain", color=MUI_COLOR_PALETTEE_500[1]
                             ),
                         ],
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="transit",
                         color=MUI_COLOR_PALETTEE_500[1],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="bridge", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="railway", color=MUI_COLOR_PALETTEE_500[1]
                             ),
-                            OntologyItem(name="road", color=MUI_COLOR_PALETTEE_500[1]),
+                            BaseOntologyItem(
+                                name="road", color=MUI_COLOR_PALETTEE_500[1]
+                            ),
                         ],
                     ),
-                    OntologyItem(name="celestial", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="city", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="country", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="park", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="celestial", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="city", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="country", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="park", color=MUI_COLOR_PALETTEE_500[1]),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="organisation",
                 color=MUI_COLOR_PALETTEE_500[2],
                 children=[
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="company",
                         color=MUI_COLOR_PALETTEE_500[2],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="broadcast", color=MUI_COLOR_PALETTEE_500[2]
                             ),
-                            OntologyItem(name="news", color=MUI_COLOR_PALETTEE_500[2]),
+                            BaseOntologyItem(
+                                name="news", color=MUI_COLOR_PALETTEE_500[2]
+                            ),
                         ],
                     ),
-                    OntologyItem(name="education", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="government", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="military", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="music", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(
+                    BaseOntologyItem(name="education", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(
+                        name="government", color=MUI_COLOR_PALETTEE_500[2]
+                    ),
+                    BaseOntologyItem(name="military", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(name="music", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(
                         name="political_party", color=MUI_COLOR_PALETTEE_500[2]
                     ),
-                    OntologyItem(name="sports_league", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="sports_team", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="transit", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(
+                    BaseOntologyItem(
+                        name="sports_league", color=MUI_COLOR_PALETTEE_500[2]
+                    ),
+                    BaseOntologyItem(
+                        name="sports_team", color=MUI_COLOR_PALETTEE_500[2]
+                    ),
+                    BaseOntologyItem(name="transit", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(
                         name="stock_exchange", color=MUI_COLOR_PALETTEE_500[2]
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="stock_exchange", color=MUI_COLOR_PALETTEE_500[2]
                     ),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="other",
                 color=MUI_COLOR_PALETTEE_500[3],
                 children=[
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="art",
                         color=MUI_COLOR_PALETTEE_500[3],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="broadcast", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(name="film", color=MUI_COLOR_PALETTEE_500[3]),
-                            OntologyItem(name="music", color=MUI_COLOR_PALETTEE_500[3]),
-                            OntologyItem(name="stage", color=MUI_COLOR_PALETTEE_500[3]),
-                            OntologyItem(
+                            BaseOntologyItem(
+                                name="film", color=MUI_COLOR_PALETTEE_500[3]
+                            ),
+                            BaseOntologyItem(
+                                name="music", color=MUI_COLOR_PALETTEE_500[3]
+                            ),
+                            BaseOntologyItem(
+                                name="stage", color=MUI_COLOR_PALETTEE_500[3]
+                            ),
+                            BaseOntologyItem(
                                 name="writing", color=MUI_COLOR_PALETTEE_500[3]
                             ),
                         ],
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="event",
                         color=MUI_COLOR_PALETTEE_500[3],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="accident", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="election", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="holiday", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="natural_disaster", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="protest", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="sports_event", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="violent_conflict", color=MUI_COLOR_PALETTEE_500[3]
                             ),
                         ],
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="health",
                         color=MUI_COLOR_PALETTEE_500[3],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="malady", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="treatment", color=MUI_COLOR_PALETTEE_500[3]
                             ),
                         ],
                     ),
-                    OntologyItem(name="award", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="body_part", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="currency", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(
+                    BaseOntologyItem(name="award", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="body_part", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="currency", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(
                         name="language",
                         color=MUI_COLOR_PALETTEE_500[3],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="programming_language",
                                 color=MUI_COLOR_PALETTEE_500[3],
                             ),
                         ],
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="living_thing",
                         color=MUI_COLOR_PALETTEE_500[3],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="animal", color=MUI_COLOR_PALETTEE_500[3]
                             ),
                         ],
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="product",
                         color=MUI_COLOR_PALETTEE_500[3],
                         children=[
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="camera", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(name="car", color=MUI_COLOR_PALETTEE_500[3]),
-                            OntologyItem(
+                            BaseOntologyItem(
+                                name="car", color=MUI_COLOR_PALETTEE_500[3]
+                            ),
+                            BaseOntologyItem(
                                 name="computer", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="mobile_phone", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="software", color=MUI_COLOR_PALETTEE_500[3]
                             ),
-                            OntologyItem(
+                            BaseOntologyItem(
                                 name="weapon", color=MUI_COLOR_PALETTEE_500[3]
                             ),
                         ],
                     ),
-                    OntologyItem(name="food", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="heritage", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="internet", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="legal", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="religion", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="scientific", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(
+                    BaseOntologyItem(name="food", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="heritage", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="internet", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="legal", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="religion", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(
+                        name="scientific", color=MUI_COLOR_PALETTEE_500[3]
+                    ),
+                    BaseOntologyItem(
                         name="sports_and_leisure", color=MUI_COLOR_PALETTEE_500[3]
                     ),
-                    OntologyItem(name="supernatural", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(
+                        name="supernatural", color=MUI_COLOR_PALETTEE_500[3]
+                    ),
                 ],
             ),
         ],
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="FIGER",
         classification=ResourceClassifications.ontology,
         sub_classification="entity",
+        is_blueprint=True,
         content=[
-            OntologyItem(
+            BaseOntologyItem(
                 name="person",
                 color=MUI_COLOR_PALETTEE_500[0],
                 children=[
-                    OntologyItem(name="actor", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="architect", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="artist", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="athlete", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="author", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="coach", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="director", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="doctor", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="engineer", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="musician", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="politician", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(
+                    BaseOntologyItem(name="actor", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="architect", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="artist", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="athlete", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="author", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="coach", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="director", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="doctor", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="engineer", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="musician", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(
+                        name="politician", color=MUI_COLOR_PALETTEE_500[0]
+                    ),
+                    BaseOntologyItem(
                         name="religious_leader", color=MUI_COLOR_PALETTEE_500[0]
                     ),
-                    OntologyItem(name="soldier", color=MUI_COLOR_PALETTEE_500[0]),
-                    OntologyItem(name="terrorist", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="soldier", color=MUI_COLOR_PALETTEE_500[0]),
+                    BaseOntologyItem(name="terrorist", color=MUI_COLOR_PALETTEE_500[0]),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="location",
                 color=MUI_COLOR_PALETTEE_500[1],
                 children=[
-                    OntologyItem(name="body_of_water", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="bridge", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="city", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="country", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="county", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="province", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="railway", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="road", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="island", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="glacier", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="astral_body", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="cemetery", color=MUI_COLOR_PALETTEE_500[1]),
-                    OntologyItem(name="park", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(
+                        name="body_of_water", color=MUI_COLOR_PALETTEE_500[1]
+                    ),
+                    BaseOntologyItem(name="bridge", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="city", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="country", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="county", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="province", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="railway", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="road", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="island", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="glacier", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(
+                        name="astral_body", color=MUI_COLOR_PALETTEE_500[1]
+                    ),
+                    BaseOntologyItem(name="cemetery", color=MUI_COLOR_PALETTEE_500[1]),
+                    BaseOntologyItem(name="park", color=MUI_COLOR_PALETTEE_500[1]),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="building",
                 color=MUI_COLOR_PALETTEE_500[2],
                 children=[
-                    OntologyItem(name="airport", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="dam", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="hospital", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="hotel", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="library", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="power_station", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(name="restaurant", color=MUI_COLOR_PALETTEE_500[2]),
-                    OntologyItem(
+                    BaseOntologyItem(name="airport", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(name="dam", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(name="hospital", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(name="hotel", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(name="library", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(
+                        name="power_station", color=MUI_COLOR_PALETTEE_500[2]
+                    ),
+                    BaseOntologyItem(
+                        name="restaurant", color=MUI_COLOR_PALETTEE_500[2]
+                    ),
+                    BaseOntologyItem(
                         name="sports_facility", color=MUI_COLOR_PALETTEE_500[2]
                     ),
-                    OntologyItem(name="theater", color=MUI_COLOR_PALETTEE_500[2]),
+                    BaseOntologyItem(name="theater", color=MUI_COLOR_PALETTEE_500[2]),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="organisation",
                 color=MUI_COLOR_PALETTEE_500[3],
                 children=[
-                    OntologyItem(name="airline", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="company", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(
+                    BaseOntologyItem(name="airline", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="company", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(
                         name="educational_institution", color=MUI_COLOR_PALETTEE_500[3]
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="fraternity_sorority", color=MUI_COLOR_PALETTEE_500[3]
                     ),
-                    OntologyItem(name="sports_league", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="sports_team", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(
+                    BaseOntologyItem(
+                        name="sports_league", color=MUI_COLOR_PALETTEE_500[3]
+                    ),
+                    BaseOntologyItem(
+                        name="sports_team", color=MUI_COLOR_PALETTEE_500[3]
+                    ),
+                    BaseOntologyItem(
                         name="terrorist_organization", color=MUI_COLOR_PALETTEE_500[3]
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="government_agency", color=MUI_COLOR_PALETTEE_500[3]
                     ),
-                    OntologyItem(name="government", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(
+                    BaseOntologyItem(
+                        name="government", color=MUI_COLOR_PALETTEE_500[3]
+                    ),
+                    BaseOntologyItem(
                         name="political_party", color=MUI_COLOR_PALETTEE_500[3]
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="educational_department", color=MUI_COLOR_PALETTEE_500[3]
                     ),
-                    OntologyItem(name="military", color=MUI_COLOR_PALETTEE_500[3]),
-                    OntologyItem(name="news_agency", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(name="military", color=MUI_COLOR_PALETTEE_500[3]),
+                    BaseOntologyItem(
+                        name="news_agency", color=MUI_COLOR_PALETTEE_500[3]
+                    ),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="product",
                 color=MUI_COLOR_PALETTEE_500[4],
                 children=[
-                    OntologyItem(name="engine", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="airplane", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="car", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="ship", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="spacecraft", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="camera", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="mobile_phone", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="computer", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="software", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="game", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="instrument", color=MUI_COLOR_PALETTEE_500[4]),
-                    OntologyItem(name="weapon", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(name="engine", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(name="airplane", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(name="car", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(name="ship", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(
+                        name="spacecraft", color=MUI_COLOR_PALETTEE_500[4]
+                    ),
+                    BaseOntologyItem(name="camera", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(
+                        name="mobile_phone", color=MUI_COLOR_PALETTEE_500[4]
+                    ),
+                    BaseOntologyItem(name="computer", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(name="software", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(name="game", color=MUI_COLOR_PALETTEE_500[4]),
+                    BaseOntologyItem(
+                        name="instrument", color=MUI_COLOR_PALETTEE_500[4]
+                    ),
+                    BaseOntologyItem(name="weapon", color=MUI_COLOR_PALETTEE_500[4]),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="art",
                 color=MUI_COLOR_PALETTEE_500[5],
                 children=[
-                    OntologyItem(name="film", color=MUI_COLOR_PALETTEE_500[5]),
-                    OntologyItem(name="play", color=MUI_COLOR_PALETTEE_500[5]),
-                    OntologyItem(name="written_work", color=MUI_COLOR_PALETTEE_500[5]),
-                    OntologyItem(name="newspaper", color=MUI_COLOR_PALETTEE_500[5]),
-                    OntologyItem(name="music", color=MUI_COLOR_PALETTEE_500[5]),
+                    BaseOntologyItem(name="film", color=MUI_COLOR_PALETTEE_500[5]),
+                    BaseOntologyItem(name="play", color=MUI_COLOR_PALETTEE_500[5]),
+                    BaseOntologyItem(
+                        name="written_work", color=MUI_COLOR_PALETTEE_500[5]
+                    ),
+                    BaseOntologyItem(name="newspaper", color=MUI_COLOR_PALETTEE_500[5]),
+                    BaseOntologyItem(name="music", color=MUI_COLOR_PALETTEE_500[5]),
                 ],
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="event",
                 color=MUI_COLOR_PALETTEE_500[6],
                 children=[
-                    OntologyItem(name="attack", color=MUI_COLOR_PALETTEE_500[6]),
-                    OntologyItem(name="election", color=MUI_COLOR_PALETTEE_500[6]),
-                    OntologyItem(name="protest", color=MUI_COLOR_PALETTEE_500[6]),
-                    OntologyItem(
+                    BaseOntologyItem(name="attack", color=MUI_COLOR_PALETTEE_500[6]),
+                    BaseOntologyItem(name="election", color=MUI_COLOR_PALETTEE_500[6]),
+                    BaseOntologyItem(name="protest", color=MUI_COLOR_PALETTEE_500[6]),
+                    BaseOntologyItem(
                         name="military_conflict", color=MUI_COLOR_PALETTEE_500[6]
                     ),
-                    OntologyItem(
+                    BaseOntologyItem(
                         name="natural_disaster", color=MUI_COLOR_PALETTEE_500[6]
                     ),
-                    OntologyItem(name="sports_event", color=MUI_COLOR_PALETTEE_500[6]),
-                    OntologyItem(
+                    BaseOntologyItem(
+                        name="sports_event", color=MUI_COLOR_PALETTEE_500[6]
+                    ),
+                    BaseOntologyItem(
                         name="terrorist_attack", color=MUI_COLOR_PALETTEE_500[6]
                     ),
                 ],
             ),
-            OntologyItem(name="time", color=get_random_color()),
-            OntologyItem(name="color", color=get_random_color()),
-            OntologyItem(name="award", color=get_random_color()),
-            OntologyItem(name="educational_degree", color=get_random_color()),
-            OntologyItem(name="title", color=get_random_color()),
-            OntologyItem(name="law", color=get_random_color()),
-            OntologyItem(name="ethnicity", color=get_random_color()),
-            OntologyItem(name="language", color=get_random_color()),
-            OntologyItem(name="religion", color=get_random_color()),
-            OntologyItem(name="god", color=get_random_color()),
-            OntologyItem(name="chemical_thing", color=get_random_color()),
-            OntologyItem(name="biological_thing", color=get_random_color()),
-            OntologyItem(name="medical_treatment", color=get_random_color()),
-            OntologyItem(name="disease", color=get_random_color()),
-            OntologyItem(name="symptom", color=get_random_color()),
-            OntologyItem(name="drug", color=get_random_color()),
-            OntologyItem(name="body_part", color=get_random_color()),
-            OntologyItem(name="living_thing", color=get_random_color()),
-            OntologyItem(name="animal", color=get_random_color()),
-            OntologyItem(name="food", color=get_random_color()),
-            OntologyItem(name="website", color=get_random_color()),
-            OntologyItem(name="broadcast_network", color=get_random_color()),
-            OntologyItem(name="broadcast_program", color=get_random_color()),
-            OntologyItem(name="tv_channel", color=get_random_color()),
-            OntologyItem(name="currency", color=get_random_color()),
-            OntologyItem(name="stock_exchange", color=get_random_color()),
-            OntologyItem(name="algorithm", color=get_random_color()),
-            OntologyItem(name="programming_language", color=get_random_color()),
-            OntologyItem(name="transit_system", color=get_random_color()),
-            OntologyItem(name="transit_line", color=get_random_color()),
+            BaseOntologyItem(name="time", color=get_random_color()),
+            BaseOntologyItem(name="color", color=get_random_color()),
+            BaseOntologyItem(name="award", color=get_random_color()),
+            BaseOntologyItem(name="educational_degree", color=get_random_color()),
+            BaseOntologyItem(name="title", color=get_random_color()),
+            BaseOntologyItem(name="law", color=get_random_color()),
+            BaseOntologyItem(name="ethnicity", color=get_random_color()),
+            BaseOntologyItem(name="language", color=get_random_color()),
+            BaseOntologyItem(name="religion", color=get_random_color()),
+            BaseOntologyItem(name="god", color=get_random_color()),
+            BaseOntologyItem(name="chemical_thing", color=get_random_color()),
+            BaseOntologyItem(name="biological_thing", color=get_random_color()),
+            BaseOntologyItem(name="medical_treatment", color=get_random_color()),
+            BaseOntologyItem(name="disease", color=get_random_color()),
+            BaseOntologyItem(name="symptom", color=get_random_color()),
+            BaseOntologyItem(name="drug", color=get_random_color()),
+            BaseOntologyItem(name="body_part", color=get_random_color()),
+            BaseOntologyItem(name="living_thing", color=get_random_color()),
+            BaseOntologyItem(name="animal", color=get_random_color()),
+            BaseOntologyItem(name="food", color=get_random_color()),
+            BaseOntologyItem(name="website", color=get_random_color()),
+            BaseOntologyItem(name="broadcast_network", color=get_random_color()),
+            BaseOntologyItem(name="broadcast_program", color=get_random_color()),
+            BaseOntologyItem(name="tv_channel", color=get_random_color()),
+            BaseOntologyItem(name="currency", color=get_random_color()),
+            BaseOntologyItem(name="stock_exchange", color=get_random_color()),
+            BaseOntologyItem(name="algorithm", color=get_random_color()),
+            BaseOntologyItem(name="programming_language", color=get_random_color()),
+            BaseOntologyItem(name="transit_system", color=get_random_color()),
+            BaseOntologyItem(name="transit_line", color=get_random_color()),
         ],
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="MaintIE-lite",
         classification=ResourceClassifications.ontology,
         sub_classification="entity",
+        is_blueprint=True,
         content=[
-            OntologyItem(name="Activity", color=MUI_COLOR_PALETTEE_500[0]),
-            OntologyItem(name="PhysicalObject", color=MUI_COLOR_PALETTEE_500[1]),
-            OntologyItem(name="State", color=MUI_COLOR_PALETTEE_500[2]),
-            OntologyItem(name="Process", color=MUI_COLOR_PALETTEE_500[3]),
-            OntologyItem(name="Property", color=MUI_COLOR_PALETTEE_500[4]),
+            BaseOntologyItem(name="Activity", color=MUI_COLOR_PALETTEE_500[0]),
+            BaseOntologyItem(name="PhysicalObject", color=MUI_COLOR_PALETTEE_500[1]),
+            BaseOntologyItem(name="State", color=MUI_COLOR_PALETTEE_500[2]),
+            BaseOntologyItem(name="Process", color=MUI_COLOR_PALETTEE_500[3]),
+            BaseOntologyItem(name="Property", color=MUI_COLOR_PALETTEE_500[4]),
         ],
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="MaintIE-lite",
         classification=ResourceClassifications.ontology,
         sub_classification="relation",
+        is_blueprint=True,
         content=[
-            OntologyItem(name="contains"),
-            OntologyItem(name="hasPart"),
-            OntologyItem(name="hasParticipant"),
-            OntologyItem(name="hasProperty"),
+            BaseOntologyItem(name="contains"),
+            BaseOntologyItem(name="hasPart"),
+            BaseOntologyItem(name="hasParticipant"),
+            BaseOntologyItem(name="hasProperty"),
         ],
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="ConceptNet5",
         classification=ResourceClassifications.ontology,
         sub_classification="relation",
+        is_blueprint=True,
         content=[
-            OntologyItem(name="RelatedTo"),
-            OntologyItem(name="FormOf"),
-            OntologyItem(name="IsA"),
-            OntologyItem(name="PartOf"),
-            OntologyItem(name="HasA"),
-            OntologyItem(name="UsedFor"),
-            OntologyItem(name="CapableOf"),
-            OntologyItem(name="AtLocation"),
-            OntologyItem(name="Causes"),
-            OntologyItem(name="HasSubevent"),
-            OntologyItem(name="HasFirstSubevent"),
-            OntologyItem(name="HasLastSubevent"),
-            OntologyItem(name="HasPrerequisite"),
-            OntologyItem(name="HasProperty"),
-            OntologyItem(name="MotivatedByGoal"),
-            OntologyItem(name="ObstructedBy"),
-            OntologyItem(name="Desires"),
-            OntologyItem(name="CreatedBy"),
-            OntologyItem(name="Synonym"),
-            OntologyItem(name="Antonym"),
-            OntologyItem(name="DistinctFrom"),
-            OntologyItem(name="DerivedFrom"),
-            OntologyItem(name="SymbolOf"),
-            OntologyItem(name="DefinedAs"),
-            OntologyItem(name="MannerOf"),
-            OntologyItem(name="LocatedNear"),
-            OntologyItem(name="HasContext"),
-            OntologyItem(name="EtymologicallyRelatedTo"),
-            OntologyItem(name="EtymologicallyDerivedFrom"),
-            OntologyItem(name="CausesDesire"),
-            OntologyItem(name="MadeOf"),
-            OntologyItem(name="ReceivesAction"),
-            OntologyItem(name="ExternalURL"),
+            BaseOntologyItem(name="RelatedTo"),
+            BaseOntologyItem(name="FormOf"),
+            BaseOntologyItem(name="IsA"),
+            BaseOntologyItem(name="PartOf"),
+            BaseOntologyItem(name="HasA"),
+            BaseOntologyItem(name="UsedFor"),
+            BaseOntologyItem(name="CapableOf"),
+            BaseOntologyItem(name="AtLocation"),
+            BaseOntologyItem(name="Causes"),
+            BaseOntologyItem(name="HasSubevent"),
+            BaseOntologyItem(name="HasFirstSubevent"),
+            BaseOntologyItem(name="HasLastSubevent"),
+            BaseOntologyItem(name="HasPrerequisite"),
+            BaseOntologyItem(name="HasProperty"),
+            BaseOntologyItem(name="MotivatedByGoal"),
+            BaseOntologyItem(name="ObstructedBy"),
+            BaseOntologyItem(name="Desires"),
+            BaseOntologyItem(name="CreatedBy"),
+            BaseOntologyItem(name="Synonym"),
+            BaseOntologyItem(name="Antonym"),
+            BaseOntologyItem(name="DistinctFrom"),
+            BaseOntologyItem(name="DerivedFrom"),
+            BaseOntologyItem(name="SymbolOf"),
+            BaseOntologyItem(name="DefinedAs"),
+            BaseOntologyItem(name="MannerOf"),
+            BaseOntologyItem(name="LocatedNear"),
+            BaseOntologyItem(name="HasContext"),
+            BaseOntologyItem(name="EtymologicallyRelatedTo"),
+            BaseOntologyItem(name="EtymologicallyDerivedFrom"),
+            BaseOntologyItem(name="CausesDesire"),
+            BaseOntologyItem(name="MadeOf"),
+            BaseOntologyItem(name="ReceivesAction"),
+            BaseOntologyItem(name="ExternalURL"),
         ],
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="Coreference",
         classification=ResourceClassifications.ontology,
         sub_classification="relation",
+        is_blueprint=True,
         content=[
-            OntologyItem(
+            BaseOntologyItem(
                 name="coref",
                 description="The most granular relation in coreference resolution",
             )
         ],
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="SemEval07Task4",
         classification=ResourceClassifications.ontology,
         sub_classification="relation",
+        is_blueprint=True,
         content=[
-            OntologyItem(
+            BaseOntologyItem(
                 name="cause_effect",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="content_container",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="instrument_agency",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="origin_entity",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="part_whole",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="product_producer",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="theme_tool",
             ),
         ],
     ),
-    BaseResourceModel(
+    CreateResourceModel(
         name="SemEval10Task8",
         classification=ResourceClassifications.ontology,
         sub_classification="relation",
+        is_blueprint=True,
         content=[
-            OntologyItem(
+            BaseOntologyItem(
                 name="cause_effect",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="content_container",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="instrument_agency",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="entity_origin",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="entity_destination",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="component_whole",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="member_collection",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="product_producer",
             ),
-            OntologyItem(
+            BaseOntologyItem(
                 name="messenger_topic",
             ),
         ],
@@ -668,31 +737,31 @@ resources = [
 ]
 
 
-preannotation_resources = {
-    "MaintIE-lite": BaseResourceModel(
-        name="MaintIE-lite",
-        classification=ResourceClassifications.preannotation,
-        sub_classification="entity",
-        content=[
-            EntityPreannotation(
-                surface_form="pump",
-                classification="PhysicalObject",
-            ),
-            EntityPreannotation(
-                surface_form="change out",
-                classification="Activity",
-            ),
-            EntityPreannotation(
-                surface_form="replace",
-                classification="Activity",
-            ),
-            EntityPreannotation(
-                surface_form="hose",
-                classification="PhysicalObject",
-            ),
-        ],
-    ),
-}
+# preannotation_resources = {
+#     "MaintIE-lite": CreateResourceModel(
+#         name="MaintIE-lite",
+#         classification=ResourceClassifications.preannotation,
+#         sub_classification="entity",
+#         content=[
+#             EntityPreannotation(
+#                 surface_form="pump",
+#                 classification="PhysicalObject",
+#             ),
+#             EntityPreannotation(
+#                 surface_form="change out",
+#                 classification="Activity",
+#             ),
+#             EntityPreannotation(
+#                 surface_form="replace",
+#                 classification="Activity",
+#             ),
+#             EntityPreannotation(
+#                 surface_form="hose",
+#                 classification="PhysicalObject",
+#             ),
+#         ],
+#     ),
+# }
 
 
 datasets = [
@@ -701,8 +770,9 @@ datasets = [
         description="Noisy user-generated content from Twitter",
         data_type="text",
         items=["Barack Obama left the White House."],
-        preprocessing=Preprocessing(tokenizer=TokenizerEnum.punkt),
+        preprocessing=Preprocessing(tokenizer=TokenizerEnum.whitespace),
         is_blueprint=True,
+        is_annotated=False,
     ),
     CreateDataset(
         name="MaintIE-demo",
@@ -714,8 +784,9 @@ datasets = [
             "engine turbocharger is blown - remove and replace",
             "coolant hose leaking - replace",
         ],
-        preprocessing=Preprocessing(tokenizer=TokenizerEnum.punkt),
+        preprocessing=Preprocessing(tokenizer=TokenizerEnum.whitespace),
         is_blueprint=True,
+        is_annotated=False,
     ),
 ]
 
@@ -6814,7 +6885,7 @@ datasets = [
 #   ],
 # };
 
-# MiscOntologyItems = {
+# MiscBaseOntologyItems = {
 #   Unsure: {
 #     name: "Unsure",
 #     fullName: "Unsure",

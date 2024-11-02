@@ -37,7 +37,7 @@ router = APIRouter(
 @router.get(
     "",
     response_description="List all resources",
-    response_model=Union[List[ResourceModelOut]],
+    response_model=List[ResourceModelOut],
 )
 async def list_resources_endpoint(
     include_system: bool = False,

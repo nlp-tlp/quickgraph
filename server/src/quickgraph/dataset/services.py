@@ -43,6 +43,7 @@ from .schemas import (
     TokenizerEnum,
 )
 
+
 logger = logging.getLogger(__name__)
 
 DATASETS_COLLECTION = "datasets"
@@ -247,17 +248,18 @@ async def list_datasets(
 
 async def check_dataset_exists(
     db: AsyncIOMotorDatabase, dataset_id: ObjectId, username: str
-) -> Optional[Dict]:
-    """Verify dataset exists and isn't deleted."""
-    dataset = await db.datasets.find_one({"_id": dataset_id, "created_by": username})
-
-    if not dataset:
-        return None
-
+) -> Optional[Tuple[Dict, bool]]:
+    """Verify dataset exists, isn't deleted and whether it is read only."""
+    dataset = await db.datasets.find_one(
+        {
+            "_id": dataset_id,
+            "created_by": {"$in": [username, settings.api.system_username]},
+        }
+    )
     if dataset.get("is_deleted", False):
-        return None
+        return None, False
 
-    return dataset
+    return dataset, dataset["created_by"] == settings.api.system_username
 
 
 def check_key_in_nested_dict(nested_dict: dict, key: str) -> bool:
@@ -287,6 +289,7 @@ async def find_one_dataset(
     include_dataset_size: bool = False,
     include_projects: bool = False,
     include_dataset_items: bool = False,
+    include_system: bool = False,
 ) -> Optional[Dataset]:
     """
     Finds one dataset either created by the system or the current user.
@@ -306,7 +309,7 @@ async def find_one_dataset(
     """
     try:
         logger.info(f"Finding dataset: {dataset_id}")
-        dataset = await check_dataset_exists(
+        dataset, read_only = await check_dataset_exists(
             db=db, dataset_id=dataset_id, username=username
         )
 
@@ -361,7 +364,7 @@ async def find_one_dataset(
 
             logger.info(f"Returning project dataset: {dataset}")
 
-            return RichProjectDataset.model_validate(dataset)
+            return RichProjectDataset(**dataset, read_only=read_only)
         else:
             if "entity_ontology_resource_id" in dataset:
                 dataset["entity_ontology_resource_id"] = str(
@@ -372,7 +375,7 @@ async def find_one_dataset(
                     dataset["relation_ontology_resource_id"]
                 )
             logger.info(f"Returning blueprint dataset: {dataset}")
-            return RichBlueprintDataset(**dataset)
+            return RichBlueprintDataset(**dataset, read_only=read_only)
     except Exception as e:
         logger.error(f"error: {e}")
         return None
@@ -380,43 +383,109 @@ async def find_one_dataset(
 
 def embed_and_cluster_texts(
     texts: List[str],
+    min_cluster_size: int = 2,
+    min_samples: int = 1,
+    top_n_keywords: int = 5,
 ) -> Tuple[np.ndarray, Dict[int, List[str]]]:
-    """Embed and cluster texts."""
-    # Load embedding model
-    model = SentenceTransformer("all-distilroberta-v1")
+    """
+    Embed and cluster texts with error handling.
 
-    # Embed dataset item with sentence embedding
-    embeddings = model.encode(texts)
+    Args:
+        texts: List of strings to cluster
+        min_cluster_size: Minimum size for a cluster (default: 2)
+        min_samples: Minimum samples for HDBSCAN (default: 1)
+        top_n_keywords: Number of keywords to extract per cluster (default: 5)
 
-    # Cluster items based on their embeddings
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=1, metric="euclidean")
-    clusters = clusterer.fit_predict(embeddings)
+    Returns:
+        Tuple of cluster assignments and cluster keywords
+    """
+    if not texts:
+        raise ValueError("Input texts list cannot be empty")
 
-    logger.info(f"Clusters: {clusters}")
-    if all(cluster_id == -1 for cluster_id in clusters):
-        logger.warning("No valid clusters were found; all points were marked as noise.")
+    # Adjust min_cluster_size based on dataset size
+    adjusted_min_cluster_size = min(min_cluster_size, len(texts))
+    if adjusted_min_cluster_size != min_cluster_size:
+        logger.warning(
+            f"Adjusted min_cluster_size from {min_cluster_size} to {adjusted_min_cluster_size} "
+            f"due to small dataset size"
+        )
 
-    # If you have the original texts stored in a list called `texts`
-    cluster_texts = defaultdict(list)
+    try:
+        # Load embedding model
+        model = SentenceTransformer("all-distilroberta-v1")
 
-    for text, cluster_id in zip(texts, clusters):
-        cluster_texts[cluster_id].append(text)
+        # Embed dataset items
+        embeddings = model.encode(texts)
 
-    # Now create a simple TF-IDF vectorizer to extract common words from each cluster
-    vectorizer = TfidfVectorizer(stop_words="english")
-    cluster_keywords = {}
+        # Handle single document case
+        if len(texts) == 1:
+            logger.info("Single document detected, assigning to cluster 0")
+            clusters = np.array([0])
+            cluster_keywords = {0: extract_keywords([texts[0]], top_n_keywords)}
+            return clusters, cluster_keywords
 
-    for cluster_id, texts in cluster_texts.items():
-        if cluster_id == -1:  # Skip noise cluster
-            continue
+        # Cluster items
+        clusterer = hdbscan.HDBSCAN(
+            min_cluster_size=adjusted_min_cluster_size,
+            min_samples=min_samples,
+            metric="euclidean",
+        )
+        clusters = clusterer.fit_predict(embeddings)
+
+        logger.info(
+            f"Found {len(set(clusters)) - (1 if -1 in clusters else 0)} clusters"
+        )
+
+        # Check if all points are noise
+        if all(cluster_id == -1 for cluster_id in clusters):
+            logger.warning("No valid clusters found; all points marked as noise")
+            # Fallback: treat all documents as one cluster
+            clusters = np.zeros(len(texts), dtype=int)
+
+        # Group texts by cluster
+        cluster_texts = defaultdict(list)
+        for text, cluster_id in zip(texts, clusters):
+            cluster_texts[cluster_id].append(text)
+
+        # Extract keywords for each cluster
+        cluster_keywords = {}
+        for cluster_id, cluster_texts_list in cluster_texts.items():
+            if cluster_id == -1:  # Skip noise cluster
+                continue
+            cluster_keywords[cluster_id] = extract_keywords(
+                cluster_texts_list, top_n_keywords
+            )
+
+        return clusters, cluster_keywords
+
+    except Exception as e:
+        logger.error(f"Error in clustering: {str(e)}")
+        raise
+
+
+def whitespace_tokenizer(text):
+    """Tokenize text using whitespace."""
+    return text.split()
+
+
+def extract_keywords(texts: List[str], top_n: int) -> List[str]:
+    """Extract top keywords from a list of texts using TF-IDF."""
+    if not texts:
+        return []
+
+    vectorizer = TfidfVectorizer(
+        stop_words="english",
+        tokenizer=whitespace_tokenizer,
+        token_pattern=None,
+    )
+    try:
         tfidf_matrix = vectorizer.fit_transform(texts)
         indices = np.argsort(vectorizer.idf_)[::-1]
-        top_n = 5  # Top N keywords
         features = vectorizer.get_feature_names_out()
-        top_keywords = [features[i] for i in indices[:top_n]]
-        cluster_keywords[cluster_id] = top_keywords
-
-    return clusters, cluster_keywords
+        return [features[i] for i in indices[:top_n]]
+    except Exception as e:
+        logger.error(f"Error extracting keywords: {str(e)}")
+        return []
 
 
 def create_standard_dataset_items(

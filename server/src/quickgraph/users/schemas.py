@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 
 from ..utils.schemas import PydanticObjectIdAnnotated
 
@@ -30,12 +30,19 @@ class UserDocumentModel(BaseDocument):
 
 
 class UserCreate(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
     email: Optional[EmailStr] = Field(default=None)
     name: Optional[str] = Field(default=None)
     security_question: str
     security_answer: str
+
+    @field_validator("username")
+    @classmethod
+    def username_not_system(cls, v: str):
+        if v.lower() == "system":
+            raise ValueError('Username cannot be "system"')
+        return v
 
 
 class UserUpdate(BaseModel):

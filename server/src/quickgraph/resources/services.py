@@ -5,7 +5,7 @@ import logging
 import random
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -150,14 +150,14 @@ async def create_one_resource(
     db: AsyncIOMotorDatabase,
     resource: Union[CreateResourceModel, CreatePreannotationResource],
     username: str,
-):
+) -> Dict[str, Any]:
     resource = resource.model_dump(exclude_none=True)
     content = resource.pop("content")
 
     new_resource = await db[COLLECTION_NAME].insert_one(
         {
             **resource,
-            "created_by": username,  # Avoids needing to send this key in the frontend body
+            "created_by": username,
             **(
                 {"content": initialize_ontology(content)}
                 if resource["classification"] == "ontology"
@@ -165,19 +165,15 @@ async def create_one_resource(
             ),
         }
     )
-    created_resource = await db[COLLECTION_NAME].find_one(
-        {"_id": new_resource.inserted_id}
-    )
-    return created_resource
+    return await db[COLLECTION_NAME].find_one({"_id": new_resource.inserted_id})
 
 
 async def find_one_resource(
     db: AsyncIOMotorDatabase, resource_id: ObjectId, username: str
-):
+) -> Tuple[Optional[ResourceModel], bool]:
+    """Find one resource and check if it is read-only."""
     result = await db[COLLECTION_NAME].find_one({"_id": resource_id})
-
     read_only = result["created_by"] != username
-
     return result, read_only
 
 

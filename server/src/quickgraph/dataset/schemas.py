@@ -226,6 +226,9 @@ class Dataset(BaseDataset):
     external_id: Optional[str] = Field(
         default=None, description="The External ID associated with the item"
     )
+    read_only: bool = Field(
+        default=False, description="Flag indicating if dataset is read-only"
+    )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True, use_enum_values=True, populate_by_name=True

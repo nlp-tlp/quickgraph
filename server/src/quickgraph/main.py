@@ -7,7 +7,6 @@ from typing import Dict
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pymongo import ASCENDING
 
 from .dashboard.router import router as dashboard_router
 from .database import close_mongo_connection, connect_to_mongo
@@ -21,6 +20,11 @@ from .resources.router import router as resources_router
 from .settings import Settings, get_settings, settings
 from .social.router import router as social_router
 from .users.router import router as users_router
+from .utils.system import (
+    create_indexes,
+    create_system_resources,
+    create_system_datasets,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,6 +50,13 @@ origins = [
 async def lifespan(app: FastAPI):  # type: ignore
     settings = get_settings()
     connect_to_mongo(uri=settings.mongodb.uri)
+
+    # Create system resources
+    await create_system_resources()
+
+    # Create system datasets
+    await create_system_datasets()
+
     try:
         yield
     finally:
@@ -68,13 +79,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-async def create_indexes(db: AsyncIOMotorDatabase) -> None:
-    """Creates database indexes if they does not already exist otherwise will have no effect."""
-    await db["markup"].create_index(
-        [("dataset_item_id", ASCENDING)]
-    )  # Used to speed up $lookup operations.
 
 
 app.include_router(users_router)

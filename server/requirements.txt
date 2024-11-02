@@ -26,6 +26,7 @@ MarkupSafe==3.0.2
 motor==3.6.0
 mpmath==1.3.0
 networkx==3.4.2
+nltk==3.9.1
 nodeenv==1.9.1
 numpy==2.1.2
 nvidia-cublas-cu12==12.4.5.8
@@ -57,7 +58,7 @@ python-jose==3.3.0
 python-multipart==0.0.16
 pytz==2024.2
 PyYAML==6.0.2
--e git+https://github.com/nlp-tlp/quickgraph@3b37f59716c0301b02e58370c1f0844e697d20a1#egg=QuickGraph&subdirectory=server
+-e git+https://github.com/nlp-tlp/quickgraph@2e0e1cc93d1e739f01026f2fd134913e4a242a4c#egg=QuickGraph&subdirectory=server
 regex==2024.9.11
 requests==2.32.3
 rsa==4.9

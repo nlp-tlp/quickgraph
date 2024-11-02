@@ -5,6 +5,7 @@ import logging
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
+import traceback
 
 from bson import ObjectId
 from fastapi import HTTPException, status
@@ -48,7 +49,11 @@ async def get_ontology_item(
             },
             {"content": 1},
         )
-        ontology = [OntologyItem(**o) for o in ontology["content"]]
+        try:
+            ontology = [OntologyItem(**o) for o in ontology["content"]]
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            traceback.print_exc()
     return find_ontology_item_by_id(ontology, ontology_item_id)
 
 

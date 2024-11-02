@@ -52,9 +52,9 @@ class OntologyItem(BaseModel):
     example_terms: Optional[List[str]] = Field(
         default=[], description="List of example terms classified by the ontology item."
     )
-    color: Optional[
-        str
-    ] = "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
+    color: Optional[str] = (
+        "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
+    )
     active: bool = Field(
         default=True, description="Flag indicating if the ontology item is active"
     )
@@ -70,13 +70,14 @@ class OntologyItem(BaseModel):
 class BaseOntologyItem(BaseModel):
     name: str = Field(description="The name of the ontology item class")
     children: List["BaseOntologyItem"] = Field(
-        default=[], description="The children of the ontology item"
+        default_factory=list, description="The children of the ontology item"
     )
     description: str = Field(
         default="", description="The description of the ontology item."
     )
     example_terms: List[str] = Field(
-        default=[], description="List of example terms classified by the ontology item."
+        default_factory=list,
+        description="List of example terms classified by the ontology item.",
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,

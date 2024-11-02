@@ -196,17 +196,18 @@ async def valid_user_for_resource(
     resource_id: str,
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ) -> UserDocumentModel:
     """Validates if the user has access to the resource and returns the user."""
     resource = await db.resources.find_one({"_id": ObjectId(resource_id)})
-    if not resource:
+    if resource is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Resource not found.",
         )
 
     # Check if the user is the creator of the resource
-    if resource["created_by"] == user.username:
+    if resource["created_by"] in [user.username, settings.api.system_username]:
         return user
     else:
         raise HTTPException(

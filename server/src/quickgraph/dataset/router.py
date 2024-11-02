@@ -87,7 +87,6 @@ async def get_dataset_endpoint(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Find a single dataset."""
-    logger.info(f"Finding dataset with id: {dataset_id}")
     dataset = await find_one_dataset(
         db=db,
         dataset_id=ObjectId(dataset_id),
