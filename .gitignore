@@ -5,8 +5,7 @@ venv
 # Docs
 static/img/*
 !static/img/.gitkeep
-
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+static-img.tar.gz
 
 # dependencies
 client/node_modules
