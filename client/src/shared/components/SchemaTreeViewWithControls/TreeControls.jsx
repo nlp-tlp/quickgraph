@@ -23,6 +23,7 @@ export const TreeControls = ({
   onReset,
   onUpdate,
   onAddRootNode,
+  disabled = false,
 }) => {
   // Calculate max depth
   const getMaxDepth = (nodes, currentDepth = 0) => {
@@ -82,16 +83,18 @@ export const TreeControls = ({
             </Stack>
           </Stack>
           <Stack direction="row" spacing={1}>
-            <Tooltip title="Add Root Node">
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => onAddRootNode()}
-                color="success"
-              >
-                Add Root Node
-              </Button>
-            </Tooltip>
+            {!disabled && (
+              <Tooltip title="Add Root Node">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => onAddRootNode()}
+                  color="success"
+                >
+                  Add Root Node
+                </Button>
+              </Tooltip>
+            )}
             <Tooltip title="Expand All">
               <Button
                 size="small"
@@ -122,36 +125,40 @@ export const TreeControls = ({
                 Download
               </Button>
             </Tooltip>
-            <Tooltip title="Reset to Original">
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={onReset}
-                disabled={!hasChanges}
-                startIcon={<RestoreIcon />}
-              >
-                Reset
-              </Button>
-            </Tooltip>
-            <Tooltip
-              title={
-                !isValid
-                  ? "Fix empty node names before updating"
-                  : "Save Changes"
-              }
-            >
-              <span>
+            {!disabled && (
+              <Tooltip title="Reset to Original">
                 <Button
                   size="small"
-                  variant="contained"
-                  onClick={onUpdate}
-                  disabled={!hasChanges || !isValid}
-                  startIcon={<SaveIcon />}
+                  variant="outlined"
+                  onClick={onReset}
+                  disabled={!hasChanges}
+                  startIcon={<RestoreIcon />}
                 >
-                  Update
+                  Reset
                 </Button>
-              </span>
-            </Tooltip>
+              </Tooltip>
+            )}
+            {!disabled && (
+              <Tooltip
+                title={
+                  !isValid
+                    ? "Fix empty node names before updating"
+                    : "Save Changes"
+                }
+              >
+                <span>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={onUpdate}
+                    disabled={!hasChanges || !isValid}
+                    startIcon={<SaveIcon />}
+                  >
+                    Update
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
           </Stack>
         </Stack>
       </CardContent>

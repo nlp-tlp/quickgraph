@@ -43,6 +43,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
     onNodeDelete,
     onNodeAdd,
     items,
+    editable,
     ...other
   } = props;
 
@@ -234,7 +235,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
                   type="input"
                   variant="standard"
                   value={nodeLabel}
-                  onChange={handleLabelChange}
+                  onChange={editable ? handleLabelChange : null}
                   sx={{ fontWeight: 500 }}
                   disabled={isDisabled}
                   error={error}
@@ -253,7 +254,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
                   type="input"
                   variant="standard"
                   value={nodeDescription}
-                  onChange={handleDescriptionChange}
+                  onChange={editable ? handleDescriptionChange : null}
                   disabled={isDisabled}
                   onClick={(e) => e.stopPropagation()}
                   onKeyDown={handleKeyDown}
@@ -262,13 +263,15 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
                   }}
                 />
               </Stack>
-              <Box>
-                <Tooltip title="More actions">
-                  <IconButton onClick={handleMenuOpen}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
+              {editable && (
+                <Box>
+                  <Tooltip title="More actions">
+                    <IconButton onClick={handleMenuOpen}>
+                      <MoreVertIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
             </Stack>
           </Box>
           <TreeItem2DragAndDropOverlay {...getDragAndDropOverlayProps()} />
@@ -316,6 +319,7 @@ export default function SchemaTreeView({
   handleNodeUpdate,
   handleNodeDelete,
   handleNodeAdd,
+  disabled = false,
 }) {
   return (
     <RichTreeView
@@ -332,6 +336,7 @@ export default function SchemaTreeView({
             onNodeUpdate={handleNodeUpdate}
             onNodeDelete={handleNodeDelete}
             onNodeAdd={handleNodeAdd}
+            editable={!disabled}
           />
         ),
       }}

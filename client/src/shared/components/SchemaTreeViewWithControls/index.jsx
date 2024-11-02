@@ -7,6 +7,7 @@ const SchemaTreeViewWithControls = ({
   initialData = [],
   handleDataChange,
   handleDataUpdate,
+  editable = true,
 }) => {
   const {
     originalItems,
@@ -35,6 +36,7 @@ const SchemaTreeViewWithControls = ({
         onReset={reset}
         onUpdate={update}
         onAddRootNode={addRootNode}
+        disabled={!editable}
       />
       <SchemaTreeView
         items={items}
@@ -45,6 +47,7 @@ const SchemaTreeViewWithControls = ({
         handleNodeUpdate={updateNode}
         handleNodeDelete={deleteNode}
         handleNodeAdd={addNode}
+        disabled={!editable}
       />
     </Box>
   );
