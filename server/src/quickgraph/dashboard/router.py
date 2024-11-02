@@ -11,11 +11,12 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from ..dataset.schemas import QualityFilter, SaveStateFilter
 from ..dependencies import get_active_project_user, get_db
 from ..project.schemas import FlagState, OntologyItem
+from ..resources.services import get_project_ontology_items
 from ..users.schemas import UserDocumentModel
 from ..utils.agreement import AgreementCalculator
 from ..utils.misc import flatten_hierarchical_ontology
 from ..utils.services import create_search_regex
-from .schemas import DashboardInformation
+from .schemas import AdjudicationResponse, DashboardInformation
 from .services import (
     calculate_project_progress,
     create_overview_plot_data,
@@ -283,7 +284,7 @@ async def get_overview(
 
 
 @router.get("/adjudication/{project_id}")
-async def get_adjudication(
+async def get_adjudication_endpoint(
     project_id: str,
     skip: int = Query(default=0, min=0),
     search_term: Optional[str] = Query(
@@ -316,10 +317,15 @@ async def get_adjudication(
     user: UserDocumentModel = Depends(get_active_project_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Gets adjudication information for a single dataset item
+    """Gets adjudication information for a single dataset item.
 
-    TODO:
-        - Return metrics: most_common_markup, most_agreed_markup, most_disagreed_markup, average_annotations, user_most_annotations, user_least_annotations, user_highest_agreement, and user_lowest_agreement
+    Only returns items that have greater than 0 agreement.
+
+    TODO
+    ----
+    - Return metrics: most_common_markup, most_agreed_markup, most_disagreed_markup,
+    average_annotations, user_most_annotations, user_least_annotations,
+    user_highest_agreement, and user_lowest_agreement
     """
 
     project_id = ObjectId(project_id)
@@ -327,7 +333,7 @@ async def get_adjudication(
     match_condition = {
         "$match": {
             "project_id": project_id,
-            "iaa.overall": {"$gt": min_agreement / 100},
+            "iaa.agreement.overall": {"$gt": min_agreement / 100},
         }
     }
 
@@ -374,7 +380,7 @@ async def get_adjudication(
     logger.info(f"match condition: {match_condition}")
 
     # Get project dataset id
-    project = await db["projects"].find_one(
+    project = await db.projects.find_one(
         {"_id": project_id},
         {"dataset_id": 1, "annotators": 1, "tasks": 1, "ontology": 1},
     )
@@ -390,84 +396,10 @@ async def get_adjudication(
         },
         {"$skip": skip},
         {"$limit": 1},
-        {
-            "$addFields": {
-                "save_states": {
-                    "$ifNull": ["$save_states", []],
-                },
-            },
-        },
-        {
-            "$lookup": {
-                "from": "markup",
-                "localField": "_id",
-                "foreignField": "dataset_item_id",
-                "as": "markup",
-            }
-        },
-        {
-            "$unwind": {
-                "path": "$markup",
-                "preserveNullAndEmptyArrays": True,
-            },
-        },
-        {
-            "$lookup": {
-                "from": "markup",
-                "localField": "markup.source_id",
-                "foreignField": "_id",
-                "as": "source",
-            }
-        },
-        {
-            "$lookup": {
-                "from": "markup",
-                "localField": "markup.target_id",
-                "foreignField": "_id",
-                "as": "target",
-            }
-        },
-        {"$unwind": {"path": "$source", "preserveNullAndEmptyArrays": True}},
-        {"$unwind": {"path": "$target", "preserveNullAndEmptyArrays": True}},
-        {
-            "$project": {
-                "source.project_id": 0,
-                "source.dataset_item_id": 0,
-                "source.created_at": 0,
-                "source.updated_at": 0,
-                "target.project_id": 0,
-                "target.dataset_item_id": 0,
-                "target.created_at": 0,
-                "target.updated_at": 0,
-                "project_id": 0,
-                "target._id": 0,
-                "source._id": 0,
-                "markup.dataset_item_id": 0,
-                "markup.is_blueprint": 0,
-                "markup.created_at": 0,
-                "markup.project_id": 0,
-                "markup._id": 0,
-                "markup.source_id": 0,
-                "markup.target_id": 0,
-                "markup.source.is_blueprint": 0,
-                "markup.target.is_blueprint": 0,
-            }
-        },
-        {"$addFields": {"markup.source": "$source", "markup.target": "$target"}},
-        {
-            "$group": {
-                "_id": "$_id",
-                "markup": {"$push": "$markup"},
-                "save_states": {"$first": "$save_states"},
-                "tokens": {"$first": "$tokens"},
-                "original": {"$first": "$original"},
-                "flags": {"$first": "$flags"},
-            }
-        },
     ]
 
     # Get dataset item (only one is returned at a time)
-    dataset_item = await db["data"].aggregate(dataset_item_pipeline).to_list(None)
+    dataset_item = await db.data.aggregate(dataset_item_pipeline).to_list(None)
 
     if len(dataset_item) == 0:
         # No dataset items found
@@ -498,8 +430,6 @@ async def get_adjudication(
             **({"relations": {}} if project["tasks"]["relation"] else {}),
         }
 
-    # logger.info(f"dataset_item post pipeline\n: {dataset_item[0]}"")
-
     dataset_item = dataset_item[0]
 
     # Get dataset item socials
@@ -516,155 +446,87 @@ async def get_adjudication(
         for s in social
     ]
 
-    saved_users = [ss["created_by"] for ss in dataset_item["save_states"]]
+    # Get dataset item markup
+    markup = (
+        await db["markup"]
+        .find(
+            {
+                "dataset_item_id": dataset_item["_id"],
+                "classification": {"$in": ["entity", "relation"]},
+            }
+        )
+        .to_list(None)
+    )
+    # Get ontologies to get further information about the mark up
+    _, _, ontology = await get_project_ontology_items(db=db, project_id=project_id)
+    logger.info(f"ontology: {ontology}")
+    ontologyId2Details = {item.id: item for item in ontology}
+    entity_markup = []
+    relation_markup = []
+
+    logger.info(f"ontologyId2Details: {ontologyId2Details}")
+
+    for m in markup:
+        if m["classification"] == "entity":
+            entity_markup.append(
+                {
+                    **m,
+                    "ontology_item_name": ontologyId2Details[
+                        m["ontology_item_id"]
+                    ].name,
+                    "ontology_item_fullname": ontologyId2Details[
+                        m["ontology_item_id"]
+                    ].fullname,
+                    "ontology_item_color": ontologyId2Details[
+                        m["ontology_item_id"]
+                    ].color,
+                }
+            )
+        else:
+            relation_markup.append(
+                {
+                    "source_id": m["source_id"],
+                    "target_id": m["target_id"],
+                    "created_by": m["created_by"],
+                    "ontology_item_id": m["ontology_item_id"],
+                }
+            )
+
+    logger.info(f"entity_markup: {entity_markup}")
 
     # Get count of dataset items
-    total_dataset_items = await db["data"].count_documents(match_condition["$match"])
-
-    def get_markup(base_markup, classification: str) -> list:
-        markup = [m for m in base_markup if m.get("classification") == classification]
-
-        if len(markup) == 0:
-            logger.info("No markup found")
-            return []
-
-        # Convert ontology_item_ids into their fullnames for human readability
-        ontology = project["ontology"][classification]
-
-        ontology = [OntologyItem.parse_obj(item) for item in ontology]
-
-        flat_ontology = flatten_hierarchical_ontology(ontology=ontology)
-
-        # Default to purple color if none exists (relations do not have this attribute)
-        ontology_id2details = {
-            item.id: {
-                "fullname": item.fullname,
-                "color": item.color if item and hasattr(item, "color") else "#7b1fa2",
-                "name": item.name,
-            }
-            for item in flat_ontology
-        }
-        # add keys on markup
-        markup = [
-            {
-                **m,
-                "ontology_item_name": ontology_id2details.get(m["ontology_item_id"])[
-                    "name"
-                ],
-                "ontology_item_fullname": ontology_id2details.get(
-                    m["ontology_item_id"]
-                )["fullname"],
-                "ontology_item_color": ontology_id2details.get(m["ontology_item_id"])[
-                    "color"
-                ],
-            }
-            for m in markup
-        ]
-        return markup
-
-    # Aggregate data into expected format
-    entity_markup = get_markup(
-        base_markup=dataset_item["markup"], classification="entity"
-    )
-    # Get entity agreement score and markup
-    relation_markup = []
-    if project["tasks"]["relation"]:
-        relation_markup = get_markup(
-            base_markup=dataset_item["markup"], classification="relation"
-        )
-
-    agreement_calculator = AgreementCalculator(
-        entity_data=[
-            {
-                "start": m["start"],
-                "end": m["end"],
-                "label": m["ontology_item_id"],
-                "username": m["created_by"],
-                "doc_id": str(dataset_item["_id"]),
-            }
-            for m in entity_markup
-            if m["created_by"] in saved_users
-        ],
-        relation_data=[
-            {
-                "label": m["ontology_item_id"],
-                "username": m["created_by"],
-                "source": {
-                    "start": m["source"]["start"],
-                    "end": m["source"]["end"],
-                    "label": m["source"]["ontology_item_id"],
-                },
-                "target": {
-                    "start": m["target"]["start"],
-                    "end": m["target"]["end"],
-                    "label": m["target"]["ontology_item_id"],
-                },
-                "doc_id": str(dataset_item["_id"]),
-            }
-            for m in relation_markup
-            if m["created_by"] in saved_users
-        ],
-    )
-
-    entity_overall_agreement_score = agreement_calculator.overall_agreement()
-    entity_pairwise_agreement_scores = agreement_calculator.calculate_agreements()
-    relation_overall_agreement_score = agreement_calculator.overall_agreement(
-        "relation"
-    )
-    relation_pairwise_agreement_scores = agreement_calculator.calculate_agreements(
-        "relation"
-    )
-
-    overall_agreement_score = agreement_calculator.overall_average_agreement()
+    total_dataset_items = await db.data.count_documents(match_condition["$match"])
 
     # Find the last updated markup and convert to string for serialization
     last_updated = (
-        max([m["updated_at"] for m in dataset_item["markup"]])
-        if dataset_item.get("markup")
-        and len([m for m in dataset_item["markup"] if bool(m)]) > 0
+        max([m["updated_at"] for m in markup])
+        if markup and len([m for m in markup if bool(m)]) > 0
         else None
     )
-    return {
-        "save_states": dataset_item["save_states"],
-        "agreement": (
-            {
-                "overall": overall_agreement_score,
-                "relation": relation_overall_agreement_score,
-                "entity": entity_overall_agreement_score,
-            }
-            if project["tasks"]["relation"]
-            else {
-                "overall": entity_overall_agreement_score,
-                "entity": entity_overall_agreement_score,
-            }
-        ),
-        "pairwise_agreement": (
-            {
-                "relation": relation_pairwise_agreement_scores,
-                "entity": entity_pairwise_agreement_scores,
-            }
-            if project["tasks"]["relation"]
-            else {"entity": entity_pairwise_agreement_scores}
-        ),
-        "tokens": dataset_item["tokens"],
-        "original": dataset_item["original"],
-        "total_items": total_dataset_items,
-        "_id": str(dataset_item["_id"]),
-        "updated_at": last_updated,
-        "annotators": [
+
+    return AdjudicationResponse(
+        _id=str(dataset_item["_id"]),
+        save_states=dataset_item["save_states"],
+        agreement=dataset_item["iaa"]["agreement"],
+        pairwise_agreement=dataset_item["iaa"]["pairwise_agreement"],
+        tokens=dataset_item["tokens"],
+        original=dataset_item["original"],
+        total_items=total_dataset_items,
+        updated_at=last_updated,
+        annotators=[
             a["username"] for a in project["annotators"] if a["state"] == "accepted"
         ],
-        "flags": dataset_item["flags"],
-        "social": social,
-        "entities": {
+        flags=dataset_item["flags"],
+        social=social,
+        entities={
             **group_data_by_key(data=entity_markup, key="created_by"),
         },
-        **(
-            {"relations": {**group_data_by_key(data=relation_markup, key="created_by")}}
+        relations=(
+            {**group_data_by_key(data=relation_markup, key="created_by")}
             if project["tasks"]["relation"]
-            else {}
+            else None
         ),
-    }
+    )
 
 
 @router.get("/effort/{project_id}")

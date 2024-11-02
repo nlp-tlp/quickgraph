@@ -12,6 +12,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from ..dataset.schemas import QualityFilter
 from ..dependencies import get_db, get_user
 from ..project.schemas import OntologyItem
+from ..resources.services import get_project_ontology_items
 from ..users.schemas import UserDocumentModel
 from ..utils.misc import flatten_hierarchical_ontology
 from .schemas import (
@@ -86,10 +87,9 @@ async def get_graph(
             status_code=status.HTTP_404_NOT_FOUND, content={"detail": "Graph not found"}
         )
 
-    entity_ontology = [OntologyItem(**item) for item in project["ontology"]["entity"]]
-    relation_ontology = [
-        OntologyItem(**item) for item in project["ontology"]["relation"]
-    ]
+    entity_ontology, relation_ontology, _ = await get_project_ontology_items(
+        db=db, project_id=project_id
+    )
 
     ontology_id2details = {}
     for ontology_type, ontology_items in [

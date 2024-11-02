@@ -1,11 +1,14 @@
 """Markup utilities."""
 
-from typing import List
+from typing import Any, Dict, List
 
 from ..project.schemas import OntologyItem
 
 
-def get_entity_offset(source_entity: dict, target_entity: dict) -> int:
+def get_entity_offset(
+    source_entity: Dict[str, Any], target_entity: Dict[str, Any]
+) -> int:
+    """Get the offset between two entities."""
     return abs(target_entity["start"] - source_entity["end"]) - 1
 
 

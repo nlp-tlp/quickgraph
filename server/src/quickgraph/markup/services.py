@@ -1,33 +1,28 @@
 """Markup services."""
 
 import itertools
-import json
 import logging
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-import pymongo
 from bson import ObjectId
 from fastapi import HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pymongo import DeleteOne
 
-from ..dataset.services import find_one_dataset_item
-from ..project.schemas import OntologyItem, Project, ProjectOntology
+from ..project.schemas import OntologyItem
 from ..project.services import find_one_project
 from .schemas import (
+    AnnotationType,
     CreateEntity,
     CreateMarkupApply,
     CreateRelation,
     Entity,
-    EntityMarkup,
     EntityOut,
     OutMarkupAccept,
     OutMarkupApply,
     OutMarkupDelete,
     Relation,
-    RelationMarkup,
     RelationOut,
     RichCreateEntity,
     RichCreateRelation,
@@ -43,11 +38,8 @@ async def get_ontology_item(
     ontology_item_id: str,
     project_id: ObjectId = None,
     ontology=None,
-):
-    logger.info("calling `get_ontology_item`")
-
+) -> Optional[OntologyItem]:
     if ontology is None:
-        # Get ontology
         ontology = await db.resources.find_one(
             {
                 "project_id": project_id,
@@ -56,35 +48,28 @@ async def get_ontology_item(
             },
             {"content": 1},
         )
-
-        ontology = [OntologyItem.parse_obj(o) for o in ontology["content"]]
-        # project = await db["projects"].find_one(
-        #     {"_id": project_id}, {"_id": 0, "ontology": 1}
-        # )
-        # ontology = ProjectOntology.parse_obj(project["ontology"])
-
-    ontology_item = find_ontology_item_by_id(ontology, ontology_item_id)
-
-    return ontology_item
+        ontology = [OntologyItem(**o) for o in ontology["content"]]
+    return find_ontology_item_by_id(ontology, ontology_item_id)
 
 
 async def find_many_markups(db, project_id: ObjectId, username: str):
     """Find all markup created by a user for a given project"""
 
-    return (
-        await db["markup"]
-        .find({"project_id": project_id, "created_by": username})
-        .to_list(None)
-    )
+    return await db.markup.find(
+        {"project_id": project_id, "created_by": username}
+    ).to_list(None)
 
 
-async def find_one_markup(db, markup_id: ObjectId, username: str):
-    return await db["markup"].find_one({"_id": markup_id, "created_by": username})
+async def find_one_markup(
+    db, markup_id: ObjectId, username: str
+) -> Optional[Dict[str, Any]]:
+    """Find a single markup by its id"""
+    return await db.markup.find_one({"_id": markup_id, "created_by": username})
 
 
 async def update_one_markup(db, markup_id: ObjectId, field: str, value, username: str):
     logger.info(f"update_one_markup: {markup_id}")
-    await db["markup"].update_one({"_id": markup_id}, {"$set": {field: value}})
+    await db.markup.update_one({"_id": markup_id}, {"$set": {field: value}})
     return await find_one_markup(db=db, markup_id=markup_id, username=username)
 
 
@@ -561,7 +546,7 @@ async def apply_many_entity_annotations(
         - Entity that apply action is applied to is set as accepted by default; others are suggested.
         - If dataset_item is `saved` then markup will not be created
     """
-    logger.info("Markup", markup)
+    logger.info("Markup: {markup}")
 
     # markup.dataset_item_id
 
@@ -798,12 +783,7 @@ async def apply_many_entity_annotations(
             }
         },
     ]
-
-    logger.info("pipeline:\n", json.dumps(pipeline, indent=2, default=str))
-
-    results = await db["data"].aggregate(pipeline).to_list(None)
-
-    logger.info("results:\n", json.dumps(results, indent=2, default=str))
+    results = await db.data.aggregate(pipeline).to_list(None)
 
     if len(results) == 0:
         return []
@@ -815,11 +795,7 @@ async def apply_many_entity_annotations(
     )
     inserted_ids = inserted_result.inserted_ids
 
-    # logger.info("inserted_ids", inserted_ids)
-
-    new_markup = await db["markup"].find({"_id": {"$in": inserted_ids}}).to_list(None)
-
-    return new_markup
+    return await db["markup"].find({"_id": {"$in": inserted_ids}}).to_list(None)
 
 
 async def get_project(db: AsyncIOMotorDatabase, project_id: str, username: str):
@@ -848,20 +824,10 @@ async def get_ontology(
     return [OntologyItem.parse_obj(o) for o in ontology_data["content"]]
 
 
-async def validate_dataset_item(db: AsyncIOMotorDatabase, item_id: str):
-    if await find_one_dataset_item(db=db, item_id=ObjectId(item_id)) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Dataset item not found."
-        )
-
-
 async def apply_annotation(
     db: AsyncIOMotorDatabase, markup: CreateMarkupApply, apply_all: bool, username: str
-):
+) -> Optional[OutMarkupApply]:
     """Applies markup/annotation to items in dataset either individually or batched (propagation)"""
-
-    logger.info('Calling: "apply_annotation()"')
-
     project = await get_project(db=db, project_id=markup.project_id, username=username)
     ontology = await get_ontology(
         db=db,
@@ -869,11 +835,9 @@ async def apply_annotation(
         annotation_type=markup.annotation_type,
     )
     ontology_item = find_ontology_item_by_id(ontology, markup.content.ontology_item_id)
-    await validate_dataset_item(db=db, item_id=markup.dataset_item_id)
 
     if markup.annotation_type == "entity":
         if apply_all:
-            logger.info("Apply many entity markup")
             new_markup = await apply_many_entity_annotations(
                 db=db,
                 markup=markup,
@@ -902,10 +866,7 @@ async def apply_annotation(
                 annotation_type="entity",
                 apply_all=apply_all,
             )
-
         else:
-            logger.info(f"Apply single entity markup: {markup.content}")
-
             exists, new_markup = await apply_single_entity_annotation(
                 db=db, markup=markup, username=username
             )
@@ -931,10 +892,7 @@ async def apply_annotation(
 
     elif markup.annotation_type == "relation":
         if markup.content.source_id == markup.content.target_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot create relation - source and target entities are identical.",
-            )
+            return None
 
         if (
             await find_one_markup(
@@ -942,32 +900,22 @@ async def apply_annotation(
             )
             is None
         ):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Source entity not found",
-            )
+            return None
         if (
             await find_one_markup(
                 db=db, markup_id=ObjectId(markup.content.target_id), username=username
             )
             is None
         ):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Target entity not found",
-            )
+            return None
 
         if apply_all:
-            logger.info("Apply all relations".upper())
-
             new_markup = await apply_many_relation_annotations(
                 db=db,
                 markup=markup,
                 dataset_id=ObjectId(project.dataset_id),
                 username=username,
             )
-
-            logger.info(f"NEW MANY RELATION: {new_markup}")
             if new_markup:
                 entity_ontology = await get_ontology(
                     db=db, project_id=ObjectId(project.id), annotation_type="entity"
@@ -1013,7 +961,6 @@ async def apply_annotation(
                 )
 
         else:
-            logger.info("Apply single relation".upper())
             new_markup = await apply_single_relation_annotation(
                 db=db, markup=markup, username=username
             )
@@ -1033,11 +980,7 @@ async def apply_annotation(
                     annotation_type="relation",
                     apply_all=apply_all,
                 )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Annotation type specified is not supported",
-        )
+    return None
 
 
 async def accept_single_relation_annotation(db, markup_id: ObjectId, username: str):
@@ -1045,51 +988,31 @@ async def accept_single_relation_annotation(db, markup_id: ObjectId, username: s
     relation = await db["markup"].find_one({"_id": markup_id})
 
     # Update entities even if they are already accepted...
-    updated_source_entity = await update_one_markup(
+    await update_one_markup(
         db=db,
         markup_id=relation["source_id"],
         field="suggested",
         value=False,
         username=username,
     )
-    updated_target_entity = await update_one_markup(
+    await update_one_markup(
         db=db,
         markup_id=relation["target_id"],
         field="suggested",
         value=False,
         username=username,
     )
-
     # Update relation
     updated_relation = await update_one_markup(
         db=db, markup_id=markup_id, field="suggested", value=False, username=username
     )
-
-    # source_ontology_item = await get_ontology_item(
-    #     db=db,
-    #     project_id=relation["project_id"],
-    #     ontology_item_id=updated_source_entity["ontolog_item_id"],
-    # )
-
-    # return {
-    #     "entities": {
-    #         relation["dataset_item_id"]: [
-    #             Entity(**updated_source_entity),
-    #             Entity(**updated_target_entity),
-    #         ]
-    #     },
-    #     "relations": {relation["dataset_item_id"]: [Relation(**updated_relation)]},
-    # }
-
     entity_ids = [relation["source_id"], relation["target_id"]]
     relation_ids = [updated_relation["_id"]]
     return entity_ids, relation_ids
 
 
 async def accept_many_relation_annotation(db, markup_id: ObjectId, username: str):
-    """
-    Finds all markup similar to `markup_id` and converts their `suggested` type to `False`
-    """
+    """Finds all markup similar to `markup_id` and converts their `suggested` type to `False`"""
 
     existing_markup = await find_one_markup(
         db=db, markup_id=markup_id, username=username
@@ -1259,12 +1182,25 @@ async def accept_annotation(
     username: str,
     apply_all: bool = False,
 ) -> Optional[OutMarkupAccept]:
-    """Accepts suggested annotations by setting the `suggested` key to True"""
+    """Accepts suggested annotations by setting the `suggested` key to True
+
+    Parameters
+    ----------
+    db: Database connection
+    markup_id: ID of the markup to accept
+    username: Username performing the acceptance
+    apply_all: Whether to accept all matching annotations
+
+    Returns
+    -------
+    OutMarkupAccept object containing acceptance results or None if invalid
+    """
+    # Validate markup exists and get base info
     markup = await find_one_markup(db=db, markup_id=markup_id, username=username)
+    if not markup:
+        return None
 
-    if markup is None:
-        return
-
+    # Get ontology information
     ontology_item = await get_ontology_item(
         db=db,
         classification=markup["classification"],
@@ -1311,14 +1247,6 @@ async def accept_annotation(
                     entity_ids=[str(i) for i in entity_ids],
                     relation_ids=[str(i) for i in relation_ids],
                 )
-            # return {
-            #     "count": len(relation_ids),
-            #     "label_name": ontology_item.fullname,
-            #     "annotation_type": "relation",
-            #     "apply_all": apply_all,
-            #     "entity_ids": [str(i) for i in entity_ids],
-            #     "relation_ids": [str(i) for i in relation_ids],
-            # }
         else:
             entity_ids, relation_ids = await accept_single_relation_annotation(
                 db=db, markup_id=markup_id, username=username
@@ -1335,19 +1263,13 @@ async def accept_annotation(
                     entity_ids=[str(i) for i in entity_ids],
                     relation_ids=[str(i) for i in relation_ids],
                 )
-                # return {
-                #     "count": 1,
-                #     "label_name": ontology_item.fullname,
-                #     "annotation_type": "relation",
-                #     "apply_all": apply_all,
-                #     "entity_ids": [str(i) for i in entity_ids],
-                #     "relation_ids": [str(i) for i in relation_ids],
-                # }
     return
 
 
-async def delete_single_entity_annotation(db, markup_id: ObjectId, username: str):
-    logger.info('"delete_single_entity_annotation"')
+async def delete_single_entity_annotation(
+    db, markup_id: ObjectId, username: str, blocked_dataset_item_ids: List[str] = None
+) -> Optional[Dict[str, Any]]:
+    """Deletes a single entity annotation"""
     # Check if entity is associated with a relation
     try:
         relations = (
@@ -1370,10 +1292,18 @@ async def delete_single_entity_annotation(db, markup_id: ObjectId, username: str
         logger.info(f"Failed to delete single entity annotation: {e}")
 
 
-async def delete_many_entity_annotations(db, markup_id: ObjectId, username: str):
-    logger.info(f'"delete_many_entity_annotations"')
+async def delete_many_entity_annotations(
+    db, markup_id: ObjectId, username: str, blocked_dataset_item_ids: List[ObjectId]
+) -> Tuple[int, List[ObjectId], List[ObjectId]]:
+    """Deletes all entity annotations that are similar to the markup_id"""
     pipeline = [
-        {"$match": {"_id": markup_id, "created_by": username}},
+        {
+            "$match": {
+                "_id": markup_id,
+                "created_by": username,
+                "dataset_item_id": {"$nin": blocked_dataset_item_ids},
+            }
+        },
         {"$addFields": {"selected_document_id": "$_id"}},
         {
             "$lookup": {
@@ -1491,42 +1421,41 @@ async def delete_many_entity_annotations(db, markup_id: ObjectId, username: str)
         },
         {"$project": {"_id": 0}},
     ]
-
-    try:
-        result = await db["markup"].aggregate(pipeline).to_list(None)
-
-        result = result[0]
-
-        # logger.info("aggregation result\n", json.dumps(result, indent=2, default=str))
-
-        ids_to_delete = result["entity_ids"] + result["relation_ids"]
-
-        logger.info("ids_to_delete", ids_to_delete)
-
-        delete_result = await db["markup"].delete_many({"_id": {"$in": ids_to_delete}})
-
-        output = (
-            delete_result.deleted_count,
-            result["entity_ids"],
-            result["relation_ids"],
-        )
-
-        return output
-
-    except Exception as e:
-        logger.info(e)
+    result = await db.markup.aggregate(pipeline).to_list(None)
+    result = result[0]
+    ids_to_delete = result["entity_ids"] + result["relation_ids"]
+    delete_result = await db.markup.delete_many({"_id": {"$in": ids_to_delete}})
+    return (
+        delete_result.deleted_count,
+        result["entity_ids"],
+        result["relation_ids"],
+    )
 
 
-async def delete_single_relation_annotation(db, markup_id: ObjectId, username: str):
+async def delete_single_relation_annotation(
+    db, markup_id: ObjectId, username: str, blocked_dataset_item_ids: List[str] = None
+) -> None:
+    """Deletes a single relation annotation"""
     await db["markup"].delete_one({"_id": markup_id, "created_by": username})
 
 
-async def delete_many_relations(db, markup_id: ObjectId, username: str):
-    """Find all matching relations to markup_id and delete. Matching relations
-    must have the same properties including src/tgt entity surface forms and offset...
+async def delete_many_relation_annotations(
+    db, markup_id: ObjectId, username: str, blocked_dataset_item_ids: List[ObjectId]
+) -> Tuple[int, Dict]:
+    """Find all matching relations to markup_id and delete.
+
+    Matching relations must have the same properties including src/tgt entity surface forms and offset.
+
+    Returns
+    -------
+        Tuple[int, Dict]: Count of deleted items and mapping of dataset_item_id to deleted relation IDs
     """
 
     markup = await find_one_markup(db=db, markup_id=markup_id, username=username)
+
+    if markup is None:
+        return 0, {}
+
     markup_is_suggested = markup["suggested"]
 
     markup_src_entity = await find_one_markup(
@@ -1536,14 +1465,15 @@ async def delete_many_relations(db, markup_id: ObjectId, username: str):
         db=db, markup_id=markup["target_id"], username=username
     )
 
-    logger.info("\nmarkup_src_entity\n", markup_src_entity)
-    logger.info("\nmarkup_tgt_entity\n", markup_tgt_entity)
+    if markup_src_entity is None or markup_tgt_entity is None:
+        logger.warning("Source or target entity not found")
+        return 0, {}
 
     offset = get_entity_offset(
         source_entity=markup_src_entity, target_entity=markup_tgt_entity
     )
-    logger.info(f"Entity offset: {offset}")
 
+    # Build the aggregation pipeline
     pipeline = [
         {
             "$match": {
@@ -1552,6 +1482,7 @@ async def delete_many_relations(db, markup_id: ObjectId, username: str):
                 "created_by": username,
                 "classification": markup["classification"],
                 "suggested": True if markup_is_suggested else {"$in": [True, False]},
+                "dataset_item_id": {"$nin": blocked_dataset_item_ids},
             }
         },
         {
@@ -1574,10 +1505,10 @@ async def delete_many_relations(db, markup_id: ObjectId, username: str):
         {"$unwind": {"path": "$target"}},
         {
             "$match": {
-                "source.surface_form": "John",
-                "source.ontology_item_id": "i1",
-                "target.surface_form": "Smith",
-                "target.ontology_item_id": "i1",
+                "source.surface_form": markup_src_entity["surface_form"],
+                "source.ontology_item_id": markup_src_entity["ontology_item_id"],
+                "target.surface_form": markup_tgt_entity["surface_form"],
+                "target.ontology_item_id": markup_tgt_entity["ontology_item_id"],
             }
         },
         {
@@ -1600,23 +1531,21 @@ async def delete_many_relations(db, markup_id: ObjectId, username: str):
         {"$match": {"offset": {"$eq": offset}}},
     ]
 
-    matched_relation_markup = await db["markup"].aggregate(pipeline).to_list(None)
+    # Get matching relations
+    matched_relation_markup = await db.markup.aggregate(pipeline).to_list(None)
 
-    logger.info(f"relation candidates: {len(matched_relation_markup)}")
+    if len(matched_relation_markup) == 0:
+        logger.info("No matching relations found")
+        return 0, {}
 
-    relation_ids = [str(r["_id"]) for r in matched_relation_markup]
+    # Extract IDs for deletion
+    relation_ids = [ObjectId(r["_id"]) for r in matched_relation_markup]
+    relation_ids_str = [str(r["_id"]) for r in matched_relation_markup]
 
-    await db["markup"].delete_many({"_id": relation_ids})
+    # Perform the deletion
+    delete_result = await db.markup.delete_many({"_id": {"$in": relation_ids}})
 
-    # Create output
-    deleted_relation_markup = {
-        str(k): [str(r["_id"]) for r in list(v)]
-        for k, v in itertools.groupby(
-            matched_relation_markup, lambda x: x["dataset_item_id"]
-        )
-    }
-
-    return len(matched_relation_markup), deleted_relation_markup
+    return delete_result.deleted_count, relation_ids_str
 
 
 async def delete_annotation(
@@ -1624,15 +1553,26 @@ async def delete_annotation(
     markup_id: ObjectId,
     username: str,
     apply_all: bool = False,
-):
+) -> Optional[OutMarkupDelete]:
+    """Delete annotation(s) based on markup_id and application type.
+
+    Parameters
+    ----------
+        db: Database connection
+        markup_id: ID of the markup to delete
+        username: Username performing the deletion
+        apply_all: Whether to delete all matching annotations
+
+    Returns
+    -------
+        OutMarkupDelete object containing deletion results or None if invalid
+    """
+    # Validate markup exists and get base info
     markup = await find_one_markup(db=db, markup_id=markup_id, username=username)
-    # logger.info("MARKUP\n", markup)
-
     if not markup:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Markup not found"
-        )
+        return None
 
+    # Get ontology information
     ontology_item = await get_ontology_item(
         db=db,
         project_id=markup["project_id"],
@@ -1640,100 +1580,81 @@ async def delete_annotation(
         ontology_item_id=markup["ontology_item_id"],
     )
 
-    # logger.info("ontology_item", ontology_item)
+    # Define deletion strategies
+    deletion_handlers = {
+        AnnotationType.entity: {
+            True: delete_many_entity_annotations,
+            False: delete_single_entity_annotation,
+        },
+        AnnotationType.relation: {
+            True: delete_many_relation_annotations,
+            False: delete_single_relation_annotation,
+        },
+    }
 
-    if markup["classification"] == "entity":
+    # Get saved dataset item ids, these cannot be modified and are considered 'blocked'.
+    blocked_dataset_item_ids = await db.data.find(
+        {"save_states": {"$elemMatch": {"created_by": username}}}
+    ).to_list(None)
+
+    try:
+        annotation_type = AnnotationType(markup["classification"])
+    except ValueError:
+        return None
+
+    # Get appropriate deletion handler
+    delete_handler = deletion_handlers[annotation_type][apply_all]
+
+    # Execute deletion and format response based on annotation type
+    if annotation_type == AnnotationType.entity:
         if apply_all:
-            (
-                count,
-                deleted_entity_markup,
-                deleted_relation_markup,
-            ) = await delete_many_entity_annotations(
-                db=db, markup_id=markup_id, username=username
+            count, deleted_entities, deleted_relations = await delete_handler(
+                db=db,
+                markup_id=markup_id,
+                username=username,
+                blocked_dataset_item_ids=blocked_dataset_item_ids,
             )
-
-            return {
-                "count": count,
-                "label_name": ontology_item.fullname,
-                "apply_all": apply_all,
-                "annotation_type": "entity",
-                "entity_ids": [str(_id) for _id in deleted_entity_markup],
-                "relation_ids": [str(_id) for _id in deleted_relation_markup],
-            }
-        # OutMarkupDelete(
-        #         count=count,
-        #         label_name=ontology_item.fullname,
-        #         entities=deleted_entity_markup,
-        #         relations=deleted_relation_markup,
-        #         annotation_type="entity",
-        #         apply_all=apply_all,
-        #     )
-
-        else:
-            deleted_relation_ids = await delete_single_entity_annotation(
-                db=db, markup_id=markup_id, username=username
-            )
-
-            return {
-                "count": 1,
-                "entity_ids": [str(markup_id)],
-                "relation_ids": [str(_id) for _id in deleted_relation_ids],
-                "apply_all": apply_all,
-                "annotation_type": "entity",
-            }
-
-            # return OutMarkupDelete(
-            #     count=1,
-            #     label_name=ontology_item.fullname,
-            #     entities={str(markup["dataset_item_id"]): [str(markup_id)]},
-            #     annotation_type="entity",
-            #     apply_all=apply_all,
-            #     relations={
-            #         str(markup["dataset_item_id"]): [
-            #             str(r) for r in deleted_relation_ids
-            #         ]
-            #     }
-            #     if len(deleted_relation_ids) > 0
-            #     else {},
-            # )
-
-    elif markup["classification"] == "relation":
-        if apply_all:
-            count, deleted_relation_markup = await delete_many_relations(
-                db=db, markup_id=markup_id, username=username
-            )
-
             return OutMarkupDelete(
                 count=count,
                 label_name=ontology_item.fullname,
-                relations=deleted_relation_markup,
-                annotation_type="relation",
+                entity_ids=[str(id) for id in deleted_entities],
+                relation_ids=[str(id) for id in deleted_relations],
+                annotation_type=annotation_type.value,
                 apply_all=apply_all,
             )
-
         else:
-            await delete_single_relation_annotation(
+            deleted_relation_ids = await delete_handler(
                 db=db, markup_id=markup_id, username=username
             )
-
-            return {
-                "count": 1,
-                "label_name": ontology_item.fullname,
-                "relation_ids": [str(markup_id)],
-                "annotation_type": "relation",
-                "apply_all": apply_all,
-            }
-
-            # return OutMarkupDelete(
-            #     count=1,
-            #     label_name=ontology_item.fullname,
-            #     relations={str(markup["dataset_item_id"]): [str(markup_id)]},
-            #     annotation_type="relation",
-            #     apply_all=apply_all,
-            # )
-
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Markup classification not found",
-        )
+            return OutMarkupDelete(
+                count=1,
+                label_name=ontology_item.fullname,
+                entity_ids=[str(markup_id)],
+                relation_ids=[str(id) for id in deleted_relation_ids],
+                annotation_type=annotation_type.value,
+                apply_all=apply_all,
+            )
+    else:  # relation
+        if apply_all:
+            count, deleted_ids = await delete_handler(
+                db=db,
+                markup_id=markup_id,
+                username=username,
+                blocked_dataset_item_ids=blocked_dataset_item_ids,
+            )
+            return OutMarkupDelete(
+                count=count,
+                label_name=ontology_item.fullname,
+                relation_ids=deleted_ids,
+                annotation_type=annotation_type.value,
+                apply_all=apply_all,
+            )
+        else:
+            await delete_handler(db=db, markup_id=markup_id, username=username)
+            return OutMarkupDelete(
+                count=1,
+                label_name=ontology_item.fullname,
+                relation_ids=[str(markup_id)],
+                annotation_type=annotation_type.value,
+                apply_all=apply_all,
+            )

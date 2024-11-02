@@ -9,6 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..dependencies import get_active_project_user, get_db, get_user
 from ..project.schemas import CreateFlag, Flag, FlagState, OntologyItem, ProjectOntology
+from ..resources.services import get_project_ontology_items
 from ..users.schemas import UserDocumentModel
 from ..utils.misc import flatten_hierarchical_ontology
 from .schemas import (
@@ -274,15 +275,19 @@ async def get_annotation_insights(
     user: UserDocumentModel = Depends(get_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Currently fetches counts of entity markup surface forms - will be extended in the future.
+    """Fetch the counts of entity markup surface forms.
 
-    TODO: refactor so the output of the aggregation pipeline is friendlier. Investigate doing ontology_item expansion in query.
+    TODO
+    ----
+    - refactor so the output of the aggregation pipeline is friendlier. Investigate doing ontology_item expansion in query.
     """
+
+    project_id = ObjectId(project_id)
 
     pipeline = [
         {
             "$match": {
-                "project_id": ObjectId(project_id),
+                "project_id": project_id,
                 "created_by": user.username,
                 "classification": "entity",
             }
@@ -323,19 +328,13 @@ async def get_annotation_insights(
         {"$project": {"_id": 0, "result": "$result"}},
     ]
 
-    result = await db["markup"].aggregate(pipeline).to_list(None)
+    result = await db.markup.aggregate(pipeline).to_list(None)
 
-    # Get ontology item details to make output human readable
-    project = await db["projects"].find_one(
-        {"_id": ObjectId(project_id)}, {"ontology": 1}
+    entity_ontology, _, _ = await get_project_ontology_items(
+        db=db, project_id=project_id
     )
 
-    project = await db["projects"].find_one(
-        {"_id": ObjectId(project_id)}, {"_id": 0, "ontology": 1}
-    )
-    ontology = ProjectOntology(**project["ontology"])
-
-    flat_ontology = flatten_hierarchical_ontology(ontology=ontology.entity)
+    flat_ontology = flatten_hierarchical_ontology(ontology=entity_ontology)
 
     ontology_meta_map = {
         i.id: {"color": i.color, "name": i.name, "fullname": i.fullname}

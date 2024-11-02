@@ -944,15 +944,102 @@ async def get_project_progress(
         return None
 
 
+async def calculate_and_update_iaa(
+    db: AsyncIOMotorDatabase, item_id: ObjectId, dataset_item: dict
+) -> None:
+    """Helper function to calculate and update IAA for a single item."""
+    try:
+        saved_users = [ss["created_by"] for ss in dataset_item["save_states"]]
+
+        # Only calculate IAA if we have more than one saved user
+        if len(saved_users) < 2:
+            return
+
+        entity_markup = [
+            e for e in dataset_item["markup"] if e["classification"] == "entity"
+        ]
+        relation_markup = [
+            r for r in dataset_item["markup"] if r["classification"] == "relation"
+        ]
+
+        agreement_calculator = AgreementCalculator(
+            entity_data=[
+                {
+                    "start": m["start"],
+                    "end": m["end"],
+                    "label": m["ontology_item_id"],
+                    "username": m["created_by"],
+                    "doc_id": str(dataset_item["_id"]),
+                }
+                for m in entity_markup
+                if m["created_by"] in saved_users
+            ],
+            relation_data=[
+                {
+                    "label": m["ontology_item_id"],
+                    "username": m["created_by"],
+                    "source": {
+                        "start": m["source"]["start"],
+                        "end": m["source"]["end"],
+                        "label": m["source"]["ontology_item_id"],
+                    },
+                    "target": {
+                        "start": m["target"]["start"],
+                        "end": m["target"]["end"],
+                        "label": m["target"]["ontology_item_id"],
+                    },
+                    "doc_id": str(dataset_item["_id"]),
+                }
+                for m in relation_markup
+                if m["created_by"] in saved_users
+            ],
+        )
+
+        entity_overall_agreement_score = agreement_calculator.overall_agreement()
+        entity_pairwise_agreement_scores = agreement_calculator.calculate_agreements()
+        relation_overall_agreement_score = agreement_calculator.overall_agreement(
+            "relation"
+        )
+        relation_pairwise_agreement_scores = agreement_calculator.calculate_agreements(
+            "relation"
+        )
+        overall_agreement_score = agreement_calculator.overall_average_agreement()
+
+        logger.info(f'IAA for item "{item_id}": {overall_agreement_score}')
+
+        await db["data"].update_one(
+            {"_id": item_id},
+            {
+                "$set": {
+                    "iaa": {
+                        "agreement": {
+                            "overall": overall_agreement_score,
+                            "entity": entity_overall_agreement_score,
+                            "relation": relation_overall_agreement_score,
+                        },
+                        "pairwise_agreement": {
+                            "relation": relation_pairwise_agreement_scores,
+                            "entity": entity_pairwise_agreement_scores,
+                        },
+                        "last_updated": datetime.utcnow(),
+                    }
+                }
+            },
+            upsert=False,
+        )
+    except Exception as e:
+        logger.error(f"Error calculating IAA for item {item_id}: {str(e)}")
+
+
 async def save_many_dataset_items(
     db: AsyncIOMotorDatabase,
-    project_id: ObjectId,
     dataset_item_ids: List[ObjectId],
     username: str,
 ) -> SaveResponse:
-    """Saves many dataset items for a user"""
+    """Saves many dataset items for a user and calculates IAA when appropriate."""
     new_save_state = BaseSaveState(created_by=username).model_dump()
 
+    # Pipeline for getting markup data for IAA calculation
     markup_pipeline = [
         {"$match": {"_id": {"$in": [ObjectId(oid) for oid in dataset_item_ids]}}},
         {
@@ -1032,11 +1119,7 @@ async def save_many_dataset_items(
 
     if len(dataset_item_ids) > 1:
         # Bulk save - only set to saved, doesn't permit unsave
-
-        # Update items that have not been saved yet
-        # TODO: create new Save State pydantic model, they don't need 'dataset_item_id' anymore.
-
-        result = await db["data"].update_many(
+        result = await db.data.update_many(
             {
                 "_id": {"$in": dataset_item_ids},
                 "save_states.created_by": {"$ne": username},
@@ -1045,148 +1128,58 @@ async def save_many_dataset_items(
             upsert=True,
         )
 
-        # TODO: Calculate overall IAA for each document and update their states
-
-        # dataset_items = await db['data']
+        if result.modified_count > 0:
+            dataset_items = await db.data.aggregate(markup_pipeline).to_list(None)
+            for item in dataset_items:
+                await calculate_and_update_iaa(db, item["_id"], item)
 
         return SaveResponse(count=result.modified_count)
     else:
-        # Update save state of user on dataset item
-        di = await db.data.find_one({"_id": dataset_item_ids[0]})
+        # Single item save/unsave
+        item_id = dataset_item_ids[0]
+        di = await db.data.find_one({"_id": item_id})
         di_save_states = di.get("save_states", [])
+
         if username not in [ss["created_by"] for ss in di_save_states]:
+            # Save
             di_save_states.append(new_save_state)
             await db.data.update_one(
                 {"_id": dataset_item_ids[0]},
                 {"$set": {"save_states": di_save_states}},
                 upsert=False,
             )
+
+            # Get updated item data and calculate IAA
+            dataset_item = (
+                await db["data"]
+                .aggregate([{"$match": {"_id": item_id}}] + markup_pipeline[1:])
+                .next()
+            )
+            await calculate_and_update_iaa(db, item_id, dataset_item)
+
             return SaveResponse(count=1)
         else:
-            # remove save state
+            # Unsave
             di_save_states = [
                 ss for ss in di_save_states if ss["created_by"] != username
             ]
             await db.data.update_one(
-                {"_id": dataset_item_ids[0]},
+                {"_id": item_id},
                 {"$set": {"save_states": di_save_states}},
                 upsert=False,
             )
+
+            # Recalculate IAA after unsave if there are still multiple saves
+            if len(di_save_states) > 1:
+                dataset_item = (
+                    await db["data"]
+                    .aggregate([{"$match": {"_id": item_id}}] + markup_pipeline[1:])
+                    .next()
+                )
+                await calculate_and_update_iaa(db, item_id, dataset_item)
+            else:
+                logger.info(f"Unsaved item {item_id} has less than 2 saves")
             return SaveResponse(count=1)
-
-        # result = await db["data"].update_one(
-        #     {"_id": dataset_item_ids[0]},
-        #     [
-        #         {
-        #             "$set": {
-        #                 "save_states": {
-        #                     "$cond": {
-        #                         "if": {
-        #                             "$in": [
-        #                                 username,
-        #                                 {"$ifNull": ["$save_states.created_by", []]},
-        #                             ]
-        #                         },
-        #                         "then": {
-        #                             "$filter": {
-        #                                 "input": {"$ifNull": ["$save_states", []]},
-        #                                 "as": "state",
-        #                                 "cond": {
-        #                                     "$ne": ["$$state.created_by", username]
-        #                                 },
-        #                             },
-        #                         },
-        #                         "else": {
-        #                             "$concatArrays": [
-        #                                 {"$ifNull": ["$save_states", []]},
-        #                                 [new_save_state],
-        #                             ],
-        #                         },
-        #                     },
-        #                 }
-        #             }
-        #         }
-        #     ],
-        #     upsert=False,
-        # )
-
-        # try:
-        #     dataset_item = await db["data"].aggregate(markup_pipeline).to_list(None)
-        #     dataset_item = dataset_item[0]
-
-        #     saved_users = [ss["created_by"] for ss in dataset_item["save_states"]]
-        #     entity_markup = [
-        #         e for e in dataset_item["markup"] if e["classification"] == "entity"
-        #     ]
-        #     relation_markup = [
-        #         r for r in dataset_item["markup"] if r["classification"] == "relation"
-        #     ]
-
-        #     agreement_calculator = AgreementCalculator(
-        #         entity_data=[
-        #             {
-        #                 "start": m["start"],
-        #                 "end": m["end"],
-        #                 "label": m["ontology_item_id"],
-        #                 "username": m["created_by"],
-        #                 "doc_id": str(dataset_item["_id"]),
-        #             }
-        #             for m in entity_markup
-        #             if m["created_by"] in saved_users
-        #         ],
-        #         relation_data=[
-        #             {
-        #                 "label": m["ontology_item_id"],
-        #                 "username": m["created_by"],
-        #                 "source": {
-        #                     "start": m["source"]["start"],
-        #                     "end": m["source"]["end"],
-        #                     "label": m["source"]["ontology_item_id"],
-        #                 },
-        #                 "target": {
-        #                     "start": m["target"]["start"],
-        #                     "end": m["target"]["end"],
-        #                     "label": m["target"]["ontology_item_id"],
-        #                 },
-        #                 "doc_id": str(dataset_item["_id"]),
-        #             }
-        #             for m in relation_markup
-        #             if m["created_by"] in saved_users
-        #         ],
-        #     )
-
-        #     entity_overall_agreement_score = agreement_calculator.overall_agreement()
-        #     # logger.info("entity_overall_agreement_score", entity_overall_agreement_score)
-
-        #     relation_overall_agreement_score = agreement_calculator.overall_agreement(
-        #         "relation"
-        #     )
-
-        #     overall_agreement_score = agreement_calculator.overall_average_agreement()
-        #     # logger.info('overall_agreement_score', overall_agreement_score)
-
-        #     # Update IAA of dataset item
-        #     await db["data"].update_one(
-        #         {"_id": dataset_item_ids[0]},
-        #         [
-        #             {
-        #                 "$set": {
-        #                     "iaa": {
-        #                         "overall": overall_agreement_score,
-        #                         "entity": entity_overall_agreement_score,
-        #                         "relation": relation_overall_agreement_score,
-        #                         "last_updated": datetime.utcnow(),
-        #                     }
-        #                 }
-        #             }
-        #         ],
-        #         upsert=False,
-        #     )
-
-        # except Exception as e:
-        #     logger.info(f"Error occurred calculating IAA: {e}")
-
-        # return SaveResponse(count=result.modified_count)
 
 
 async def get_project_annotator(

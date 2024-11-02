@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Literal, Optional, Union
+from typing import List, Optional, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
@@ -301,8 +301,9 @@ class OutMarkupApply(BaseModel):
 
 class OutMarkupDelete(BaseModel):
     count: int
-    entities: Dict[str, list] = {}
-    relations: Dict[str, list] = {}
+    label_name: str
+    entity_ids: Optional[List[str]] = Field(default_factory=list)
+    relation_ids: List[str] = Field(default_factory=list)
     annotation_type: AnnotationType = Field(
         description="Type of annotation markup being applied",
     )

@@ -291,15 +291,17 @@ async def find_one_dataset(
     """
     Finds one dataset either created by the system or the current user.
 
-    Args:
-        db: Database connection
-        dataset_id: ObjectId of the dataset
-        username: Current username
-        include_dataset_size: Whether to include dataset size
-        include_projects: Whether to include related projects
-        include_dataset_items: Whether to include dataset items
+    Parameters
+    ----------
+    db: Database connection
+    dataset_id: ObjectId of the dataset
+    username: Current username
+    include_dataset_size: Whether to include dataset size
+    include_projects: Whether to include related projects
+    include_dataset_items: Whether to include dataset items
 
-    Returns:
+    Returns
+    -------
         Dataset object or None if not found
     """
     try:
@@ -347,26 +349,6 @@ async def find_one_dataset(
             dataset["projects"] = [project]
             dataset["project"] = project
 
-            # Flatten ontologies
-            if check_key_in_nested_dict(dataset, "project.ontology.entity"):
-                dataset["project"]["ontology"][
-                    "entity"
-                ] = flatten_hierarchical_ontology(
-                    ontology=[
-                        OntologyItem(**item)
-                        for item in dataset["project"]["ontology"]["entity"]
-                    ]
-                )
-            if check_key_in_nested_dict(dataset, "project.ontology.relation"):
-                dataset["project"]["ontology"][
-                    "relation"
-                ] = flatten_hierarchical_ontology(
-                    ontology=[
-                        OntologyItem(**item)
-                        for item in dataset["project"]["ontology"]["relation"]
-                    ]
-                )
-
             if "entity_ontology_resource_id" in dataset:
                 dataset["entity_ontology_resource_id"] = str(
                     dataset["entity_ontology_resource_id"]
@@ -391,241 +373,6 @@ async def find_one_dataset(
                 )
             logger.info(f"Returning blueprint dataset: {dataset}")
             return RichBlueprintDataset(**dataset)
-
-        # agg_pipeline_segment = [
-        #     {
-        #         "$lookup": {
-        #             "from": "data",
-        #             "localField": "_id",
-        #             "foreignField": "dataset_id",
-        #             "as": "items",
-        #         }
-        #     },
-        #     {"$unwind": {"path": "$items", "preserveNullAndEmptyArrays": True}},
-        #     {
-        #         "$lookup": {
-        #             "from": "markup",
-        #             "localField": "items._id",  # blueprint_dataset_item_id
-        #             "foreignField": "dataset_item_id",
-        #             "as": "markup",
-        #         }
-        #     },
-        #     {
-        #         "$addFields": {
-        #             "items.entities": {
-        #                 "$filter": {
-        #                     "input": "$markup",
-        #                     "as": "m",
-        #                     "cond": {
-        #                         "$eq": ["$$m.classification", "entity"],
-        #                     },
-        #                 },
-        #             },
-        #             "items.relations": {
-        #                 "$filter": {
-        #                     "input": "$markup",
-        #                     "as": "m",
-        #                     "cond": {
-        #                         "$eq": ["$$m.classification", "relation"],
-        #                     },
-        #                 },
-        #             },
-        #         },
-        #     },
-        #     {
-        #         "$project": {
-        #             "markup": 0,
-        #             "items.entities.project_id": 0,
-        #             "items.entities.dataset_item_id": 0,
-        #             "items.entities.created_at": 0,
-        #             "items.entities.updated_at": 0,
-        #             "items.entities.created_by": 0,
-        #             "items.entities.suggested": 0,
-        #             "items.entities.classification": 0,
-        #             "items.entities.is_blueprint": 0,
-        #             "items.relations.project_id": 0,
-        #             "items.relations.dataset_item_id": 0,
-        #             "items.relations.created_at": 0,
-        #             "items.relations.updated_at": 0,
-        #             "items.relations.created_by": 0,
-        #             "items.relations.suggested": 0,
-        #             "items.relations.classification": 0,
-        #             "items.relations.is_blueprint": 0,
-        #         }
-        #     },
-        #     {
-        #         "$group": {
-        #             "_id": "$_id",
-        #             "items": {
-        #                 "$push": "$items",
-        #             },
-        #             "name": {"$first": "$name"},
-        #             "description": {"$first": "$description"},
-        #             "preprocessing": {"$first": "$preprocessing"},
-        #             "created_by": {"$first": "$created_by"},
-        #             "created_at": {"$first": "$created_at"},
-        #             "updated_at": {"$first": "$updated_at"},
-        #             "project_id": {"$first": "$project_id"},
-        #             "is_annotated": {"$first": "$is_annotated"},
-        #             "is_blueprint": {"$first": "$is_blueprint"},
-        #             "dataset_type": {"$first": "$dataset_type"},
-        #             "projects": {"$first": "$projects"},
-        #         }
-        #     },
-        #     {"$addFields": {"size": {"$size": "$items"}}},
-        #     {
-        #         "$lookup": {
-        #             "from": "resources",
-        #             "localField": "entity_ontology_resource_id",
-        #             "foreignField": "_id",
-        #             "as": "linked_entity_resource",
-        #         }
-        #     },
-        #     {
-        #         "$lookup": {
-        #             "from": "resources",
-        #             "localField": "relation_ontology_resource_id",
-        #             "foreignField": "_id",
-        #             "as": "linked_relation_resource",
-        #         }
-        #     },
-        #     {
-        #         "$unwind": {
-        #             "path": "$linked_entity_resource",
-        #             "preserveNullAndEmptyArrays": True,
-        #         }
-        #     },
-        #     {
-        #         "$unwind": {
-        #             "path": "$linked_relation_resource",
-        #             "preserveNullAndEmptyArrays": True,
-        #         }
-        #     },
-        # ]
-
-        # if include_projects:
-        #     agg_pipeline_segment += [
-        #         {
-        #             "$lookup": {
-        #                 "from": "projects",
-        #                 "localField": "_id",
-        #                 "foreignField": "dataset_id",
-        #                 "as": "projects",
-        #             }
-        #         },
-        #     ]
-
-        # agg_pipeline_segment += [
-        #     {
-        #         "$project": {
-        #             **{
-        #                 "_id": 1,
-        #                 "name": 1,
-        #                 "description": 1,
-        #                 "preprocessing": 1,
-        #                 "created_by": 1,
-        #                 "created_at": 1,
-        #                 "updated_at": 1,
-        #                 "is_blueprint": 1,
-        #                 "is_annotated": 1,
-        #                 "dataset_type": 1,
-        #                 "project_id": 1,
-        #                 "size": 1,
-        #                 "items": int(include_dataset_items),
-        #                 # "external_id": 1,
-        #                 "linked_entity_resource._id": 1,
-        #                 "linked_entity_resource.name": 1,
-        #                 "linked_relation_resource._id": 1,
-        #                 "linked_relation_resource.name": 1,
-        #                 "entity_ontology_resource_id": 1,
-        #                 "relation_ontology_resource_id": 1,
-        #             },
-        #             **(
-        #                 {
-        #                     "projects.name": 1,
-        #                     "projects._id": 1,
-        #                     "projects.ontology": 1,
-        #                 }
-        #                 if include_projects
-        #                 else {}
-        #             ),
-        #         }
-        #     },
-        # ]
-
-        # # logger.info(f"agg_pipeline_segment:\n{agg_pipeline_segment}")
-
-        # pipeline = [
-        #     {"$match": {"_id": dataset_id, "created_by": {"$in": [username, "system"]}}}
-        # ] + (agg_pipeline_segment if include_dataset_size else [])
-
-        # datasets = await db[DATASETS_COLLECTION].aggregate(pipeline).to_list(None)
-
-        # if len(datasets) == 1:
-        #     logger.info("Found one dataset")
-        #     dataset = datasets[0]
-
-        #     # Check if dataset is a "project" or "blueprint" dataset
-        #     is_project_dataset = (
-        #         dataset["is_blueprint"] is False and dataset["project_id"] is not None
-        #     )
-
-        #     logger.info(f"is_project_dataset: {is_project_dataset}")
-
-        #     if is_project_dataset:
-        #         # Only a single project will be associated with a project dataset as the bp is copied for all projects
-        #         projects = dataset.pop("projects")
-
-        #         dataset["project"] = projects[0]
-
-        #         # Flatten ontologies if project
-
-        #         if check_key_in_nested_dict(dataset, "project.ontology.entity"):
-        #             # flatten
-        #             dataset["project"]["ontology"]["entity"] = (
-        #                 flatten_hierarchical_ontology(
-        #                     ontology=[
-        #                         OntologyItem(**item)
-        #                         for item in dataset["project"]["ontology"]["entity"]
-        #                     ]
-        #                 )
-        #             )
-        #         if check_key_in_nested_dict(dataset, "project.ontology.relation"):
-        #             # flatten
-        #             dataset["project"]["ontology"]["relation"] = (
-        #                 flatten_hierarchical_ontology(
-        #                     ontology=[
-        #                         OntologyItem(**item)
-        #                         for item in dataset["project"]["ontology"]["relation"]
-        #                     ]
-        #                 )
-        #             )
-
-        #         if "entity_ontology_resource_id" in dataset:
-        #             dataset["entity_ontology_resource_id"] = str(
-        #                 dataset["entity_ontology_resource_id"]
-        #             )
-
-        #         if "relation_ontology_resource_id" in dataset:
-        #             dataset["relation_ontology_resource_id"] = str(
-        #                 dataset["relation_ontology_resource_id"]
-        #             )
-
-        #         return RichProjectDataset.model_validate(dataset)
-        #     else:
-        #         if "entity_ontology_resource_id" in dataset:
-        #             dataset["entity_ontology_resource_id"] = str(
-        #                 dataset["entity_ontology_resource_id"]
-        #             )
-        #         if "relation_ontology_resource_id" in dataset:
-        #             dataset["relation_ontology_resource_id"] = str(
-        #                 dataset["relation_ontology_resource_id"]
-        #             )
-
-        #         logger.info(f"Returning blueprint dataset: {dataset}")
-
-        #         return RichBlueprintDataset(**dataset)
-        # return None
     except Exception as e:
         logger.error(f"error: {e}")
         return None

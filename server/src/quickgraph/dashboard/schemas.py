@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..markup.schemas import Entity, Relation
 from ..project.schemas import (
     AnnotatorRoles,
     AnnotatorStates,
@@ -51,3 +52,48 @@ class DashboardPlot(BaseModel):
     no_data_title: str
     dataset: Union[List, Dict]
     meta: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SaveState(BaseModel):
+    created_by: str
+    created_at: datetime
+
+
+class Agreement(BaseModel):
+    overall: float
+    entity: float
+    relation: float
+
+
+class PairwiseAgreement(BaseModel):
+    entity: Dict
+    relation: Dict
+
+
+class Comments(BaseModel):
+    text: str
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class AdjudicationEntity(Entity):
+    ontology_item_name: str
+    ontology_item_fullname: str
+    ontology_item_color: str
+
+
+class AdjudicationResponse(BaseModel):
+    id: PydanticObjectIdAnnotated = Field(alias="_id")
+    save_states: List[SaveState]
+    agreement: Agreement
+    pairwise_agreement: PairwiseAgreement
+    tokens: List[str]
+    original: str
+    total_items: int
+    updated_at: datetime
+    annotators: List[str]
+    flags: List
+    social: List[Comments]
+    entities: Dict[str, List[AdjudicationEntity]]
+    relations: Optional[Dict[str, List[Relation]]] = Field(default=None)

@@ -171,24 +171,6 @@ async def create_one_resource(
     return created_resource
 
 
-# async def create_many_resources(
-#     db: AsyncIOMotorDatabase, resources: List[CreateResourceModel], username: str
-# ):
-
-#     await db[COLLECTION_NAME].insert_many(
-#         [
-#             {
-#                 **r.dict(),
-#                 "created_by": username,
-#                 "ontology": add_hierarchical_names_and_paths(
-#                     initialized_copy(r.dict()["ontology"])
-#                 ),
-#             }
-#             for r in resources
-#         ]
-#     )
-
-
 async def find_one_resource(
     db: AsyncIOMotorDatabase, resource_id: ObjectId, username: str
 ):

@@ -102,7 +102,6 @@ async def save_project_dataset_items_endpoint(
     """Save one or many dataset items associated with a project"""
     result = await save_many_dataset_items(
         db=db,
-        project_id=ObjectId(body.project_id),
         dataset_item_ids=[ObjectId(di) for di in body.dataset_item_ids],
         username=user.username,
     )

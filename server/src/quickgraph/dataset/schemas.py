@@ -83,6 +83,9 @@ class EnrichedItem(BaseItem):
     cluster_keywords: List[str] = Field(
         default=[], description="Top keywords describing the cluster"
     )
+    flags: List[str] = Field(
+        default=[], description="List of flags associated with this dataset item"
+    )
 
     dataset_id: PydanticObjectIdAnnotated = Field(default_factory=ObjectId)
     created_at: datetime = Field(default_factory=datetime.utcnow)
