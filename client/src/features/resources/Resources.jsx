@@ -151,7 +151,7 @@ const ResourceCard = ({ resource, index }) => {
       md={12}
       lg={6}
       xl={4}
-      key={`resource-grid-item-${resource.id}`}
+      key={`resource-grid-item-${resource._id}`}
     >
       <Box as={Paper} variant="outlined">
         <Box p={2}>
@@ -234,7 +234,7 @@ const ResourceCard = ({ resource, index }) => {
             color="primary"
             variant="contained"
             size="small"
-            onClick={() => navigate(`/resource-management/${resource.id}`)}
+            onClick={() => navigate(`/resource-management/${resource._id}`)}
             sx={{ textDecoration: "none" }}
             disableElevation
             title="Click to view this resource"
