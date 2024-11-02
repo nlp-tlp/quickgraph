@@ -169,7 +169,7 @@ const Contexts = {
     type: "external",
   },
   "/dataset-creator/review": {
-    text: 'If all the boxes are green, its time to create your dataset! Otherwise, click the "fix" button to go back and make the necessary changes. Please note dataset creation may take a few minutes if there are a large amount of items.',
+    text: 'If all the boxes are green, its time to create your dataset! Otherwise, click the "fix" button to go back and make the necessary changes. Please note dataset creation may take a few minutes if there are a large amount of items as they need to be processed and clustered.',
   },
 };
 
