@@ -1,7 +1,7 @@
 import useResource from "../../../shared/hooks/api/resource";
 import SchemaTreeViewWithControls from "../../../shared/components/SchemaTreeViewWithControls";
 
-const Ontology = ({ values, setValues }) => {
+const Ontology = ({ values, setValues, editable }) => {
   const { updateResource } = useResource();
   const handleUpdate = (updatedData) => {
     return updateResource({
@@ -22,6 +22,7 @@ const Ontology = ({ values, setValues }) => {
         })
       }
       handleDataUpdate={handleUpdate}
+      editable={editable}
     />
   );
 };

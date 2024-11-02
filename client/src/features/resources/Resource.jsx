@@ -189,28 +189,27 @@ const Resource = () => {
                       }}
                     >
                       <Stack
-                        // mt={1}
                         direction="row"
                         spacing={2}
                         alignItems="center"
                         justifyContent="flex-start"
                       >
-                        {resource.read_only ? (
+                        {resource.read_only && (
                           <Chip
                             label="Read Only"
                             size="small"
                             color="warning"
                             title="This resource is read only - no modifications are permitted."
                           />
-                        ) : null}
-                        {resource.is_blueprint ? (
+                        )}
+                        {resource.is_blueprint && (
                           <Chip
                             label="Blueprint"
                             size="small"
                             color="primary"
                             title="This resource is a blueprint which can be copied by projects."
                           />
-                        ) : null}
+                        )}
                       </Stack>
                     </Box>
                   </>
