@@ -238,10 +238,7 @@ async def list_datasets(
         # if not dataset["is_blueprint"]:
         #     # Project dataset
         #     dataset["project"] = dataset["projects"][0]
-
         _datasets.append(dataset)
-
-    logger.info(f"_datasets: {_datasets}")
 
     return [Dataset(**d) for d in _datasets]
 
