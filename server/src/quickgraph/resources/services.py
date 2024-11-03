@@ -19,6 +19,7 @@ from .schemas import (
     CreatePreannotationResource,
     CreateResourceModel,
     OntologyItem,
+    RelationConstraints,
     ResourceModel,
     ResourceModelOut,
     UpdateResourceModel,
@@ -27,6 +28,31 @@ from .schemas import (
 logger = logging.getLogger(__name__)
 
 COLLECTION_NAME = "resources"
+
+
+def find_item_by_id(
+    content: List[Dict[str, Any]], target_id: str
+) -> tuple[Dict[str, Any], List[int]]:
+    """
+    Recursively find an item by id in the content hierarchy and return its path indices.
+    Returns (item, path_indices) if found, (None, []) if not found.
+    """
+
+    def search(
+        items: List[Dict[str, Any]], current_path: List[int]
+    ) -> tuple[Dict[str, Any], List[int]]:
+        for i, item in enumerate(items):
+            if item["id"] == target_id:
+                return item, current_path + [i]
+
+            if "children" in item and item["children"]:
+                found_item, found_path = search(item["children"], current_path + [i])
+                if found_item:
+                    return found_item, found_path
+
+        return None, []
+
+    return search(content, [])
 
 
 def initialize_ontology(
@@ -151,7 +177,9 @@ async def create_one_resource(
     resource: Union[CreateResourceModel, CreatePreannotationResource],
     username: str,
 ) -> Dict[str, Any]:
-    resource = resource.model_dump(exclude_none=True)
+    """Create one resource."""
+
+    resource = resource.model_dump(exclude_none=False)
     content = resource.pop("content")
 
     new_resource = await db[COLLECTION_NAME].insert_one(

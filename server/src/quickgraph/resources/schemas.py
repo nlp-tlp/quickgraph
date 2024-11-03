@@ -2,12 +2,23 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..utils.schemas import PydanticObjectIdAnnotated
+
+
+class ResourceClassifications(str, Enum):
+    ontology = "ontology"
+    preannotation = "preannotation"
+    constraints = "constraints"
+
+
+class ResourceSubClassification(str, Enum):
+    entity = "entity"
+    relation = "relation"
 
 
 class EntityPreannotation(BaseModel):
@@ -34,9 +45,16 @@ class RichRelationPreannotation(RelationPreannotation):
     )
 
 
-class Constraint(BaseModel):
-    domain: list
-    range: list
+class RelationConstraints(BaseModel):
+    domain: List[str] = Field(default_factory=list)
+    range: List[str] = Field(default_factory=list)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class UpdateRelationConstraints(RelationConstraints):
+    id: str = Field(description="The UUID of the ontology item", alias="_id")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class OntologyItem(BaseModel):
@@ -50,20 +68,22 @@ class OntologyItem(BaseModel):
         default="", description="The description of the ontology item."
     )
     example_terms: Optional[List[str]] = Field(
-        default=[], description="List of example terms classified by the ontology item."
+        default_factory=list,
+        description="List of example terms classified by the ontology item.",
     )
-    color: Optional[str] = (
-        "#000000"  # Default color is black - TODO review if this should be changed for branding. default will apply to relation ontology items, not entities.
-    )
+    color: Optional[str] = "#000000"
     active: bool = Field(
         default=True, description="Flag indicating if the ontology item is active"
     )
     # https://docs.pydantic.dev/usage/postponed_annotations/#self-referencing-models
     children: List["OntologyItem"] = Field(
-        default=[], description="The children of the ontology item"
+        default_factory=list, description="The children of the ontology item"
     )
     path: Optional[List[int]] = Field(
         default=None, description="The path of the ontology item"
+    )
+    constraints: Optional[RelationConstraints] = Field(
+        default=None, description="The constraints of the ontology item"
     )
 
 
@@ -87,17 +107,9 @@ class BaseOntologyItem(BaseModel):
         default_factory=datetime.utcnow,
         description="The datetime the ontology item was last updated",
     )
-
-
-class ResourceClassifications(str, Enum):
-    ontology = "ontology"
-    preannotation = "preannotation"
-    constraints = "constraints"
-
-
-class ResourceSubClassification(str, Enum):
-    entity = "entity"
-    relation = "relation"
+    constraints: Optional[RelationConstraints] = Field(
+        default=None, description="The constraints of the ontology item"
+    )
 
 
 class BaseResourceModel(BaseModel):
@@ -112,7 +124,6 @@ class BaseResourceModel(BaseModel):
         None,
         List[BaseOntologyItem],
         List[Union[EntityPreannotation, RelationPreannotation]],
-        List[Constraint],
     ] = Field(description="The content of the resource")
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
@@ -121,31 +132,6 @@ class BaseResourceModel(BaseModel):
     updated_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="The datetime the resource was last updated",
-    )
-
-    model_config = ConfigDict(use_enum_values=True)
-
-
-class CreatePreannotationResource(BaseModel):
-    name: str = Field(description="Name assigned to resource")
-    classification: ResourceClassifications = Field(
-        description="Resource classification type - ontology, pre-annotation, constraints, ..."
-    )
-    sub_classification: Union[None, str] = Field(
-        description="Resource sub classification type - entity, relation, ..."
-    )
-    preannotations: Union[
-        None, List[Union[RichEntityPreannotation, RichRelationPreannotation]]
-    ]
-    ontology_id: Union[None, str] = Field(
-        default=None,
-        description="The UUID of the associated ontology (if preannotation resource)",
-    )
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Date resource was created"
-    )
-    updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Date resource was created"
     )
 
     model_config = ConfigDict(use_enum_values=True)
@@ -175,7 +161,6 @@ class ResourceModel(BaseResourceModel):
         None,
         List[OntologyItem],
         List[Union[EntityPreannotation, RelationPreannotation]],
-        List[Constraint],
     ] = Field(description="The content of the resource")
 
     model_config = ConfigDict(
@@ -195,6 +180,31 @@ class UpdateResourceModel(BaseModel):
         description="The sub classification of the resource"
     )
     content: List[OntologyItem] = Field(description="The content of the resource")
+    model_config = ConfigDict(use_enum_values=True)
+
+
+class CreatePreannotationResource(BaseModel):
+    name: str = Field(description="Name assigned to resource")
+    classification: ResourceClassifications = Field(
+        description="Resource classification type - ontology, pre-annotation, constraints, ..."
+    )
+    sub_classification: Union[None, str] = Field(
+        description="Resource sub classification type - entity, relation, ..."
+    )
+    preannotations: Union[
+        None, List[Union[RichEntityPreannotation, RichRelationPreannotation]]
+    ]
+    ontology_id: Union[None, str] = Field(
+        default=None,
+        description="The UUID of the associated ontology (if preannotation resource)",
+    )
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Date resource was created"
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Date resource was created"
+    )
+
     model_config = ConfigDict(use_enum_values=True)
 
 
@@ -220,4 +230,3 @@ class AggregatePreannotationResources(BaseModel):
 class AggregateResourcesModel(BaseModel):
     ontology: AggregateOntologyResources = []
     preannotation: AggregatePreannotationResources = []
-    constraints: List[Constraint] = []

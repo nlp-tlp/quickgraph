@@ -1,7 +1,8 @@
 """Resources router."""
 
 import logging
-from typing import List, Union
+from datetime import datetime
+from typing import List
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,15 +13,16 @@ from ..dependencies import get_db, get_user, valid_user_for_resource
 from ..users.schemas import UserDocumentModel
 from .schemas import (
     CreateResourceModel,
-    OntologyItem,
     ResourceModel,
     ResourceModelOut,
     ResourceModelWithReadStatus,
+    UpdateRelationConstraints,
     UpdateResourceModel,
 )
 from .services import (
     create_one_resource,
     delete_one_resource,
+    find_item_by_id,
     find_many_resources,
     find_one_resource,
     update_one_resource,
@@ -66,7 +68,80 @@ async def create_resource_endpoint(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Create a single resource."""
-    return await create_one_resource(db=db, resource=resource, username=user.username)
+    resource = await create_one_resource(
+        db=db, resource=resource, username=user.username
+    )
+    if resource is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Resource not created"
+        )
+    return resource
+
+
+@router.patch("/{resource_id}/relation-constraints", response_model=ResourceModel)
+async def update_resource_constraints_endpoint(
+    resource_id: str,
+    constraints: UpdateRelationConstraints,
+    user: UserDocumentModel = Depends(valid_user_for_resource),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """Update relation constraints."""
+    resource_id = ObjectId(resource_id)
+    resource = await db.resources.find_one(
+        {"_id": resource_id, "created_by": user.username}
+    )
+
+    if resource is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Resource not found"
+        )
+
+    if resource["is_blueprint"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Updating constraints on blueprint resources is not allowed",
+        )
+
+    # TODO: Check that the entities in the domain and range are valid entities in the ontology.
+
+    # Find the item and its path in the content hierarchy
+    item, path_indices = find_item_by_id(resource["content"], constraints.id)
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Content item with id {constraints.id} not found",
+        )
+
+    # Construct the update path based on the found indices
+    update_path = "content"
+    for idx in path_indices[:-1]:  # All but the last index
+        update_path += f".{idx}.children"
+    update_path += f".{path_indices[-1]}.constraints"  # Last index
+
+    # Perform the update
+    result = await db.resources.update_one(
+        {"_id": resource_id},
+        {
+            "$set": {
+                update_path: {
+                    "domain": constraints.domain,
+                    "range": constraints.range,
+                    "updated_at": datetime.utcnow(),
+                },
+                "updated_at": datetime.utcnow(),
+            }
+        },
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update the resource",
+        )
+
+    # Fetch and return the updated resource
+    updated_resource = await db.resources.find_one({"_id": resource_id})
+    return ResourceModel(**updated_resource)
 
 
 @router.patch(
