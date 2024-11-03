@@ -45,9 +45,30 @@ const RelationPopover = ({ textId, handleRelationPopoverClose }) => {
     setTgtSurfaceForm(newTrgSurfaceForm);
   }, [state.sourceSpan, state.targetSpan, textId, state.texts]);
 
-  const flatRelationOntology = state.flatRelationOntology.sort(
-    (a, b) => state.relationCounts[b.id] - state.relationCounts[a.id]
-  );
+  const flatRelationOntology = state.flatRelationOntology
+    .filter((r) => {
+      // If constraints is null, include the relation
+      if (!r.constraints) {
+        return true;
+      }
+
+      // If the domain/range aren't defined, treat them as empty lists
+      const domain = r.constraints.domain || [];
+      const range = r.constraints.range || [];
+
+      // If both domain and range are empty lists, include the relation
+      if (domain.length === 0 && range.length === 0) {
+        return true;
+      }
+
+      // Otherwise check both domain and range constraints
+      return (
+        domain.includes(state.sourceSpan.ontologyItemId) &&
+        range.includes(state.targetSpan.ontologyItemId)
+      );
+    })
+    .sort((a, b) => state.relationCounts[b.id] - state.relationCounts[a.id]);
+
   // `filteredRelations` are those that are shown as chips on entity spans.
   const filteredRelations =
     state.relations[textId] === undefined

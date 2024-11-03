@@ -1,10 +1,10 @@
 export function flattenOntology(a) {
   return a.reduce(function (
     flattened,
-    { id, name, fullname, domain, range, children, active }
+    { id, name, fullname, constraints, children, active }
   ) {
     return flattened
-      .concat([{ id, name, fullname, domain, range, active }])
+      .concat([{ id, name, fullname, constraints, active }])
       .concat(children ? flattenOntology(children) : []);
   },
   []);
@@ -15,7 +15,7 @@ export const getFlatOntology = (a) => {
   function flattenOntology(a) {
     return a.reduce(function (
       flattened,
-      { id, name, fullname, color = null, children, domain, range, active }
+      { id, name, fullname, color = null, children, constraints, active }
     ) {
       return flattened
         .concat([
@@ -24,8 +24,7 @@ export const getFlatOntology = (a) => {
             name,
             fullname,
             color,
-            domain,
-            range,
+            constraints,
             active,
             children,
           }, // Adds children back in for use elsewhere

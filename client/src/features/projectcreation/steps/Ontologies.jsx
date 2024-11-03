@@ -1,5 +1,5 @@
 import "./grid-table.css";
-import { Grid, Typography, Tooltip, Chip } from "@mui/material";
+import { Grid, Typography, Chip } from "@mui/material";
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import moment from "moment";
@@ -18,47 +18,59 @@ export const Ontologies = ({
 }) => {
   const theme = useTheme();
 
-  const updateValue = (key, value) => {
-    setValues((prevState) => ({ ...prevState, [key]: value }));
+  const handleSelection = (resource) => {
+    const { classification, sub_classification, id, name } = resource;
+    const currentSelection =
+      values.resources[classification][sub_classification];
+    const newValue =
+      currentSelection.id === id ? { name: null, id: null } : { name, id };
+    setValues({
+      ...values,
+      resources: {
+        ...values.resources,
+        [classification]: {
+          ...values.resources[classification],
+          [sub_classification]: newValue,
+        },
+      },
+    });
   };
 
-  const handleSelection = (resource) => {
-    if (
-      values.resources[resource.classification][resource.sub_classification]
-        .id === resource.id
-    ) {
-      // Remove resource from selection
-      updateValue("resources", {
-        ...values.resources,
-        [resource.classification]: {
-          ...values.resources[resource.classification],
-          [resource.sub_classification]: {
-            name: null,
-            id: null,
-          },
-        },
-      });
-    } else {
-      updateValue("resources", {
-        ...values.resources,
-        [resource.classification]: {
-          ...values.resources[resource.classification],
-          [resource.sub_classification]: {
-            name: resource.name,
-            id: resource.id,
-          },
-        },
-      });
+  const isRowSelectable = (row) => {
+    const { sub_classification, id } = row;
+    const { dataset, tasks } = values;
+    if (sub_classification === "relation" && !tasks.relation) {
+      return false;
     }
+    if (dataset.dataset_type === 2) {
+      return [
+        dataset.entity_ontology_resource_id,
+        dataset.relation_ontology_resource_id,
+      ].includes(id);
+    }
+    if (dataset.dataset_type === 1 && sub_classification === "entity") {
+      return dataset.entity_ontology_resource_id === id;
+    }
+    return true;
+  };
+
+  const getRowClassName = (row) => {
+    const { sub_classification, id } = row;
+    const selectedId = values.resources.ontology[sub_classification].id;
+
+    if (!isRowSelectable(row)) {
+      return "row-unselected";
+    }
+
+    return selectedId === id ? "row-selected" : "row-unselected";
   };
 
   const columns = [
-    { field: "id", hide: true },
     {
       field: "sub_classification",
       headerName: "Type",
       flex: 1,
-      maxWidth: 80,
+      maxWidth: 120,
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
@@ -120,16 +132,6 @@ export const Ontologies = ({
         />
       ),
     },
-    // {
-    //   field: "created_at",
-    //   headerName: "Created",
-    //   valueGetter: (params) => moment.utc(params.row.created_at).fromNow(),
-    //   maxWidth: 120,
-    //   flex: 1,
-    //   align: "center",
-    //   headerAlign: "center",
-    // },
-
     {
       field: "instances",
       headerName: "Examples",
@@ -184,25 +186,13 @@ export const Ontologies = ({
           title="Assign this ontology to the project"
           onClick={() => handleSelection(params.row)}
           sx={{
-            color: [
-              values.resources.ontology.entity.id,
-              values.resources.ontology.relation.id,
-            ].includes(params.id)
-              ? theme.palette.primary.main
-              : theme.palette.neutral.main,
+            color:
+              values.resources.ontology[params.row.sub_classification].id ===
+              params.id
+                ? theme.palette.primary.main
+                : theme.palette.neutral.main,
           }}
-          disabled={
-            (params.row.sub_classification === "relation" &&
-              !values.tasks.relation) ||
-            (values.dataset.dataset_type === 2 &&
-              ![
-                values.dataset.entity_ontology_resource_id,
-                values.dataset.relation_ontology_resource_id,
-              ].includes(params.row.id)) ||
-            (values.dataset.dataset_type === 1 &&
-              params.row.sub_classification === "entity" &&
-              values.dataset.entity_ontology_resource_id !== params.row.id)
-          }
+          disabled={!isRowSelectable(params.row)}
         />,
       ],
     },
@@ -213,70 +203,32 @@ export const Ontologies = ({
       .filter((r) => r.classification === "ontology")
       .map((r) => ({ ...r, id: r._id })) || [];
 
-  const handleRowStyle = (row) => {
-    if (row.sub_classification === "relation") {
-      if (!values.tasks.relation) {
-        return "row-unselected";
-      } else if (
-        values.dataset.relation_ontology_resource_id !== undefined &&
-        values.dataset.relation_ontology_resource_id !== row.id
-      ) {
-        return "row-unselected";
-      } else if (values.resources.ontology.relation.id === null) {
-        return;
-      } else {
-        if (row.id === values.resources.ontology.relation.id) {
-          return "row-selected";
-        } else {
-          return "row-unselected";
-        }
-      }
-    }
-    if (row.sub_classification === "entity") {
-      if (
-        values.dataset.entity_ontology_resource_id !== undefined &&
-        values.dataset.entity_ontology_resource_id !== row.id
-      ) {
-        return "row-unselected";
-      } else if (values.resources.ontology.entity.id === null) {
-        return;
-      } else {
-        if (row.id === values.resources.ontology.entity.id) {
-          return "row-selected";
-        } else {
-          return "row-unselected";
-        }
-      }
-    }
-  };
+  if (loading) return <LoadingAlert message="Loading ontologies" />;
+  if (error) return <ErrorAlert />;
+  if (rows.length === 0) {
+    return (
+      <Grid item xs={12} sx={{ textAlign: "center" }}>
+        <Typography>No ontology resources found</Typography>
+      </Grid>
+    );
+  }
 
   return (
     <Grid item container justifyContent="center" direction="column">
       <ContextStack values={values} />
-      {loading ? (
-        <LoadingAlert message="Loading ontologies" />
-      ) : error ? (
-        <ErrorAlert />
-      ) : rows.length === 0 ? (
-        <Grid item xs={12} sx={{ textAlign: "center" }}>
-          <Typography>No ontology resources found</Typography>
-        </Grid>
-      ) : (
-        <div style={{ height: 600, width: "100%" }}>
-          <DataGrid
-            density={"comfortable"}
-            rows={rows}
-            columns={columns}
-            pageSize={20}
-            rowsPerPageOptions={[20]}
-            disableColumnSelector
-            disableMultipleSelection={true}
-            disableSelectionOnClick
-            getRowClassName={(params) => handleRowStyle(params.row)}
-            columnVisibilityModel={{ id: false }}
-          />
-        </div>
-      )}
+      <div style={{ height: 600, width: "100%" }}>
+        <DataGrid
+          density={"comfortable"}
+          rows={rows}
+          columns={columns}
+          pageSize={20}
+          rowsPerPageOptions={[20]}
+          disableColumnSelector
+          disableMultipleSelection={true}
+          disableSelectionOnClick
+          getRowClassName={(params) => getRowClassName(params.row)}
+        />
+      </div>
     </Grid>
   );
 };

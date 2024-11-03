@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import LoadingAlert from "../../../shared/components/LoadingAlert";
 import ErrorAlert from "../../../shared/components/ErrorAlert";
 import ContextStack from "./ContextStack";
+import "./grid-table.css";
 
 export const Dataset = ({
   values,
@@ -16,28 +17,35 @@ export const Dataset = ({
   datasets = [],
 }) => {
   const theme = useTheme();
-  const updateValue = (key, value) => {
-    setValues((prevState) => ({ ...prevState, [key]: value }));
-  };
 
   const handleSelection = (dataset) => {
-    if (values.dataset.id === dataset.id) {
-      updateValue("dataset", { name: null, id: null });
-    } else {
-      updateValue("dataset", {
-        name: dataset.name,
-        id: dataset._id,
-        dataset_type: dataset.dataset_type,
-        entity_ontology_resource_id: dataset.entity_ontology_resource_id,
-        relation_ontology_resource_id: dataset.relation_ontology_resource_id,
-        is_annotated: dataset.is_annotated,
-        is_suggested: dataset.is_suggested,
-      });
-    }
+    const isSelected = values.dataset.id === dataset.id;
+
+    const newDataset = isSelected
+      ? { name: null, id: null }
+      : {
+          name: dataset.name,
+          id: dataset._id,
+          dataset_type: dataset.dataset_type,
+          entity_ontology_resource_id: dataset.entity_ontology_resource_id,
+          relation_ontology_resource_id: dataset.relation_ontology_resource_id,
+          is_annotated: dataset.is_annotated,
+          is_suggested: dataset.is_suggested,
+        };
+
+    setValues({ ...values, dataset: newDataset });
+  };
+
+  const getRowClassName = (row) => {
+    const isSelected = row.id === values.dataset.id;
+    return values.dataset.id
+      ? isSelected
+        ? "row-selected"
+        : "row-unselected"
+      : "";
   };
 
   const columns = [
-    { field: "id", hide: true },
     {
       field: "name",
       headerName: "Name",
@@ -128,18 +136,6 @@ export const Dataset = ({
         />
       ),
     },
-    // {
-    //   field: "preprocessing",
-    //   headerName: "Preprocessing",
-    //   // description: (params) =>
-    //   //   `${Object.keys(params.row.preprocessing).join(", ")}`,
-    //   sortable: false,
-    //   flex: 1,
-    //   minWidth: 200,
-    //   valueGetter: (params) =>
-    //     `${Object.keys(params.row.preprocessing).join(", ")}`,
-    //   headerAlign: "center",
-    // },
     {
       field: "projects",
       headerName: "Projects",
@@ -170,9 +166,10 @@ export const Dataset = ({
           title="Assign this dataset to the project"
           onClick={() => handleSelection(params.row)}
           sx={{
-            color: [values.dataset.id].includes(params.id)
-              ? theme.palette.primary.main
-              : theme.palette.neutral.main,
+            color:
+              values.dataset.id === params.id
+                ? theme.palette.primary.main
+                : theme.palette.neutral.main,
           }}
         />,
       ],
@@ -181,45 +178,32 @@ export const Dataset = ({
 
   const rows = datasets?.map((d) => ({ ...d, id: d._id })) || [];
 
-  const handleRowStyle = (row) => {
-    if (values.dataset.id === null) {
-      return;
-    } else {
-      if (row.id === values.dataset.id) {
-        return "row-selected";
-      } else {
-        return "row-unselected";
-      }
-    }
-  };
+  if (loading) return <LoadingAlert message="Loading datasets" />;
+  if (error) return <ErrorAlert />;
+  if (rows.length === 0) {
+    return (
+      <Grid item xs={12} sx={{ textAlign: "center" }}>
+        <Typography>No datasets found</Typography>
+      </Grid>
+    );
+  }
 
   return (
     <Grid item container justifyContent="center" direction="column">
       <ContextStack values={values} />
-      {loading ? (
-        <LoadingAlert message="Loading datasets" />
-      ) : error ? (
-        <ErrorAlert />
-      ) : rows.length === 0 ? (
-        <Grid item xs={12} sx={{ textAlign: "center" }}>
-          <Typography>No datasets found</Typography>
-        </Grid>
-      ) : (
-        <div style={{ height: 600, width: "100%" }}>
-          <DataGrid
-            density={"comfortable"}
-            rows={rows}
-            columns={columns}
-            pageSize={20}
-            rowsPerPageOptions={[20]}
-            disableColumnSelector
-            disableMultipleSelection={true}
-            disableSelectionOnClick
-            getRowClassName={(params) => handleRowStyle(params.row)}
-            columnVisibilityModel={{ id: false }}
-          />
-        </div>
-      )}
+      <div style={{ height: 600, width: "100%" }}>
+        <DataGrid
+          density={"comfortable"}
+          rows={rows}
+          columns={columns}
+          pageSize={20}
+          rowsPerPageOptions={[20]}
+          disableColumnSelector
+          disableMultipleSelection={true}
+          disableSelectionOnClick
+          getRowClassName={(params) => getRowClassName(params.row)}
+        />
+      </div>
     </Grid>
   );
 };

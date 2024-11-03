@@ -238,6 +238,8 @@ const Resource = () => {
                       values={editableResource}
                       setValues={setEditableResource}
                       editable={!resource.read_only}
+                      isEntity={resource.sub_classification === "entity"}
+                      isBlueprint={resource.is_blueprint}
                     />
                   )}
                 </Grid>

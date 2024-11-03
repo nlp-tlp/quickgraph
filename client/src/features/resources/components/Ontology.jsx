@@ -1,14 +1,16 @@
 import useResource from "../../../shared/hooks/api/resource";
 import SchemaTreeViewWithControls from "../../../shared/components/SchemaTreeViewWithControls";
 
-const Ontology = ({ values, setValues, editable }) => {
+const Ontology = ({ values, setValues, editable, isEntity, isBlueprint }) => {
   const { updateResource } = useResource();
   const handleUpdate = (updatedData) => {
     return updateResource({
-      id: values._id,
-      classification: values.classification,
-      sub_classification: values.sub_classification,
-      content: updatedData,
+      resourceId: values._id,
+      body: {
+        classification: values.classification,
+        sub_classification: values.sub_classification,
+        content: updatedData,
+      },
     });
   };
 
@@ -23,6 +25,8 @@ const Ontology = ({ values, setValues, editable }) => {
       }
       handleDataUpdate={handleUpdate}
       editable={editable}
+      isEntity={isEntity}
+      isBlueprint={isBlueprint}
     />
   );
 };

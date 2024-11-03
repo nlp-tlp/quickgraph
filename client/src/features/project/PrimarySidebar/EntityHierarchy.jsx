@@ -89,7 +89,7 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
         <Chip
           label={shortcut}
           size="small"
-          sx={{ ml: 1 }}
+          sx={{ ml: 1, backgroundColor: "white" }}
           title="Keyboard shortcut"
         />
       )}

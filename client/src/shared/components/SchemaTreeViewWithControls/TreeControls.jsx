@@ -24,7 +24,10 @@ export const TreeControls = ({
   onUpdate,
   onAddRootNode,
   disabled = false,
+  isEntity = true,
 }) => {
+  const itemTypeName = isEntity ? "Entity" : "Relation";
+
   // Calculate max depth
   const getMaxDepth = (nodes, currentDepth = 0) => {
     let maxDepth = currentDepth;
@@ -78,20 +81,20 @@ export const TreeControls = ({
                 Max Depth: <strong>{getMaxDepth(items)}</strong>
               </Typography>
               <Typography variant="body2">
-                Total Items: <strong>{getTotalItems(items)}</strong>
+                Total {itemTypeName}s: <strong>{getTotalItems(items)}</strong>
               </Typography>
             </Stack>
           </Stack>
           <Stack direction="row" spacing={1}>
             {!disabled && (
-              <Tooltip title="Add Root Node">
+              <Tooltip title={`Add Root ${itemTypeName}`}>
                 <Button
                   size="small"
                   variant="outlined"
                   onClick={() => onAddRootNode()}
                   color="success"
                 >
-                  Add Root Node
+                  Add Root {itemTypeName}
                 </Button>
               </Tooltip>
             )}

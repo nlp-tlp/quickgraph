@@ -81,9 +81,6 @@ const Resources = () => {
             <ListItemText primary={"Constraints - Entity (editable)"} />
           </ListItem>
           <ListItem>
-            <ListItemText primary={"Constraints - Relation (editable)"} />
-          </ListItem>
-          <ListItem>
             <ListItemText primary={"Preannotations (not editable)"} />
           </ListItem> */}
         </List>
@@ -169,6 +166,8 @@ const OntologyComponent = ({ classification, sub_classification }) => {
             initialData={editableResource}
             handleDataChange={(treeData) => setEditableResource([...treeData])}
             handleDataUpdate={handleUpdate}
+            isEntity={sub_classification === "entity"}
+            isBlueprint={false}
           />
         )}
       </Grid>
