@@ -46,8 +46,8 @@ class JSONBaseItem(BaseModel):
     tokens: List[str] = Field(
         description='The tokens of this item. This may not necessarily be aligned with the "original" field.'
     )
-    entities: Optional[List[Entity]]
-    relations: Optional[List[Relation]]
+    entities: Optional[List[Entity]] = Field(default=None)
+    relations: Optional[List[Relation]] = Field(default=None)
     external_id: Optional[str] = Field(
         default=None, description="The External ID associated with the item"
     )

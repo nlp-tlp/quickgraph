@@ -526,9 +526,9 @@ def create_rich_dataset_items(
 
     This function assigns a "dataset_id" to rich dataset items. Rich datasets can have additional fields in contrast to standard "text" datasets.
     """
-
+    logger.info(f"Creating rich dataset items for {len(dataset_items)} items")
     clusters, cluster_keywords = embed_and_cluster_texts(
-        texts=[d.original for d in dataset_items]
+        texts=[d["original"] for d in dataset_items]
     )
 
     return [
@@ -698,7 +698,12 @@ async def create_annotated_dataset_items(
 
 
 async def process_dataset_items(
-    db, dataset_items, dataset, dataset_id, username: str, project_id: ObjectId = None
+    db: AsyncIOMotorDatabase,
+    dataset_items: List[Dict[str, Any]],
+    dataset,
+    dataset_id: ObjectId,
+    username: str,
+    project_id: ObjectId = None,
 ):
     if dataset["is_annotated"]:
         await create_annotated_dataset_items(
@@ -901,11 +906,7 @@ async def filter_dataset(
     filters: DatasetFilters,
     username: str,
 ):
-    """Filter a dataset.
-
-    TODO:
-        - add check for whether user is disabled or hasn't accepted yet...
-    """
+    """Filter a dataset."""
     project_id = ObjectId(filters.project_id)
 
     project = await db["projects"].find_one(
@@ -1148,6 +1149,7 @@ async def filter_dataset(
             "flags": [
                 item for item in di.get("flags", []) if item["created_by"] == username
             ],
+            "extra_fields": di.get("extra_fields"),
             "cluster_id": di.get("cluster_id"),
             "cluster_keywords": di.get("cluster_keywords"),
         }
