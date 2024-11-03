@@ -29,7 +29,7 @@ class BaseItem(BaseModel):
 
 
 class Entity(BaseModel):
-    id: Optional[str] = Field(description="The id of the entity")
+    id: Optional[str] = Field(default=None, description="The id of the entity")
     start: int
     end: int
     label: str
