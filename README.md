@@ -100,6 +100,8 @@ MONGODB__URI="mongodb+srv://..."
 AUTH__SECRET_KEY="your_secret"
 ```
 
+If you want to rebuild the documentation static assets, run `tar czf static-img.tar.gz static/img/` from the `/docs` directory. Store this in an S3 bucket in AWS and reconfigure the Dockerfile in `./docs`.
+
 ## 🏗 Architecture
 
 QuickGraph consists of four main components:
