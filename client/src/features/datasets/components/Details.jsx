@@ -80,7 +80,7 @@ const DatasetDetails = ({ values, setValues }) => {
               resources: {
                 ...prevState.resources,
                 entityId: targetValue,
-                entityClasses: resources.filter((r) => r.id === targetValue)[0]
+                entityClasses: resources.filter((r) => r._id === targetValue)[0]
                   .instances,
               },
             })),
@@ -93,7 +93,7 @@ const DatasetDetails = ({ values, setValues }) => {
                 .filter((r) => r.sub_classification === "entity")
                 .map((r) => ({
                   name: `${r.name} (${r.instances.length})`,
-                  value: r.id,
+                  value: r._id,
                   title: `${r.instances.join(", ")}`,
                 })),
         },
@@ -108,7 +108,7 @@ const DatasetDetails = ({ values, setValues }) => {
                 ...prevState.resources,
                 relationId: targetValue,
                 relationClasses: resources.filter(
-                  (r) => r.id === targetValue
+                  (r) => r._id === targetValue
                 )[0].instances,
               },
             })),
@@ -121,7 +121,7 @@ const DatasetDetails = ({ values, setValues }) => {
                 .filter((r) => r.sub_classification === "relation")
                 .map((r) => ({
                   name: `${r.name} (${r.instances.length})`,
-                  value: r.id,
+                  value: r._id,
                   title: `${r.instances.join(", ")}`,
                 })),
         },
