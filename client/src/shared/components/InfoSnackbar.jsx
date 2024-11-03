@@ -157,7 +157,7 @@ const Contexts = {
     type: "external",
   },
   "/dataset-creator/editor": {
-    text: "QuickGraph supports numerous dataset formats including simple newline separated text, pre-annotated content, and rich objects. To find out more ",
+    text: "QuickGraph supports numerous dataset formats including simple newline separated text, pre-annotated content, and rich objects. To upload pre-annotated or rich datasets, toggle from Text to JSON input. To find out more ",
     anchorText: "click here.",
     link: DocsLinks.datasets,
     type: "external",

@@ -5,6 +5,9 @@ import {
   Chip,
   Typography,
   Divider,
+  IconButton,
+  Box,
+  Popover,
 } from "@mui/material";
 import {
   Save as SaveIcon,
@@ -18,8 +21,55 @@ import TrayFlag from "./TrayFlag";
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from "react-router-dom";
 import moment from "moment";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { ProjectContext } from "../../../shared/context/ProjectContext";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+
+const ExtraFields = ({ fields }) => {
+  const theme = useTheme();
+
+  if (Object.keys(fields).length === 0) {
+    return (
+      <Box sx={{ p: 2, width: 300 }}>
+        <Typography color="text.secondary" variant="body2">
+          No extra fields available for this item
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ maxWidth: 300, maxHeight: 400, overflow: "auto" }}>
+      <Stack spacing={1.5} sx={{ p: 2 }}>
+        {Object.entries(fields).map(([key, value]) => (
+          <Box key={key}>
+            <Typography
+              component="span"
+              color={theme.palette.primary.main}
+              sx={{ wordBreak: "break-word" }}
+              variant="caption"
+            >
+              {key}:
+            </Typography>{" "}
+            <Typography
+              component="span"
+              variant="caption"
+              sx={{
+                wordBreak: "break-word",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {typeof value === "object"
+                ? JSON.stringify(value, null, 2)
+                : String(value)}
+            </Typography>
+          </Box>
+        ))}
+      </Stack>
+    </Box>
+  );
+};
 
 const getMostRecentDate = (dates) => {
   /**
@@ -53,6 +103,8 @@ const getMostRecentDate = (dates) => {
 const ActionTray = ({ textId, textIndex }) => {
   const theme = useTheme();
   const { state, dispatch, handleSave } = useContext(ProjectContext);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [showExtraFields, setShowExtraFields] = useState(false);
   const tokenCount = state.texts[textId].tokens.length ?? 0;
   const entities = state.entities[textId] ?? [];
   const entityCount = entities.filter((e) => !e.suggested).length;
@@ -60,6 +112,7 @@ const ActionTray = ({ textId, textIndex }) => {
   const relations = state.relations[textId] ?? [];
   const relationCount = relations.filter((r) => !r.suggested).length;
   const suggestedRelationCount = relations.length - relationCount;
+  const extraFields = state.texts[textId].extra_fields ?? {};
 
   const lastUpdatedMarkupDate = moment
     .utc(
@@ -77,6 +130,16 @@ const ActionTray = ({ textId, textIndex }) => {
       payload: { datasetItemId: textId },
     });
   };
+
+  const handleExtraFieldsClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleExtraFieldsClose = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
 
   return (
     <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -122,11 +185,54 @@ const ActionTray = ({ textId, textIndex }) => {
                   : "outlined"
               }
               onClick={toggleDiscussion}
-              // disabled={state.settings.disable_discussion}
             />
           </Badge>
         </Tooltip>
         <TrayFlag state={state} dispatch={dispatch} textId={textId} />
+        <Chip
+          clickable
+          label="Extra fields"
+          size="small"
+          icon={open ? <VisibilityOffIcon /> : <VisibilityIcon />}
+          variant={open ? "contained" : "outlined"}
+          color="primary"
+          onClick={handleExtraFieldsClick}
+        />
+        <Popover
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handleExtraFieldsClose}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "left",
+          }}
+          PaperProps={{
+            elevation: 0,
+            variant: "outlined",
+            sx: {
+              mt: 1,
+              "&:before": {
+                content: '""',
+                display: "block",
+                position: "absolute",
+                top: 0,
+                left: 14,
+                width: 10,
+                height: 10,
+                bgcolor: "background.paper",
+                transform: "translateY(-50%) rotate(45deg)",
+                zIndex: 0,
+              },
+            },
+          }}
+        >
+          <ExtraFields fields={extraFields} />
+        </Popover>
+
         <Divider orientation="vertical" flexItem />
         <Tooltip
           title={`This item has ${entityCount} accepted and ${suggestedEntityCount} suggested entity annotations`}
@@ -241,6 +347,7 @@ const ActionTray = ({ textId, textIndex }) => {
           </Typography>
         </Tooltip>
       </Stack>
+      {showExtraFields && <ExtraFields fields={extraFields} />}
     </Stack>
   );
 };
