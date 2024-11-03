@@ -1,26 +1,16 @@
-# Use Node.js as the base image
+# docs/Dockerfile
 FROM node:18
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy the rest of your Docusaurus project
 COPY . .
 
-# Build the site
-RUN npm run build
+# Add a startup script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-# Expose port 4000
-EXPOSE 4000
-
-# Set environment variable for the port
-ENV PORT=4000
-
-# Command to serve the built site
-CMD npx serve -s build -l 4000
+# Use the startup script as the entrypoint
+ENTRYPOINT ["/start.sh"]

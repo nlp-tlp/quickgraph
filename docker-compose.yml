@@ -53,6 +53,8 @@ services:
       - static_img:/app/static/img
     networks:
       - app-network
+    depends_on:
+      - init-static-img
 
   init-static-img:
     image: curlimages/curl:latest
@@ -61,10 +63,9 @@ services:
     command: >
       sh -c '
       cd /static_img &&
-      curl -L https://nlp-tlp.s3.ap-southeast-2.amazonaws.com/static-img.tar.gz | tar xz --strip-components=3
+      curl -L https://nlp-tlp.s3.ap-southeast-2.amazonaws.com/static-img.tar.gz | tar xz --strip-components=3 &&
+      touch .initialized
       '
-    depends_on:
-      - docs
 
 volumes:
   mongodb_data:
