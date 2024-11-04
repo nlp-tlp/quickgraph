@@ -67,9 +67,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
   const [nodeColor, setNodeColor] = React.useState(
     itemData?.color || "#efefef"
   );
-  const [isDisabled, setIsDisabled] = React.useState(
-    itemData?.disabled || false
-  );
+  const [isActive, setIsActive] = React.useState(itemData?.active || false);
   const [error, setError] = React.useState(false);
 
   // Validate name on mount and when nodeLabel changes
@@ -133,12 +131,12 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
     setMenuAnchor(null);
   };
 
-  const handleToggleDisabled = (event) => {
+  const handleToggleActive = (event) => {
     event.stopPropagation();
-    const newDisabled = !isDisabled;
-    setIsDisabled(newDisabled);
+    const newActive = !isActive;
+    setIsActive(newActive);
     if (onNodeUpdate) {
-      onNodeUpdate(itemId, { disabled: newDisabled });
+      onNodeUpdate(itemId, { active: newActive }, true); // true indicates update descendants
     }
     setMenuAnchor(null);
   };
@@ -151,7 +149,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
         name: "",
         description: "",
         color: nodeColor,
-        disabled: false,
+        active: true,
       };
       onNodeAdd(itemId, newNode);
     }
@@ -229,9 +227,6 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
     event.stopPropagation();
     setConstraintsModalOpen(false);
   };
-
-  console.log("itemData", itemData);
-
   return (
     <>
       <TreeItem2Provider itemId={itemId}>
@@ -243,7 +238,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
               marginTop: "8px",
               borderColor: nodeColor,
               backgroundColor: alpha(nodeColor, 0.25),
-              opacity: isDisabled ? 0.5 : 1,
+              opacity: isActive ? 1 : 0.5,
             }}
           >
             <TreeItem2IconContainer {...getIconContainerProps()}>
@@ -270,7 +265,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
                     value={nodeLabel}
                     onChange={editable ? handleLabelChange : null}
                     sx={{ fontWeight: 500 }}
-                    disabled={isDisabled}
+                    disabled={!isActive}
                     error={error}
                     helperText={error ? "Name cannot be empty" : ""}
                     onClick={(e) => e.stopPropagation()}
@@ -288,7 +283,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
                     variant="standard"
                     value={nodeDescription}
                     onChange={editable ? handleDescriptionChange : null}
-                    disabled={isDisabled}
+                    disabled={!isActive}
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={handleKeyDown}
                     InputProps={{
@@ -327,8 +322,8 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
           onClose={handleMenuClose}
           onClick={(e) => e.stopPropagation()}
         >
-          <MenuItem onClick={handleToggleDisabled}>
-            {isDisabled ? `Enable ${menuItemName}` : `Disable ${menuItemName}`}
+          <MenuItem onClick={handleToggleActive}>
+            {isActive ? `Disable ${menuItemName}` : `Enable ${menuItemName}`}
           </MenuItem>
           <MenuItem onClick={handleColorClick}>Change Color</MenuItem>
           <MenuItem onClick={handleAddChild}>Add Child {menuItemName}</MenuItem>

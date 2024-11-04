@@ -1,4 +1,10 @@
-import React, { useState, forwardRef, useContext } from "react";
+import React, {
+  useState,
+  forwardRef,
+  useContext,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   Box,
   Button,
@@ -28,15 +34,28 @@ const getContrastColor = (color) => {
   return luminance > 0.5 ? "#000000" : "#ffffff";
 };
 
-const StyledTreeItem2 = styled(TreeItem2)(({ theme, itemcolor }) => ({
+const StyledTreeItem2 = styled(TreeItem2)(({ theme, itemcolor, disabled }) => ({
   "& .MuiTreeItem-content": {
     border: `1px solid ${itemcolor || "transparent"}`,
     borderRadius: 0,
     marginBottom: 2,
-    backgroundColor: itemcolor ? alpha(itemcolor, 0.75) : "transparent",
-    color: itemcolor ? getContrastColor(itemcolor) : theme.palette.text.primary,
+    backgroundColor: disabled
+      ? theme.palette.action.disabledBackground
+      : itemcolor
+      ? alpha(itemcolor, 0.75)
+      : "transparent",
+    color: disabled
+      ? theme.palette.text.disabled
+      : itemcolor
+      ? getContrastColor(itemcolor)
+      : theme.palette.text.primary,
+    opacity: disabled ? 0.6 : 1,
     "&:hover": {
-      backgroundColor: itemcolor ? itemcolor : theme.palette.action.hover,
+      backgroundColor: disabled
+        ? theme.palette.action.disabledBackground
+        : itemcolor
+        ? itemcolor
+        : theme.palette.action.hover,
     },
     // Add styles for the content layout
     display: "flex",
@@ -44,7 +63,11 @@ const StyledTreeItem2 = styled(TreeItem2)(({ theme, itemcolor }) => ({
     padding: theme.spacing(0.5, 1),
   },
   "& .MuiTreeItem-iconContainer": {
-    color: itemcolor ? getContrastColor(itemcolor) : "inherit",
+    color: disabled
+      ? theme.palette.text.disabled
+      : itemcolor
+      ? getContrastColor(itemcolor)
+      : "inherit",
   },
   // Add styles for the label and chip container
   "& .MuiTreeItem-label": {
@@ -52,7 +75,16 @@ const StyledTreeItem2 = styled(TreeItem2)(({ theme, itemcolor }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    opacity: disabled ? 0.6 : 1,
+    cursor: disabled ? "not-allowed" : "pointer",
+    pointerEvents: disabled ? "none" : "auto",
   },
+  // Optional: style for any children when parent is disabled
+  ...(disabled && {
+    "& .MuiTreeItem-group": {
+      opacity: 0.6,
+    },
+  }),
 }));
 
 const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
@@ -64,6 +96,7 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
   const itemColor = props.color || "inherit";
   const path = props.path || [];
   const shortcut = path.length > 0 ? path.map((num) => num + 1).join("") : null;
+  const active = props.active || false;
 
   const handleContentClick = (event) => {
     event.defaultMuiPrevented = true;
@@ -82,6 +115,8 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
         alignItems: "center",
         width: "100%",
         justifyContent: "space-between",
+        cursor: !active ? "not-allowed" : "pointer",
+        pointerEvents: !active ? "none" : "auto",
       }}
     >
       <span>{props.label}</span>
@@ -103,6 +138,7 @@ const CustomTreeItem = forwardRef(function MyTreeItem(props, ref) {
       itemcolor={itemColor}
       title={`${props.fullname} (${props.itemId})` || ""}
       label={contentWithShortcut}
+      disabled={!active}
       slotProps={{
         content: {
           onClick: handleContentClick,
@@ -148,14 +184,12 @@ const EntityTreeSelect = () => {
   const { state, dispatch, handleApply } = useContext(ProjectContext);
 
   const handleAnnotation = (nodeId) => {
-    if (state.entityAnnotationMode && 0 < state.selectedTokenIndexes.length) {
+    if (state.entityAnnotationMode && state.selectedTokenIndexes.length > 0) {
       try {
         const textId = state.selectedTextId;
         const tokenIndexes = state.selectedTokenIndexes;
-
         const start = tokenIndexes[0];
         const end = tokenIndexes.at(-1);
-
         const payload = {
           project_id: state.projectId,
           dataset_item_id: textId,
@@ -164,8 +198,8 @@ const EntityTreeSelect = () => {
           suggested: false,
           content: {
             ontology_item_id: nodeId,
-            start: start,
-            end: end,
+            start,
+            end,
             surface_form: state.texts[textId].tokens
               .filter((t) => tokenIndexes.includes(t.index))
               .map((t) => t.value)
@@ -176,13 +210,49 @@ const EntityTreeSelect = () => {
       } catch (error) {}
     }
   };
-  const getItemLabel = (item) => item.name;
-  const getItemId = (item) => item.id;
 
-  const handleSelectedItemsChange = (event, id) => {
-    dispatch({ type: "SET_VALUE", payload: { activeEntityClass: id } });
-    handleAnnotation(id);
-  };
+  // Create a memoized map of entity items for efficient lookups
+  const entityMap = useMemo(() => {
+    const map = new Map();
+    const buildMap = (items) => {
+      items.forEach((item) => {
+        map.set(item.id, {
+          color: item.color,
+          fullname: item.fullname,
+          path: item.path,
+          active: item.active,
+        });
+        if (item.children) {
+          buildMap(item.children);
+        }
+      });
+    };
+    buildMap(state?.ontology?.entity ?? []);
+    return map;
+  }, [state?.ontology?.entity]);
+
+  // Memoized item props generator
+  const getItemProps = useCallback(
+    (item) => {
+      const entityData = entityMap.get(item.itemId);
+      return {
+        item,
+        ...entityData,
+      };
+    },
+    [entityMap]
+  );
+
+  const getItemLabel = useCallback((item) => item.name, []);
+  const getItemId = useCallback((item) => item.id, []);
+
+  const handleSelectedItemsChange = useCallback(
+    (event, id) => {
+      dispatch({ type: "SET_VALUE", payload: { activeEntityClass: id } });
+      handleAnnotation(id);
+    },
+    [dispatch, handleAnnotation]
+  );
 
   return (
     <Box sx={{ minHeight: 352, minWidth: 250 }}>
@@ -195,12 +265,7 @@ const EntityTreeSelect = () => {
           item: CustomTreeItem,
         }}
         slotProps={{
-          item: (item) => ({
-            item: item,
-            color: findItem(item.itemId, state.ontology.entity)?.color,
-            fullname: findItem(item.itemId, state.ontology.entity)?.fullname,
-            path: findItem(item.itemId, state.ontology.entity)?.path,
-          }),
+          item: getItemProps,
         }}
         onSelectedItemsChange={handleSelectedItemsChange}
       />
