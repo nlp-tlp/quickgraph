@@ -65,22 +65,31 @@ services:
       test: ["CMD", "test", "-f", "/app/static/img/.initialized"]
       interval: 10s
       timeout: 5s
-      retries: 100  # Allow plenty of retries for large download
+      retries: 100
     command: >
       sh -c '
+      echo "Starting initialization process..." &&
       mkdir -p /app/static/img &&
       chmod 777 /app/static/img &&
       cd /app/static/img &&
-      if [ ! -f .initialized ]; then
-        echo "Attempting to download static images (this may take several minutes)..." &&
-        curl -L --progress-bar https://nlp-tlp.s3.ap-southeast-2.amazonaws.com/static-img.tar.gz -o static-img.tar.gz &&
-        echo "\nDownload complete, extracting..." &&
-        tar xzf static-img.tar.gz --strip-components=3 &&
-        rm static-img.tar.gz &&
-        echo "Extraction complete"
+      if [ -f .initialized ]; then
+        echo "Already initialized, skipping download" &&
+        exit 0
       fi &&
+      echo "Attempting to download static images..." &&
+      if ! curl -L --progress-bar https://nlp-tlp.s3.ap-southeast-2.amazonaws.com/static-img.tar.gz -o static-img.tar.gz; then
+        echo "Failed to download static-img.tar.gz" &&
+        exit 1
+      fi &&
+      echo "Download complete, extracting..." &&
+      if ! tar xzf static-img.tar.gz --strip-components=3; then
+        echo "Failed to extract archive" &&
+        exit 1
+      fi &&
+      rm static-img.tar.gz &&
       touch .initialized &&
-      chmod -R 755 /app/static/img
+      chmod -R 755 /app/static/img &&
+      echo "Initialization complete"
       '
 
 volumes:
