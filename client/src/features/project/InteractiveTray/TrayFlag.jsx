@@ -69,6 +69,7 @@ const TrayFlag = ({ state, dispatch, textId }) => {
         <MenuList dense>
           {options.map((option, index) => (
             <FlagMenuItem
+              key={`flag-${option}-${index}`}
               state={state}
               textId={textId}
               option={option}

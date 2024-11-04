@@ -220,8 +220,6 @@ const Dataset = () => {
 
   const rows = dataset?.items?.map((i) => ({ ...i, id: i._id })) || [];
 
-  console.log("rows", rows);
-
   return (
     <>
       <UploadModal
