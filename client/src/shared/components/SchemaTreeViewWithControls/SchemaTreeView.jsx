@@ -67,7 +67,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
   const [nodeColor, setNodeColor] = React.useState(
     itemData?.color || "#efefef"
   );
-  const [isActive, setIsActive] = React.useState(itemData?.active || false);
+  const [isActive, setIsActive] = React.useState(itemData?.active || true);
   const [error, setError] = React.useState(false);
 
   // Validate name on mount and when nodeLabel changes
