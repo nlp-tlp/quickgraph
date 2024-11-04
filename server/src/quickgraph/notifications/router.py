@@ -11,8 +11,11 @@ from ..dependencies import get_db, get_user
 from ..notifications.schemas import Notification, NotificationStates
 from ..users.schemas import UserDocumentModel
 from .services import find_many_notifications
+from ..settings import settings
 
-router = APIRouter(prefix="/notifications", tags=["Notifications"])
+router = APIRouter(
+    prefix=f"{settings.api.prefix}/notifications", tags=["Notifications"]
+)
 
 logger = logging.getLogger(__name__)
 

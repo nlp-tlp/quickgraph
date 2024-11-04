@@ -46,10 +46,12 @@ from .services import (
     remove_user_from_project,
     save_many_dataset_items,
 )
+from ..settings import settings
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/project", tags=["Project"])
+
+router = APIRouter(prefix=f"{settings.api.prefix}/project", tags=["Project"])
 
 
 @router.post("", response_description="Create project", response_model=Project)

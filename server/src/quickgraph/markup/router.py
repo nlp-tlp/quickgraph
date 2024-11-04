@@ -17,10 +17,11 @@ from .schemas import (
     OutMarkupAccept,
 )
 from .services import accept_annotation, apply_annotation, delete_annotation
+from ..settings import settings
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/markup", tags=["Markup"])
+router = APIRouter(prefix=f"{settings.api.prefix}/markup", tags=["Markup"])
 
 
 @router.post(

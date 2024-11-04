@@ -26,9 +26,10 @@ from .services import (
     verify_security_answer,
 )
 
+
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix=f"{settings.api.prefix}/users", tags=["Users"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

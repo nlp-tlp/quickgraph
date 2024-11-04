@@ -24,6 +24,7 @@ class SettingsAPI(BaseModel):
     system_username: str = "system"
     system_default_dir: str = "./system"
     dummy_username: str = "janedoe"
+    prefix: str = "/api"
 
 
 class SettingsAuth(BaseModel):

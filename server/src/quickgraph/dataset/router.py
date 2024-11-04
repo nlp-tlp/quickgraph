@@ -45,10 +45,11 @@ from .services import (
     find_one_dataset,
     list_datasets,
 )
+from ..settings import settings
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/dataset", tags=["Dataset"])
+router = APIRouter(prefix=f"{settings.api.prefix}/dataset", tags=["Dataset"])
 
 
 @router.get(

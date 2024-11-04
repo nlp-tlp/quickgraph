@@ -96,19 +96,19 @@ app.include_router(dataset_router)
 app.include_router(project_router)
 
 
-@app.get("/status")
+@app.get(f"{settings.api.prefix}/status")
 async def status_endpoint() -> Dict[str, str]:
     """Checks server status"""
     return {"status": "I am healthy!"}
 
 
-@app.get("/settings")
+@app.get(f"{settings.api.prefix}/settings")
 def read_settings_endpoint() -> Settings:
     """Reads the server settings."""
     return settings
 
 
-@app.get("/health")
+@app.get(f"{settings.api.prefix}/health")
 async def health_check_endpoint(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Dict[str, str]:

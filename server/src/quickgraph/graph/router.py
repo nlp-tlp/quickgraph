@@ -36,10 +36,11 @@ from .services import (
     get_node_neighbors,
     lighten_hex_color,
 )
+from ..settings import settings
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/graph", tags=["Graph"])
+router = APIRouter(prefix=f"{settings.api.prefix}/graph", tags=["Graph"])
 
 
 @router.get(

@@ -24,10 +24,11 @@ from .services import (
     get_dashboard_information,
     group_data_by_key,
 )
+from ..settings import settings
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+router = APIRouter(prefix=f"{settings.api.prefix}/dashboard", tags=["Dashboard"])
 
 
 @router.get("/{project_id}", response_model=DashboardInformation)

@@ -27,11 +27,12 @@ from .services import (
     find_one_resource,
     update_one_resource,
 )
+from ..settings import settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/resources",
+    prefix=f"{settings.api.prefix}/resources",
     tags=["Resources"],
 )
 

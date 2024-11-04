@@ -1,18 +1,15 @@
 """Social Router."""
 
-from typing import Dict, List, Union
-
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, Field
 
 from ..dependencies import get_db, get_user
 from ..users.schemas import UserDocumentModel
-from .schemas import BaseComment, Comment, Context, CreateComment
+from .schemas import Comment, Context, CreateComment
+from ..settings import settings
 
-router = APIRouter(prefix="/social", tags=["Social"])
+router = APIRouter(prefix=f"{settings.api.prefix}/social", tags=["Social"])
 
 
 @router.post("/{dataset_item_id}")
