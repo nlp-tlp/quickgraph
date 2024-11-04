@@ -1,25 +1,20 @@
 """Markup router."""
 
 import logging
-
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from ..dependencies import get_active_project_user, get_db, get_user
-from ..project.schemas import CreateFlag, Flag, FlagState, OntologyItem, ProjectOntology
+from ..dependencies import get_db, get_user
+from ..project.schemas import Flag, FlagState, OntologyItem
 from ..resources.services import get_project_ontology_items
 from ..users.schemas import UserDocumentModel
 from ..utils.misc import flatten_hierarchical_ontology
 from .schemas import (
     CreateMarkupApply,
-    EntityMarkup,
-    InMarkupApply,
     MarkupEditBody,
     OutMarkupAccept,
-    OutMarkupApply,
-    OutMarkupDelete,
 )
 from .services import accept_annotation, apply_annotation, delete_annotation
 

@@ -849,6 +849,9 @@ async def apply_annotation(
     )
     ontology_item = find_ontology_item_by_id(ontology, markup.content.ontology_item_id)
 
+    if not ontology_item.active:
+        return None
+
     if markup.annotation_type == "entity":
         if apply_all:
             new_markup = await apply_many_entity_annotations(
