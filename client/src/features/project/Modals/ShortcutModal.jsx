@@ -6,12 +6,10 @@ import {
   Box,
   Divider,
   Stack,
-  IconButton,
   Chip,
 } from "@mui/material";
 import { ProjectContext } from "../../../shared/context/ProjectContext";
 import { useTheme } from "@mui/material/styles";
-import CloseIcon from "@mui/icons-material/Close";
 
 const style = {
   position: "absolute",
@@ -41,11 +39,12 @@ const shortcuts = [
   //   description:
   //     "Toggle between entity and relation annotation modes - unaccepted entities will be hidden in relation mode.",
   // },
-  //   {
-  //     name: '',
-  //     shortcut: '1-10',
-  //     description: 'Apply '
-  //   }
+  {
+    name: "Entity Shortcuts",
+    shortcut: "1-9",
+    description:
+      "Quick-select entities using number sequences (e.g. 1, 11, 21, ...)",
+  },
 ];
 
 const ShortcutModal = () => {
@@ -71,9 +70,6 @@ const ShortcutModal = () => {
                 These are QuickGraph annotation keyboard shortcuts
               </Typography>
             </Stack>
-            {/* <IconButton onClick={handleClose}>
-              <CloseIcon />
-            </IconButton> */}
             <Chip
               label="esc"
               sx={{ fontWeight: 700, fontSize: 12 }}
@@ -89,8 +85,13 @@ const ShortcutModal = () => {
         </Box>
         <Box p="1rem 2rem">
           <Stack direction="column" spacing={2}>
-            {shortcuts.map((sc) => (
-              <Stack direction="row" spacing={4} alignItems="center">
+            {shortcuts.map((sc, index) => (
+              <Stack
+                key={`shortcut-${index}`}
+                direction="row"
+                spacing={4}
+                alignItems="center"
+              >
                 <Typography
                   variant="body1"
                   sx={{
