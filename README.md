@@ -14,9 +14,7 @@
 > QuickGraph v2 is currently being rolled out 🚧
 > We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only.
 
-<div>
-  <img src="./client/public/static/annotation_interface_light.png">
-</div>
+![Annotation Interface]("./client/public/static/annotation_interface_light.png")
 
 ## 📚 Table of Contents
 - [Overview](#-overview)
@@ -58,6 +56,9 @@ QuickGraph is a collaborative annotation tool for rapid multi-task information e
 
 ### General Installation
 
+> [!NOTE]
+> The build process requires fetching a 600MB file of static documentation. Please be patient if the documentation URL does not become available immediately. You can check the docs container status for progress.
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/nlp-tlp/quickgraph.git
@@ -66,7 +67,7 @@ cd quickgraph
 
 2. Build and run using Docker Compose:
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
 The services will be available at:
