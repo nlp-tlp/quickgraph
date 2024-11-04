@@ -82,7 +82,7 @@ services:
         exit 1
       fi &&
       echo "Download complete, extracting..." &&
-      if ! tar xzf static-img.tar.gz --strip-components=3; then
+      if ! tar xzf static-img.tar.gz --strip-components=1; then
         echo "Failed to extract archive" &&
         exit 1
       fi &&
