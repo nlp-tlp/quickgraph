@@ -14,7 +14,7 @@
 > QuickGraph v2 is currently being rolled out 🚧
 > We're actively migrating to version 2, with completion expected by November 11th, 2024. The core features and workflow demonstrated in v1 remain relevant as they form the foundation of v2. This update is mainly architecture and user interface updates only.
 
-![Annotation Interface]("./client/public/static/annotation_interface_light.png")
+![Annotation Interface](./client/public/static/annotation_interface_light.png)
 
 ## 📚 Table of Contents
 - [Overview](#-overview)
