@@ -4,12 +4,10 @@ services:
     build:
      context: ./server
      dockerfile: Dockerfile
-    depends_on:
-      - mongodb
     ports:
       - "8000:8000"
-    networks:
-      - app-network
+    depends_on:
+      - mongodb
     environment:
       - MONGODB__DATABASE_NAME=quickgraph
       - MONGODB__URI=mongodb://root:example@mongodb:27017
@@ -17,31 +15,25 @@ services:
 
   client:
     image: quickgraph-client
+    ports:
+      - "3000:80"
     build:
       context: ./client
       dockerfile: Dockerfile
-    ports:
-      - "8080:80"
     depends_on:
       - server
       - docs
-    networks:
-      - app-network
     environment:
       - VITE_API_BASE_URL=http://localhost:8000/api
       - VITE_DOC_BASE_URL=http://localhost:4000
 
   mongodb:
-    image: mongo:latest
-    ports:
-      - "27018:27017"
+    image: docker.io/mongo:latest
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data:/data/db:z
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=example
-    networks:
-      - app-network
 
   docs:
     build:
@@ -51,13 +43,11 @@ services:
       - "4000:4000"
     volumes:
       - static_img:/app/static/img
-    networks:
-      - app-network
     depends_on:
       - init-static-img
 
   init-static-img:
-    image: curlimages/curl:latest
+    image: docker.io/curlimages/curl:latest
     user: root
     volumes:
       - static_img:/app/static/img
@@ -91,11 +81,6 @@ services:
       chmod -R 755 /app/static/img &&
       echo "Initialization complete"
       '
-
 volumes:
   mongodb_data:
   static_img:
-
-networks:
-  app-network:
-    driver: bridge
